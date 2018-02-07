@@ -1,0 +1,26 @@
+
+syntax = "proto3";
+
+package ccprotos;
+
+import "hyperledger.abchain.org/protos/crypto.proto";
+
+//user can register a public key only if it has own some pais 
+message RegPublicKey {
+	protos.PublicKey pk = 1;
+	string	  region = 2;
+}
+
+message RevokePublicKey {
+	protos.PublicKey pk = 1;
+}
+
+message ActivePublicKey {
+	bytes key = 1;
+}
+
+message Settings {
+	bool  debugMode = 1;
+	string regPrivilege = 2;
+	string adminPrivilege = 3;
+}

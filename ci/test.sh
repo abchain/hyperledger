@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+go generate ./...
+
+go test ./...
+

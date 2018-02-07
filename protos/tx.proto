@@ -1,0 +1,42 @@
+
+syntax = "proto3";
+
+package protos;
+
+import "crypto.proto";
+import "google/protobuf/timestamp.proto";
+
+message TxBase {
+    string      network         = 1;
+    string      ccname          = 2;
+    string      method          = 3;//abandoned
+}
+
+message TxHeader{
+    TxBase      base            = 1;
+    google.protobuf.Timestamp expiredTs = 2;
+    bytes       nonce           = 3;
+}
+
+message TxCredential {
+
+    message     UserCredential{
+        ECSignature signature     = 1;
+        PublicKey   pk            = 2;  
+    }
+
+    message     InnerCredential{
+        string   ccname         = 1;
+        bytes    fingerprint    = 2;
+        PublicKey   pk          = 3;
+    }
+
+    message     AddrCredentials{
+        oneof cred{
+            UserCredential user = 1;
+            InnerCredential cc  = 2;
+        }
+    }
+
+    repeated    AddrCredentials addrc  = 1;
+}

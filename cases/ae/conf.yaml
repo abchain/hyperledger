@@ -1,0 +1,52 @@
+############################################################################
+############################################################################
+#
+# 1. 二进制文件内已经包含了一份默认配置，所以本文件不是必须的，正式发布时可以将本文件删除；
+#
+# 2. 本文件内的配置项会覆盖二进制文件内的默认配置；
+#
+# 3. 修改配置时，注意保持 YAML 语法结构正确性
+#
+############################################################################
+
+logging:
+    # 日志打印级别
+    level: debug
+
+wallet:
+    # 钱包文件路径
+    path: "data"
+    # 钱包文件名
+    filename: "simplewallet.dat"
+
+service:
+    # 本地 HTTPS Server 监听的地址
+    host: 0.0.0.0
+    # 本地 HTTPS Server 监听的端口
+    port: 7080
+
+grpc:
+    # gRPC Server 地址
+    # server: "localhost:8000"
+    server: "gateway.blackpai.com:8000"
+    # Fabric user name
+    username: "user1"
+#    username: "up1"
+    # Chaincode Name
+    chaincode: "ucchain"
+    # Enable TLS
+    tlsenabled: true
+    # CA 证书文件
+    certfile: "mist/ca.crt"
+    # Fabric data path
+    path: "data"
+
+rest:
+    # REST Server 地址
+    server: "http://localhost:8080" # vp0
+#    server: "http://localhost:8081" # vp1
+#    server: "http://localhost:8082" # vp2
+#    server: "http://localhost:8083" # vp3
+
+setting:
+    offline: false

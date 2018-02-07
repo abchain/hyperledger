@@ -1,0 +1,45 @@
+
+syntax = "proto3";
+
+package ccprotos;
+
+import "hyperledger.abchain.org/protos/txaddr.proto";
+
+message SimpleFund {
+	bytes	amount  = 1;
+	protos.TxAddr  to      = 2;
+	protos.TxAddr  from    = 3;
+}
+
+message QueryToken {
+
+	enum Formats {
+		NUMBER = 0;//only raw numbers (into bytes)
+		ENCODED = 1;//encoded Protobuffer
+	  }
+
+	Formats format = 1;
+	protos.TxAddr addr = 2;
+}
+
+message QueryTransfer {
+
+	bytes  nonce = 1;
+}
+
+message QueryGlobal {}
+
+message BaseToken{
+	bytes totalTokens = 1;
+
+	message Assign {
+		protos.TxAddr  recv = 1;
+		bytes   amount = 2;
+	}
+	repeated Assign assigns = 2;		 
+}
+
+message Assign {
+	bytes	amount  = 1;
+	protos.TxAddr  to      = 2;
+}

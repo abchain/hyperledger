@@ -1,0 +1,26 @@
+//use a protobuf 3 defination as the persistent data format 
+
+syntax = "proto3";
+
+package ccprotos;
+
+import "hyperledger.abchain.org/protos/crypto.proto";
+import "hyperledger.abchain.org/protos/txaddr.proto";
+import "google/protobuf/timestamp.proto";
+
+message Contract {
+	protos.PublicKey delegatorPk = 1; 
+	bytes     totalRedeem  = 3;
+
+	message MemberStatus{
+		uint32    weight = 2;
+		bytes     totalRedeem = 3;		
+	}
+
+	map<string, MemberStatus> status = 5;
+	google.protobuf.Timestamp contractTs = 6;
+	google.protobuf.Timestamp frozenTo = 8;
+	bool      isFrozen = 10;
+
+	protos.TxAddr	  nextAddr = 12;
+}

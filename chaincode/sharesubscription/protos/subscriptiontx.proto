@@ -1,0 +1,24 @@
+
+syntax = "proto3";
+
+package ccprotos;
+
+import "hyperledger.abchain.org/protos/txaddr.proto";
+
+//user can register a public key only if it has own some pais 
+message RegContract {
+
+	protos.TxAddr delegatorAddr = 1;
+	message Member{
+		protos.TxAddr     addr = 1;
+		uint32    weight = 2;
+	}
+
+	repeated Member contractBody = 5;
+}
+
+message QueryContract {
+	protos.TxAddr contractAddr = 1;
+	protos.TxAddr memberAddr = 2;
+}
+

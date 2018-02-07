@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package protos;
+
+message TxAddr {
+    bytes       hash            = 1;
+}
+
+message TxMsgExample{
+    bytes      param1            = 1;
+    int32      param2            = 2;
+}
