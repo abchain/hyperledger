@@ -92,6 +92,7 @@ func initTest(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
 	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname)}
 }
 
@@ -118,6 +119,7 @@ func TestContract(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
 	spout.Dispatcher = bolt.GetCaller(QueryHandler(querycfg))
 
 	err, cont := spout.Query(addr)
@@ -161,11 +163,13 @@ func TestContract(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
 	stub.MockTransactionStart("redeem1")
 	spout.Dispatcher = bolt.GetCaller(RedeemHandler(cfg))
 
 	_, err = spout.Redeem(addr, []byte(addr1), big.NewInt(0))
 
+	stub.MockTransactionEnd("", err)
 	tokenSpout.Dispatcher = bolt.GetCaller(token.TokenQueryHandler(tokenQuerycfg))
 
 	err, data1 := tokenSpout.Account([]byte(addr1))
@@ -189,7 +193,14 @@ func TestContract(t *testing.T) {
 		t.Fatalf("wrong redeem amount: %s", bal.String())
 	}
 
+	stub.MockTransactionStart("redeem2")
+
 	_, err = spout.Redeem(addr, []byte(addr2), bal)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stub.MockTransactionEnd("", err)
 
 	err, data2 := tokenSpout.Account([]byte(addr2))
 	if err != nil {

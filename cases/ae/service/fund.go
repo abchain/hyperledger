@@ -24,11 +24,11 @@ type fund struct {
 }
 
 func encodeEntry(nonce []byte) string {
-	return base64.StdEncoding.EncodeToString(nonce)
+	return base64.URLEncoding.EncodeToString(nonce)
 }
 
 func decodeEntry(nonce string) ([]byte, error) {
-	return base64.StdEncoding.DecodeString(nonce)
+	return base64.URLEncoding.DecodeString(nonce)
 }
 
 func (s *fund) InitCaller(rw web.ResponseWriter,

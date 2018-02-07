@@ -73,6 +73,8 @@ func TestDeployCc(t *testing.T) {
 		t.Fatal("Invalid state count")
 	}
 
+	stub.MockTransactionEnd("", err)
+
 	//init bolt and do first query tx
 	spout.Dispatcher = bolt.GetCaller(GlobalQueryHandler(tokenQuerycfg))
 
@@ -121,11 +123,16 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
+
 	stub.MockTransactionStart("assigment2")
 
 	nc2, err := spout.Assign([]byte(addr2), assignt2)
 	if err != nil {
+		t.Fatal(err)
 	}
+
+	stub.MockTransactionEnd("", err)
 
 	stub.MockTransactionStart("assigment3")
 	fixednc := "fixednc"
@@ -136,6 +143,8 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
+
 	stub.MockTransactionStart("assigment3_fail")
 
 	spout.BeginTx([]byte(fixednc))
@@ -143,6 +152,8 @@ func TestAssignCc(t *testing.T) {
 	if err == nil {
 		t.Fatal("Execute duplicated assigment")
 	}
+
+	stub.MockTransactionEnd("", err)
 
 	spout.Dispatcher = bolt.GetCaller(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
 
@@ -221,11 +232,15 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
+
 	stub.MockTransactionStart("transfer2")
 
 	nc2, err := spout.Transfer([]byte(addr2), []byte(addr4), transt2)
 	if err != nil {
 	}
+
+	stub.MockTransactionEnd("", err)
 
 	stub.MockTransactionStart("transfer3")
 	fixednc := "fixednc"
@@ -236,6 +251,8 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
+
 	stub.MockTransactionStart("transfer3_fail")
 
 	spout.BeginTx([]byte(fixednc))
@@ -243,6 +260,8 @@ func TestTransferCc(t *testing.T) {
 	if err == nil {
 		t.Fatal("Execute duplicated transfer")
 	}
+
+	stub.MockTransactionEnd("", err)
 
 	stub.MockTransactionStart("transfer3_fail")
 
@@ -257,6 +276,8 @@ func TestTransferCc(t *testing.T) {
 	if err == nil {
 		t.Fatal("Execute overflow transfer")
 	}
+
+	stub.MockTransactionEnd("", err)
 
 	spout.Dispatcher = bolt.GetCaller(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
 

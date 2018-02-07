@@ -70,6 +70,8 @@ func assign(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
+
 	tokenSpout.Dispatcher = bolt.GetCaller(token.AssignHandler(tokencfg))
 
 	privkey, err = crypto.NewPrivatekey(crypto.DefaultCurveType)
@@ -100,6 +102,7 @@ func assign(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
 	addr, err = tx.NewAddressFromPrivateKey(privkeyNotReg)
 	if err != nil {
 		t.Fatal(err)
@@ -118,6 +121,7 @@ func assign(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
 	return
 }
 
@@ -133,6 +137,8 @@ func TestReg(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
+
 	subk, err := privkey.ChildKey(big.NewInt(184467442737))
 	if err != nil {
 		t.Fatal(err)
@@ -145,6 +151,7 @@ func TestReg(t *testing.T) {
 		t.Fatal("reg a childkey")
 	}
 
+	stub.MockTransactionEnd("", err)
 	spout.Dispatcher = bolt.GetCaller(QueryPkHandler(querycfg))
 
 	err, data := spout.Pubkey(qkey)
@@ -182,6 +189,7 @@ func TestReg(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
 	spout.Dispatcher = bolt.GetCaller(QueryPkHandler(querycfg))
 
 	err, data = spout.Pubkey(qkey)
@@ -207,6 +215,7 @@ func TestDirectReg(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
 	spout.Dispatcher = bolt.GetCaller(QueryPkHandler(querycfg))
 
 	err, data := spout.Pubkey(privkey.Public().RootFingerPrint)
@@ -277,6 +286,7 @@ func TestFund(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	stub.MockTransactionEnd("", err)
 	stub.MockTransactionStart("transfer2")
 	tokenSpout.Credgenerator = txgen.NewSingleKeyCred(privkeyNotReg)
 
@@ -285,6 +295,7 @@ func TestFund(t *testing.T) {
 		t.Fatal("Do transfer without reg publickey")
 	}
 
+	stub.MockTransactionEnd("", err)
 	tokenSpout.Dispatcher = bolt.GetCaller(token.TokenQueryHandler(tokenQuerycfg))
 
 	addr1bal, ok := big.NewInt(0).SetString(result1, 10)
