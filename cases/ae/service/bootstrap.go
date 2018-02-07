@@ -20,8 +20,25 @@ var (
 func StartService() {
 	var err error
 
+	// Read config
+	globalConfig := &config.GlobalConfig{ConfigFileName: "conf"}
+
+	globalConfig.ConfigPath = []string{"."}
+
+	gopath := os.Getenv("GOPATH")
+	for _, p := range filepath.SplitList(gopath) {
+		confpath := filepath.Join(p, "src/hyperledger.abchain.org/cases/ae")
+		globalConfig.ConfigPath = append(globalConfig.ConfigPath, confpath)
+	}
+
+	err = globalConfig.InitGlobal()
+	if err != nil {
+		logger.Errorf("Init global failed: %v", err)
+		return
+	}
+
 	// Init Fabric
-	if err = initFabric(); err != nil {
+	if err = initFabric(globalConfig); err != nil {
 		logger.Errorf("Init fabric failed: %v", err)
 		return
 	}
@@ -103,9 +120,10 @@ func StopService() {
 	DefaultRPCClient.Close()
 }
 
-func initFabric() error {
+func initFabric(cfg *config.GlobalConfig) error {
 	peerConfig := &peerex.GlobalConfig{}
 	peerConfig.ConfigFileName = "conf"
+	peerConfig.ConfigPath = cfg.ConfigPath
 
 	viper := config.Viper
 

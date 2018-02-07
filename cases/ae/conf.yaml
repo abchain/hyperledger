@@ -21,21 +21,19 @@ wallet:
 
 service:
     # 本地 HTTPS Server 监听的地址
-    host: 0.0.0.0
+    host: 127.0.0.1
     # 本地 HTTPS Server 监听的端口
     port: 7080
 
 grpc:
     # gRPC Server 地址
     # server: "localhost:8000"
-    server: "gateway.blackpai.com:8000"
     # Fabric user name
     username: "user1"
-#    username: "up1"
     # Chaincode Name
-    chaincode: "ucchain"
+    chaincode: "aecc"
     # Enable TLS
-    tlsenabled: true
+    tlsenabled: false
     # CA 证书文件
     certfile: "mist/ca.crt"
     # Fabric data path
@@ -49,4 +47,4 @@ rest:
 #    server: "http://localhost:8083" # vp3
 
 setting:
-    offline: false
+    offline: true
