@@ -2,41 +2,54 @@ package service
 
 import (
 	"github.com/gocraft/web"
-	"hyperledger.abchain.org/cases/ae/chaincode/cc"
 	token "hyperledger.abchain.org/chaincode/generaltoken"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	share "hyperledger.abchain.org/chaincode/sharesubscription"
 	pb "hyperledger.abchain.org/chaincode/sharesubscription/protos"
 	tx "hyperledger.abchain.org/tx"
 	"math/big"
-	"net/http"
 	"strconv"
 	"strings"
 )
 
 const (
-	contrcatAddr    = "contractAddr"
-	contrcatAddrDir = "/:contractAddr"
+	ContrcatAddr = "contractAddr"
 )
 
-type subscription struct {
-	*apiCore
+type Subscription struct {
+	*RPCCoreWithAccount
 	token token.GeneralCall
 	share share.GeneralCall
 }
 
-func (s *subscription) InitCaller(rw web.ResponseWriter,
+type SubscriptionRouter struct {
+	*web.Router
+}
+
+func CreatSubscriptionRouter(root RPCAccountRouter, path string) SubscriptionRouter {
+	return SubscriptionRouter{
+		root.Subrouter(Subscription{}, path),
+	}
+}
+
+func (r SubscriptionRouter) Init() SubscriptionRouter {
+
+	r.Middleware((*Subscription).InitCaller)
+	return r
+}
+
+func (r SubscriptionRouter) BuildRoutes() {
+
+	r.Post("/", (*Subscription).NewContract)
+	r.Post("/redeem/:"+ContrcatAddr, (*Subscription).Redeem)
+	r.Get("/:"+ContrcatAddr, (*Subscription).QueryContract)
+}
+
+func (s *Subscription) InitCaller(rw web.ResponseWriter,
 	req *web.Request, next web.NextMiddlewareFunc) {
 
-	s.token = token.GeneralCall{txgen.SimpleTxGen(chaincode.CC_NAME)}
-	s.share = share.GeneralCall{txgen.SimpleTxGen(chaincode.CC_NAME)}
-	if offlineMode {
-		s.token.Dispatcher = ccCaller
-		s.share.Dispatcher = ccCaller
-	} else {
-		http.Error(rw, "Not implied", http.StatusBadRequest)
-		return
-	}
+	s.token = token.GeneralCall{s.TxGenerator}
+	s.share = share.GeneralCall{s.TxGenerator}
 
 	next(rw, req)
 }
@@ -46,10 +59,10 @@ type contractEntry struct {
 	Address string `json:"contract address"`
 }
 
-func (s *subscription) NewContract(rw web.ResponseWriter, req *web.Request) {
+func (s *Subscription) NewContract(rw web.ResponseWriter, req *web.Request) {
 
-	if s.activePrivk == nil {
-		s.normalErrorF(rw, -100, "No account is specified")
+	if s.ActivePrivk == nil {
+		s.NormalErrorF(rw, -100, "No account is specified")
 		return
 	}
 
@@ -59,71 +72,71 @@ func (s *subscription) NewContract(rw web.ResponseWriter, req *web.Request) {
 	for _, str := range contractStrs {
 		ret := strings.Split(str, ":")
 		if len(ret) < 2 {
-			s.normalErrorF(rw, -100, "Wrong contract string")
+			s.NormalErrorF(rw, -100, "Wrong contract string")
 			return
 		}
 
 		w, err := strconv.Atoi(ret[1])
 		if err != nil {
-			s.normalError(rw, err)
+			s.NormalError(rw, err)
 			return
 		}
 
 		contract[ret[0]] = uint32(w)
 	}
 
-	s.share.Credgenerator = txgen.NewSingleKeyCred(s.activePrivk)
+	s.share.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 
-	conaddr, err := s.share.New(contract, s.activePrivk.Public())
+	conaddr, err := s.share.New(contract, s.ActivePrivk.Public())
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
-	s.normal(rw, &contractEntry{
+	s.Normal(rw, &contractEntry{
 		string(s.share.Dispatcher.LastInvokeTxId()),
 		tx.NewAddressFromHash(conaddr).ToString(),
 	})
 }
 
-func (s *subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
+func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 
-	if s.activePrivk == nil {
-		s.normalErrorF(rw, -100, "No account is specified")
+	if s.ActivePrivk == nil {
+		s.NormalErrorF(rw, -100, "No account is specified")
 		return
 	}
 
-	conaddr, err := tx.NewAddressFromString(req.PathParams[contrcatAddr])
+	conaddr, err := tx.NewAddressFromString(req.PathParams[ContrcatAddr])
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	amount, ok := big.NewInt(0).SetString(req.PostFormValue("amount"), 0)
 
 	if !ok || (amount.IsUint64() && amount.Uint64() == 0) {
-		s.normalErrorF(rw, 0, "Invalid amount")
+		s.NormalErrorF(rw, 0, "Invalid amount")
 		return
 	}
 
-	redeemAddr, err := tx.NewAddress(s.activePrivk.Public())
+	redeemAddr, err := tx.NewAddress(s.ActivePrivk.Public())
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
-	s.share.Credgenerator = txgen.NewSingleKeyCred(s.activePrivk)
+	s.share.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 
 	nonceid, err := s.share.Redeem(conaddr.Hash, redeemAddr.Hash, amount)
 
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
-	s.normal(rw, &fundEntry{
+	s.Normal(rw, &FundEntry{
 		string(s.share.Dispatcher.LastInvokeTxId()),
-		encodeEntry(nonceid),
+		s.EncodeEntry(nonceid),
 	})
 
 }
@@ -173,31 +186,31 @@ func toContractEntry(contract *pb.Contract, balance []byte) (*contractQueryEntry
 	return out, nil
 }
 
-func (s *subscription) QueryContract(rw web.ResponseWriter, req *web.Request) {
+func (s *Subscription) QueryContract(rw web.ResponseWriter, req *web.Request) {
 
-	addr, err := tx.NewAddressFromString(req.PathParams[contrcatAddr])
+	addr, err := tx.NewAddressFromString(req.PathParams[ContrcatAddr])
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	err, tokenacc := s.token.Account(addr.Hash)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	err, contract := s.share.Query(addr.Hash)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	ret, err := toContractEntry(contract, tokenacc.Balance)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
-	s.normal(rw, ret)
+	s.Normal(rw, ret)
 }

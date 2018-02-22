@@ -1,44 +1,78 @@
 package service
 
 import (
-	"github.com/abchain/fabric/peerex"
 	"hyperledger.abchain.org/asset/wallet"
 	"hyperledger.abchain.org/client"
 	"hyperledger.abchain.org/config"
-	"os"
 	"path/filepath"
 )
 
+const (
+	defaultCCDeployName = "aecc"
+)
+
 var (
-	DefaultWallet     wallet.Wallet
-	DefaultRPCClient  *client.RPCClient
-	DefaultRESTClient *client.RESTClient
+	defaultWallet    wallet.Wallet
+	defaultRpcConfig *client.RpcClientConfig
+	defaultFabricEP  string
 
 	offlineMode bool
 )
 
+func init() {
+
+	viper := config.Viper
+
+	// Debug
+	logging := map[string]interface{}{}
+	logging["level"] = "debug"
+	viper.SetDefault("logging", logging)
+
+	// Wallet
+	wallet := map[string]interface{}{}
+	wallet["path"] = "data"
+	wallet["filename"] = "simplewallet.dat"
+	viper.SetDefault("wallet", wallet)
+
+	// Local RPC Server
+	service := map[string]interface{}{}
+	service["host"] = "localhost"
+	service["port"] = "7080"
+	viper.SetDefault("service", service)
+
+	// gRPC Server
+	grpc := map[string]interface{}{}
+	grpc["server"] = "example.abchain.org:8000"
+	grpc["chaincode"] = defaultCCDeployName
+	grpc["tlsenabled"] = false
+	viper.SetDefault("grpc", grpc)
+
+	// REST Server
+	rest := map[string]interface{}{}
+	rest["server"] = "example.abchain.org:8080"
+	viper.SetDefault("rest", rest)
+
+	// Setting
+	setting := map[string]interface{}{}
+	setting["offline"] = false
+	viper.SetDefault("setting", setting)
+
+}
+
 func StartService() {
-	var err error
 
-	// Read config
-	globalConfig := &config.GlobalConfig{ConfigFileName: "conf"}
+	err := config.LoadConfig("conf",
+		[]string{"src/hyperledger.abchain.org/cases/ae"},
+		nil)
 
-	globalConfig.ConfigPath = []string{"."}
-
-	gopath := os.Getenv("GOPATH")
-	for _, p := range filepath.SplitList(gopath) {
-		confpath := filepath.Join(p, "src/hyperledger.abchain.org/cases/ae")
-		globalConfig.ConfigPath = append(globalConfig.ConfigPath, confpath)
-	}
-
-	err = globalConfig.InitGlobal()
 	if err != nil {
-		logger.Errorf("Init global failed: %v", err)
+		logger.Errorf("Init global config failed: %v", err)
 		return
 	}
 
 	// Init Fabric
-	if err = initFabric(globalConfig); err != nil {
+	err = initFabric()
+	if err != nil {
 		logger.Errorf("Init fabric failed: %v", err)
 		return
 	}
@@ -46,61 +80,28 @@ func StartService() {
 	viper := config.Viper
 
 	// Init Wallet
-	path := viper.GetString("wallet.path")
-	filename := viper.GetString("wallet.filename")
-	walletFile := filepath.Join(path, filename)
-	err = os.MkdirAll(path, 0777)
-	if err != nil {
-		logger.Errorf("mkdir %v failed: %v", path, err)
-		return
-	}
+	walletFile := filepath.Join(config.FabricPeerFS, viper.GetString("wallet.filename"))
 	logger.Debugf("Use wallet file: %s", walletFile)
-	DefaultWallet = wallet.NewWallet(walletFile)
-	err = DefaultWallet.Load()
+	defaultWallet = wallet.NewWallet(walletFile)
+	err = defaultWallet.Load()
 	if err != nil {
 		logger.Errorf("Load wallet file failed: %v", err)
 		return
 	}
 
-	// Init gRPC Client
-	DefaultRPCClient, err = client.NewRPCClient()
-	if err != nil {
-		logger.Errorf("Create RPC Client failed: %v", err)
-		return
+	// Init gRPC ClientConfig
+	defaultRpcConfig = client.NewRPCConfig(viper.GetString("grpc.chaincode"))
+	username := viper.GetString("grpc.username")
+	if username != "" {
+		defaultRpcConfig.SetUser(username)
 	}
 
-	// Init REST Client
-	RESTServer := viper.GetString("rest.server")
-	logger.Debugf("Connect to REST server: %v", RESTServer)
-	DefaultRESTClient, err = client.NewRESTClient(RESTServer)
-	if err != nil {
-		logger.Errorf("Create REST Client failed: %v", err)
-		return
-	}
+	// Init REST ClientConfig
+	defaultFabricEP := viper.GetString("rest.server")
+	logger.Debugf("Use fabric peer REST server: %v", defaultFabricEP)
 
-	// Connect to gRPC Server
 	offlineMode = viper.GetBool("setting.offline")
-	if !offlineMode {
-		// Connect gRPC Server
-		gRPCServer := viper.GetString("grpc.server")
-		err = DefaultRPCClient.Connect(gRPCServer)
-		if err != nil {
-			logger.Errorf("Connect gRPC server(%v) failed: %v", gRPCServer, err)
-			return
-		}
-
-		err = DefaultRPCClient.SetSecurityPolicy(viper.GetString("grpc.username")) // Set UserName
-		if err != nil {
-			logger.Errorf("SetSecurityPolicy failed: %v", err)
-			return
-		}
-
-		err = DefaultRPCClient.SetChaincodeName(viper.GetString("grpc.chaincode")) // Set Chaincode Name
-		if err != nil {
-			logger.Errorf("SetChaincodeName failed: %v", err)
-			return
-		}
-	} else {
+	if offlineMode {
 		logger.Warning("Running offline mode")
 	}
 
@@ -116,34 +117,32 @@ func StopService() {
 
 	stopHttpServer()
 
-	DefaultWallet.Persist()
-	DefaultRPCClient.Close()
+	defaultWallet.Persist()
+	defaultRpcConfig.Quit()
 }
 
-func initFabric(cfg *config.GlobalConfig) error {
-	peerConfig := &peerex.GlobalConfig{}
-	peerConfig.ConfigFileName = "conf"
-	peerConfig.ConfigPath = cfg.ConfigPath
+func initFabric() error {
 
 	viper := config.Viper
 
 	defaultViperSetting := make(map[string]interface{})
-	defaultViperSetting["peer.fileSystemPath"] = viper.GetString("grpc.path")
-	defaultViperSetting["peer.tls.rootcert.file"] = viper.GetString("grpc.certfile")
-	defaultViperSetting["peer.tls.serviceenabled"] = viper.GetBool("grpc.tlsenabled")
 
-	err := peerConfig.InitGlobalWrapper(true, defaultViperSetting)
-	if err != nil {
-		return err
+	srvAddr := viper.GetString("grpc.server")
+	if srvAddr != "" {
+		defaultViperSetting[config.FabricRPC_Addr] = srvAddr
 	}
 
-	var fsDir string = defaultViperSetting["peer.fileSystemPath"].(string)
-	if fsDir != "" && fsDir != "." {
-		err = os.MkdirAll(viper.GetString("grpc.path"), 0777)
-		if err != nil {
-			return err
-		}
+	defaultViperSetting[config.Fabric_DataPath] = viper.GetString("wallet.path")
+
+	if viper.GetBool("grpc.tlsenabled") {
+		defaultViperSetting[config.FabricRPC_SSL] = true
+		defaultViperSetting[config.FabricRPC_SSLCERT] = viper.GetString("grpc.certfile")
 	}
 
-	return nil
+	logLvl := viper.GetString("logging.level")
+	if logLvl != "" {
+		defaultViperSetting[config.Fabric_LogLevel] = logLvl
+	}
+
+	return config.InitFabricPeerEx(defaultViperSetting)
 }

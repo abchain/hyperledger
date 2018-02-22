@@ -1,101 +1,101 @@
 package config
 
 import (
-	log "github.com/abchain/fabric/peerex/logging"
+	"errors"
+	"github.com/abchain/fabric/peerex"
 	vieprWrapper "github.com/abchain/fabric/peerex/viper"
+	"os"
+	"path/filepath"
 )
 
-var defaultConfigFileName = "sdk_conf"
-
-var logger = log.InitLogger("CONFIG")
+const (
+	FabricRPC_Addr    = "service.cliaddress"
+	FabricRPC_SSL     = "peer.tls.serviceenabled"
+	FabricRPC_SSLCERT = "peer.tls.rootcert.file"
+	Fabric_DataPath   = "peer.fileSystemPath"
+	Fabric_LogLevel   = "logging_level"
+)
 
 var viper = vieprWrapper.New()
 var Viper = viper
 
-type GlobalConfig struct {
-	ConfigFileName string
-	ConfigPath     []string
-}
+//a standard routine to read config from a file and feed then into viper
+//any path in goProjPath will be append with GOPATH env, and
+//addPath is simply added
+//localpath (".") is always used
+//environment variables is never read
+func LoadConfig(fileName string, goProjPath []string, addPath []string) error {
 
-func (g *GlobalConfig) InitGlobal() error {
+	viper.SetConfigName(fileName)
 
-	// Init ConfigPath
-	if g.ConfigPath == nil {
-		g.ConfigPath = make([]string, 1, 10)
-		g.ConfigPath[0] = "."
+	viper.AddConfigPath(".")
+	gopath := os.Getenv("GOPATH")
+	for _, p := range filepath.SplitList(gopath) {
+
+		for _, c := range goProjPath {
+			viper.AddConfigPath(filepath.Join(p, c))
+		}
 	}
 
-	// Init ConfigFileName
-	if g.ConfigFileName == "" {
-		g.ConfigFileName = defaultConfigFileName
-	}
-
-	// Set Default Value
-	err := g.SetDefaultValue()
-	if err != nil {
-		return err
-	}
-
-	// Load config
-	err = g.LoadConfig()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (g *GlobalConfig) LoadConfig() error {
-	for _, c := range g.ConfigPath {
+	for _, c := range addPath {
 		viper.AddConfigPath(c)
 	}
 
-	viper.SetConfigName(g.ConfigFileName) // Name of config file (without extension)
-
-	logger.Debugf("ConfigPath: %v", g.ConfigPath)
-	logger.Debugf("ConfigFileName: %v", g.ConfigFileName)
-
-	return viper.ReadInConfig() // Find and read the config file
+	return viper.ReadInConfig()
 }
 
-func (g *GlobalConfig) SetDefaultValue() error {
+func handleFSDir(fsDir string) error {
 
-	// Debug
-	logging := map[string]interface{}{}
-	logging["level"] = "debug"
-	viper.SetDefault("logging", logging)
-
-	// Wallet
-	wallet := map[string]interface{}{}
-	wallet["path"] = "data"
-	wallet["filename"] = "simplewallet.dat"
-	viper.SetDefault("wallet", wallet)
-
-	// Local RPC Server
-	service := map[string]interface{}{}
-	service["host"] = "localhost"
-	service["port"] = "7080"
-	viper.SetDefault("service", service)
-
-	// gRPC Server
-	grpc := map[string]interface{}{}
-	grpc["server"] = "example.abchain.org:8000"
-	grpc["username"] = "nobody"
-	grpc["chaincode"] = "examplechain"
-	grpc["tlsenabled"] = false
-	grpc["certfile"] = "ca.crt"
-	grpc["path"] = "data"
-	viper.SetDefault("grpc", grpc)
-
-	// REST Server
-	rest := map[string]interface{}{}
-	rest["server"] = "http://localhost:8080"
-	viper.SetDefault("rest", rest)
-
-	// Setting
-	setting := map[string]interface{}{}
-	setting["offline"] = false
-	viper.SetDefault("setting", setting)
+	if fsDir != "" && fsDir != "." {
+		err := os.MkdirAll(fsDir, 0777)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
+}
+
+var FabricPeerFS string
+
+//simplely init fabric (std output, not use config ...)
+//if we need more specified, use GlobalConfig
+func InitFabricPeerEx(settings map[string]interface{}) error {
+
+	if settings[Fabric_DataPath] == nil {
+		return errors.New("No data path")
+	}
+
+	if settings[FabricRPC_Addr] == nil {
+		return errors.New("No RPC Address")
+	}
+
+	peerConfig := &peerex.GlobalConfig{
+		SkipConfigFile: true,
+	}
+
+	peerConfig.InitGlobalWrapper(true, settings)
+
+	FabricPeerFS = peerConfig.GetPeerFS()
+	//NOTICE: we provide an empty config for peerex and init
+	//is always return error (configfile is not found)
+	//so we have to omit it
+	//the default settings and environment variables should be still read in
+	return handleFSDir(FabricPeerFS)
+}
+
+type GlobalConfig struct {
+	peerex.GlobalConfig
+	Settings map[string]interface{}
+	LogFile  bool
+}
+
+func (g *GlobalConfig) InitFabricPeerEx() error {
+	err := g.GlobalConfig.InitGlobalWrapper(g.LogFile, g.Settings)
+	if err != nil {
+		return err
+	}
+
+	FabricPeerFS = g.GetPeerFS()
+	return handleFSDir(FabricPeerFS)
 }

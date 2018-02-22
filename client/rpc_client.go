@@ -1,96 +1,199 @@
 package client
 
 import (
-	"fmt"
+	"context"
 	"github.com/abchain/fabric/peerex"
-	log "github.com/abchain/fabric/peerex/logging"
+	"sync"
+	"time"
 )
 
-type RPCClient struct {
-	b *peerex.RpcBuilder
-	c *peerex.ClientConn
+const (
+	defaultReconnectInterval = 1 * time.Minute
+)
+
+type connBuilder struct {
+	sync.Mutex
+	peerex.ClientConn
+	waitConn      *sync.Cond
+	connFail      error
+	resetInterval time.Duration
 }
 
-var logger = log.InitLogger("CLIENT")
+func (c *connBuilder) close() {
+	c.Lock()
+	defer c.Unlock()
 
-func NewRPCClient() (*RPCClient, error) {
+	if c.waitConn != nil {
+		c.waitConn.Wait()
+	}
 
-	c := &RPCClient{}
-
-	return c, nil
+	if c.C != nil {
+		c.C.Close()
+		c.C = nil
+	}
 }
 
-func (r *RPCClient) Connect(server string) error {
+func (c *connBuilder) reset(ctx context.Context) {
 
-	r.c = &peerex.ClientConn{}
-
-	logger.Debugf("Connect to gRPC server: %v", server)
-	err := r.c.Dial(server) //peer.tls.rootcert.file, peer.tls.serverhostoverride
-	if err != nil {
-		return err
+	to := c.resetInterval
+	if int64(to) == 0 {
+		to = defaultReconnectInterval
 	}
 
-	rpc := &peerex.Rpc{}
-
-	r.b = &peerex.RpcBuilder{
-		Conn:        *r.c,
-		ConnManager: rpc.NewManager(),
+	select {
+	case <-time.After(to):
+		c.Lock()
+		c.connFail = nil
+		c.Unlock()
+	case <-ctx.Done():
 	}
-
-	return nil
 }
 
-func (r *RPCClient) Invoke(function string, args []string) (string, error) {
+func (c *connBuilder) obtainConn(ctx context.Context) *peerex.ClientConn {
 
-	if r.b == nil {
-		return "", fmt.Errorf("RpcBuilder is nil")
+	c.Lock()
+	defer c.Unlock()
+
+	if c.C != nil {
+		return &peerex.ClientConn{c.C, true}
 	}
 
-	r.b.Function = function
+	if c.connFail != nil {
+		return nil
+	}
 
-	return r.b.Fire(args)
+	//response to do submit
+	if c.waitConn == nil {
+		c.waitConn = sync.NewCond(c)
+		go func() {
+			conn := &peerex.ClientConn{nil, true}
+			err := conn.Dialdefault()
+
+			c.Lock()
+			if err != nil {
+				c.connFail = err
+			} else {
+				c.ClientConn.C = conn.C
+			}
+			c.Unlock()
+
+			c.waitConn.Broadcast()
+
+			if err != nil {
+				c.reset(ctx)
+			}
+		}()
+
+		c.waitConn.Wait()
+		c.waitConn = nil
+
+	} else {
+		c.waitConn.Wait()
+	}
+
+	if c.C != nil {
+		return &peerex.ClientConn{c.C, true}
+	} else {
+		return nil
+	}
+
 }
 
-func (r *RPCClient) Query(function string, args []string) ([]byte, error) {
-
-	if r.b == nil {
-		return nil, fmt.Errorf("RpcBuilder is nil")
-	}
-
-	r.b.Function = function
-
-	return r.b.Query(args)
+type RpcClientConfig struct {
+	chaincodeName string
+	conn          connBuilder
+	security      *peerex.SecurityPolicy
+	connManager   *peerex.RPCManager
+	TxTimeout     time.Duration
 }
 
-func (r *RPCClient) SetSecurityPolicy(username string) error {
+func NewRPCConfig(ccName string) *RpcClientConfig {
 
-	if r.b == nil {
-		return fmt.Errorf("RpcBuilder is nil")
+	return &RpcClientConfig{
+		chaincodeName: ccName,
+		connManager:   peerex.NewRpcManager(),
 	}
-
-	// logger.Debugf("Set fabric client user: %v", username)
-
-	// r.b.Security = &peerex.SecurityPolicy{User: username,
-	// 	Attributes: []string{security.PrivilegeAttr, security.RegionAttr}}
-
-	return fmt.Errorf("Deprecated")
 }
 
-func (r *RPCClient) SetChaincodeName(name string) error {
-
-	if r.b == nil {
-		return fmt.Errorf("RpcBuilder is nil")
+func (c *RpcClientConfig) SetUser(username string) {
+	if c.security == nil {
+		c.security = &peerex.SecurityPolicy{username, nil, nil, ""}
+	} else {
+		c.security.User = username
 	}
-
-	logger.Debugf("Set fabric chaincode name: %v", name)
-
-	r.b.ChaincodeName = name
-
-	return nil
 }
 
-func (r *RPCClient) Close() {
-	if r.b != nil && r.b.Conn.C != nil {
-		r.b.Conn.C.Close()
+func (c *RpcClientConfig) SetAttrs(attrs []string, isAppend bool) {
+	if c.security == nil {
+		c.security = &peerex.SecurityPolicy{"", nil, nil, ""}
 	}
+
+	if isAppend {
+		c.security.Attributes = append(c.security.Attributes, attrs...)
+	} else {
+		c.security.Attributes = attrs
+	}
+}
+
+func (c *RpcClientConfig) Quit() {
+
+	c.connManager.Cancel()
+	c.conn.close()
+}
+
+//adapter of the rpc caller
+type rPCClient struct {
+	*peerex.RpcBuilder
+	lastTxid string
+}
+
+//Assign each http request (run cocurrency) a client, which can be adapted to a caller
+//the client is "lazy" connect: it just do connect when required (a request has come)
+//and wait for connect finish
+func (c *RpcClientConfig) NewCall() (*rPCClient, error) {
+
+	conn := c.conn.obtainConn(c.connManager.Context())
+	if conn == nil {
+		return nil, c.conn.connFail
+	}
+
+	builder := &peerex.RpcBuilder{
+		c.chaincodeName,
+		"",
+		c.security,
+		*conn,
+		c.connManager,
+		c.TxTimeout,
+	}
+
+	if err := builder.VerifyConn(); err != nil {
+		return nil, err
+	}
+
+	return &rPCClient{builder, ""}, nil
+}
+
+func (r *rPCClient) LastInvokeTxId() []byte {
+	return []byte(r.lastTxid)
+}
+
+func (r *rPCClient) Invoke(function string, args []string) ([]byte, error) {
+
+	r.lastTxid = ""
+
+	r.Function = function
+	txid, err := r.Fire(args)
+	if err == nil {
+		r.lastTxid = txid
+		return []byte(r.lastTxid), nil
+	}
+
+	return nil, err
+}
+
+func (r *rPCClient) Query(function string, args []string) ([]byte, error) {
+
+	r.Function = function
+
+	return r.RpcBuilder.Query(args)
 }

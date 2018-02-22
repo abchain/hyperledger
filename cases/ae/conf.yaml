@@ -14,7 +14,7 @@ logging:
     level: debug
 
 wallet:
-    # 钱包文件路径
+    # 数据文件路径
     path: "data"
     # 钱包文件名
     filename: "simplewallet.dat"
@@ -36,15 +36,10 @@ grpc:
     tlsenabled: false
     # CA 证书文件
     certfile: "mist/ca.crt"
-    # Fabric data path
-    path: "data"
 
 rest:
     # REST Server 地址
-    server: "http://localhost:8080" # vp0
-#    server: "http://localhost:8081" # vp1
-#    server: "http://localhost:8082" # vp2
-#    server: "http://localhost:8083" # vp3
+    server: "localhost:8080" # vp0
 
 setting:
     offline: true

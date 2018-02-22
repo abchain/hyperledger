@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/abchain/fabric/core/chaincode/shim"
-	log "github.com/abchain/fabric/peerex/logging"
 	token "hyperledger.abchain.org/chaincode/generaltoken"
 	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
 	"hyperledger.abchain.org/chaincode/lib/caller"
@@ -12,8 +11,6 @@ import (
 	reg "hyperledger.abchain.org/chaincode/registrar"
 	share "hyperledger.abchain.org/chaincode/sharesubscription"
 )
-
-var logger = log.InitLogger("chaincode")
 
 type AECC struct {
 	DebugMode                     bool
@@ -28,6 +25,8 @@ const (
 	PrivilegeAttr = "Role"
 	RegionAttr    = "Region"
 )
+
+var logger = shim.NewLogger(CC_NAME)
 
 var invokeMapper map[string]*tx.ChaincodeTx
 var queryMapper map[string]*tx.ChaincodeTx
@@ -167,6 +166,6 @@ func (t *AECC) Query(stub shim.ChaincodeStubInterface,
 func ExportMain() {
 	err := shim.Start(new(AECC))
 	if err != nil {
-		fmt.Printf("Error starting AE chaincode: %s", err)
+		logger.Errorf("Error starting AE chaincode: %s", err)
 	}
 }

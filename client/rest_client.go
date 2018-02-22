@@ -1,149 +1,115 @@
 package client
 
 import (
+	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"fmt"
-	protos "github.com/abchain/fabric/protos"
-	_ "github.com/golang/protobuf/ptypes/timestamp"
-	"io/ioutil"
-	"math/big"
+	"github.com/gocraft/web"
+	"hyperledger.abchain.org/chaincode/lib/caller"
+	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
+	"hyperledger.abchain.org/utils"
 	"net/http"
 )
 
-type RESTClient struct {
-	server string
+//a null-base to provide more elastic
+type FabricClientBase struct {
+	debugData interface{}
 }
 
-func NewRESTClient(server string) (*RESTClient, error) {
-
-	c := &RESTClient{server}
-
-	return c, nil
+type FabricRPCCfg interface {
+	GetCaller() rpc.Caller
+	GetCCName() string
 }
 
-type restError struct {
-	Error string `json:"Error,omitempty"`
+type FabricRPCCore struct {
+	*FabricClientBase
+	*txgen.TxGenerator
+	Cfg FabricRPCCfg
 }
 
-func (c *RESTClient) GetBlockchainInfo() (*protos.BlockchainInfo, error) {
-
-	if c.server == "" {
-		return nil, errors.New("REST Server is not set")
-	}
-
-	// Generate URL
-	url := fmt.Sprintf("%s/chain", c.server)
-	//logger.Debugf("Request URL(%v)", url)
-
-	// HTTP Request
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("Requset failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("Read response failed: %v", err)
-	}
-	//logger.Debugf("Body: %v", string(body))
-
-	// Parse error
-	errMsg := &restError{}
-	json.Unmarshal(body, errMsg)
-	if errMsg.Error != "" {
-		return nil, fmt.Errorf("Request failed: %v", errMsg.Error)
-	}
-
-	// Unmarshal
-	info1 := &protos.BlockchainInfo{}
-	err = json.Unmarshal(body, info1)
-	if err != nil {
-		return nil, fmt.Errorf("Unmarshal response failed: %v", err)
-	}
-
-	return info1, nil
+type RPCRouter struct {
+	*web.Router
 }
 
-func (c *RESTClient) GetBlock(height *big.Int) (*protos.Block, error) {
-
-	if c.server == "" {
-		return nil, errors.New("REST Server is not set")
+func CreateRPCRouter(root *web.Router, path string) RPCRouter {
+	return RPCRouter{
+		root.Subrouter(FabricRPCCore{}, path),
 	}
-
-	// Generate URL
-	url := fmt.Sprintf("%s/chain/blocks/%v", c.server, height.Int64())
-	//logger.Debugf("Request URL(%v)", url)
-
-	// HTTP Request
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("Requset failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("Read response failed: %v", err)
-	}
-	//logger.Debugf("Body: %v", string(body))
-
-	// Parse error
-	errMsg := &restError{}
-	json.Unmarshal(body, errMsg)
-	if errMsg.Error != "" {
-		return nil, fmt.Errorf("Request failed: %v", errMsg.Error)
-	}
-
-	// Unmarshal
-	block1 := &protos.Block{}
-	err = json.Unmarshal(body, block1)
-	if err != nil {
-		return nil, fmt.Errorf("Unmarshal response failed: %v", err)
-	}
-	return block1, nil
 }
 
-func (c *RESTClient) GetTransaction(transactionID string) (*protos.Transaction, error) {
+func (r RPCRouter) Init(cfg FabricRPCCfg) {
 
-	if c.server == "" {
-		return nil, errors.New("REST Server is not set")
+	initCall := func(s *FabricRPCCore, rw web.ResponseWriter,
+		req *web.Request, next web.NextMiddlewareFunc) {
+
+		s.TxGenerator = txgen.SimpleTxGen(cfg.GetCCName())
+		s.TxGenerator.Dispatcher = cfg.GetCaller()
+
+		if s.TxGenerator.Dispatcher == nil {
+			http.Error(rw, "No caller", http.StatusInternalServerError)
+		} else {
+			next(rw, req)
+		}
 	}
 
-	// Generate URL
-	url := fmt.Sprintf("%s/transactions/%v", c.server, transactionID)
-	//logger.Debugf("Request URL(%v)", url)
+	r.Middleware(initCall).
+		Middleware((*FabricRPCCore).PrehandlePost)
+}
 
-	// HTTP Request
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("Requset failed: %v", err)
-	}
-	defer resp.Body.Close()
+func (s *FabricRPCCore) PrehandlePost(rw web.ResponseWriter,
+	req *web.Request, next web.NextMiddlewareFunc) {
+	if req.Method == http.MethodPost {
+		err := req.ParseForm()
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-	// Read response
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("Read response failed: %v", err)
-	}
-	//logger.Debugf("Body: %v", string(body))
-
-	// Parse error
-	errMsg := &restError{}
-	json.Unmarshal(body, errMsg)
-	if errMsg.Error != "" {
-		return nil, fmt.Errorf("Request failed: %v", errMsg.Error)
+		nonce := req.PostFormValue("nonce")
+		if nonce != "" {
+			s.TxGenerator.BeginTx([]byte(nonce))
+		}
 	}
 
-	// Unmarshal
-	tx1 := &protos.Transaction{}
-	err = json.Unmarshal(body, tx1)
-	if err != nil {
-		return nil, fmt.Errorf("Unmarshal response failed: %v", err)
-	}
+	next(rw, req)
+}
 
-	return tx1, nil
+func (s *FabricClientBase) normalHeader(rw web.ResponseWriter) {
+
+	// Set response content type
+	rw.Header().Set("Content-Type", "application/json")
+
+	// Enable CORS (default option handler will handle OPTION and set Access-Control-Allow-Method properly)
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+	rw.Header().Set("Access-Control-Allow-Headers", "accept, content-type")
+
+	// Set response status ok
+	rw.WriteHeader(http.StatusOK)
+
+}
+
+func (s *FabricClientBase) Normal(rw web.ResponseWriter, v interface{}) {
+
+	s.normalHeader(rw)
+	// Create response encoder
+	json.NewEncoder(rw).Encode(utils.JRPCSuccess(v))
+}
+
+func (s *FabricClientBase) NormalError(rw web.ResponseWriter, e error) {
+
+	s.normalHeader(rw)
+	json.NewEncoder(rw).Encode(utils.JRPCError(e, s.debugData))
+}
+
+func (s *FabricClientBase) NormalErrorF(rw web.ResponseWriter, code int, message string) {
+
+	s.normalHeader(rw)
+	json.NewEncoder(rw).Encode(utils.JRPCErrorF(code, message, s.debugData))
+}
+
+func (s *FabricClientBase) EncodeEntry(nonce []byte) string {
+	return base64.URLEncoding.EncodeToString(nonce)
+}
+
+func (s *FabricClientBase) DecodeEntry(nonce string) ([]byte, error) {
+	return base64.URLEncoding.DecodeString(nonce)
 }

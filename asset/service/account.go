@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gocraft/web"
+	"hyperledger.abchain.org/asset/wallet"
+	"hyperledger.abchain.org/client"
 	"hyperledger.abchain.org/crypto"
 	"hyperledger.abchain.org/tx"
 	"math/big"
@@ -11,29 +13,64 @@ import (
 )
 
 const (
-	accountID       = "accountID"
-	accountIDDir    = "/:accountID"
-	accountIndex    = "index"
-	accountIndexDir = "/:index"
+	AccountID    = "accountID"
+	AccountIndex = "index"
 )
 
-type account struct {
-	*apiCore
+type Account struct {
+	*client.FabricClientBase
 	accountID     string
+	wallet        wallet.Wallet
 	shouldPersist bool
 }
 
-func (s *account) PersistAccount(rw web.ResponseWriter,
-	req *web.Request, next web.NextMiddlewareFunc) {
+type AccountRouter struct {
+	*web.Router
+}
 
-	next(rw, req)
-
-	if s.shouldPersist {
-		DefaultWallet.Persist()
+func CreateAccountRouter(root *web.Router, path string) AccountRouter {
+	return AccountRouter{
+		root.Subrouter(Account{}, path),
 	}
 }
 
-func (s *account) ParseParameters(rw web.ResponseWriter,
+func (r AccountRouter) Init(wallet wallet.Wallet) AccountRouter {
+
+	Initcall := func(s *Account, rw web.ResponseWriter,
+		req *web.Request, next web.NextMiddlewareFunc) {
+
+		s.wallet = wallet
+		s.shouldPersist = false
+
+		next(rw, req)
+
+		if s.shouldPersist {
+			wallet.Persist()
+		}
+	}
+
+	r.Middleware(Initcall).
+		Middleware((*Account).ParseParameters)
+
+	return r
+
+}
+
+func (r AccountRouter) BuildRoutes() {
+	r.Post("/", (*Account).Create)
+	r.Get("/", (*Account).List)
+	r.Get(":/"+AccountID, (*Account).Query)
+	r.Patch(":/"+AccountID, (*Account).Update)
+	r.Delete(":/"+AccountID, (*Account).Delete)
+	r.Get(":/"+AccountID+":/"+AccountIndex, (*Account).QueryChild)
+}
+
+func (r AccountRouter) BuildPrivkeyRoutes() {
+	r.Post("/", (*Account).ImportKey)
+	r.Get(":/"+AccountID, (*Account).ExportKey)
+}
+
+func (s *Account) ParseParameters(rw web.ResponseWriter,
 	req *web.Request, next web.NextMiddlewareFunc) {
 
 	//add parseform action for PATCH method
@@ -47,21 +84,21 @@ func (s *account) ParseParameters(rw web.ResponseWriter,
 
 	//but we only get accountID from post method
 	if req.Method == http.MethodPost {
-		s.accountID = req.PostFormValue(accountID)
+		s.accountID = req.PostFormValue(AccountID)
 	} else {
-		s.accountID = req.PathParams[accountID]
+		s.accountID = req.PathParams[AccountID]
 	}
 
 	next(rw, req)
 }
 
-func (s *account) Create(rw web.ResponseWriter, req *web.Request) {
+func (s *Account) Create(rw web.ResponseWriter, req *web.Request) {
 
 	logger.Debug("Received create account request")
 
 	// Check accountID
 	if s.accountID == "" {
-		s.normalError(rw, errors.New("Must provide accountID"))
+		s.NormalError(rw, errors.New("Must provide accountID"))
 		return
 	}
 
@@ -69,35 +106,35 @@ func (s *account) Create(rw web.ResponseWriter, req *web.Request) {
 	logger.Debugf("input : accountID(%v)", s.accountID)
 
 	// Create private key
-	priv, err := DefaultWallet.NewPrivKey(s.accountID)
+	priv, err := s.wallet.NewPrivKey(s.accountID)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	// Generate Address
 	addr, err := abchainTx.NewAddressFromPrivateKey(priv)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	// Debug
 	logger.Debugf("output: address(%v)", addr)
 
-	s.normal(rw, addr.ToString())
+	s.Normal(rw, addr.ToString())
 
 	// Persist wallet data
 	s.shouldPersist = true
 }
 
-func (s *account) List(rw web.ResponseWriter, req *web.Request) {
+func (s *Account) List(rw web.ResponseWriter, req *web.Request) {
 	logger.Debug("Received list accounts request")
 
 	// get account list
-	privkeys, err := DefaultWallet.ListAll()
+	privkeys, err := s.wallet.ListAll()
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
@@ -114,10 +151,10 @@ func (s *account) List(rw web.ResponseWriter, req *web.Request) {
 	// Debug
 	logger.Debugf("output: address map(%v)", ret)
 
-	s.normal(rw, ret)
+	s.Normal(rw, ret)
 }
 
-func (s *account) Query(rw web.ResponseWriter, req *web.Request) {
+func (s *Account) Query(rw web.ResponseWriter, req *web.Request) {
 
 	logger.Debug("Received query account request")
 
@@ -125,58 +162,58 @@ func (s *account) Query(rw web.ResponseWriter, req *web.Request) {
 	logger.Debugf("input : accountID(%v)", s.accountID)
 
 	// Get address
-	priv, err := DefaultWallet.LoadPrivKey(s.accountID)
+	priv, err := s.wallet.LoadPrivKey(s.accountID)
 	if err != nil {
-		s.normalErrorF(rw, 404, "account Not Found")
+		s.NormalErrorF(rw, 404, "account Not Found")
 		return
 	}
 
 	// Generate Address
 	addr, err := abchainTx.NewAddressFromPrivateKey(priv)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
-	s.normal(rw, addr.ToString())
+	s.Normal(rw, addr.ToString())
 }
 
-func (s *account) QueryChild(rw web.ResponseWriter, req *web.Request) {
+func (s *Account) QueryChild(rw web.ResponseWriter, req *web.Request) {
 
 	logger.Debug("Received query child account request")
 
 	// Parse index
-	index, ok := big.NewInt(0).SetString(req.PathParams[accountIndex], 0)
+	index, ok := big.NewInt(0).SetString(req.PathParams[AccountIndex], 0)
 	if !ok {
-		s.normalErrorF(rw, -100, "Invalid Account Index")
+		s.NormalErrorF(rw, -100, "Invalid Account Index")
 		return
 	}
 	// Debug
 	logger.Debugf("input : accountID(%v), index(%v)", s.accountID, index)
 
 	// Get address
-	priv, err := DefaultWallet.LoadPrivKey(s.accountID)
+	priv, err := s.wallet.LoadPrivKey(s.accountID)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	childPk, err := priv.Public().ChildKey(index)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	addr, err := abchainTx.NewAddress(childPk)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
-	s.normal(rw, addr.ToString())
+	s.Normal(rw, addr.ToString())
 }
 
-func (s *account) Update(rw web.ResponseWriter, req *web.Request) {
+func (s *Account) Update(rw web.ResponseWriter, req *web.Request) {
 
 	logger.Debug("Received update account request")
 
@@ -190,34 +227,34 @@ func (s *account) Update(rw web.ResponseWriter, req *web.Request) {
 	logger.Debugf("input : accountID(%v), newAccountID(%v)", s.accountID, newAccountID)
 
 	// Rename account
-	err := DefaultWallet.Rename(s.accountID, newAccountID)
+	err := s.wallet.Rename(s.accountID, newAccountID)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	// Get address
-	priv, err := DefaultWallet.LoadPrivKey(s.accountID)
+	priv, err := s.wallet.LoadPrivKey(s.accountID)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	// Generate Address
 	addr, err := abchainTx.NewAddressFromPrivateKey(priv)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
 	// Persist wallet data
 	s.shouldPersist = true
 
-	s.normal(rw, addr.ToString())
+	s.Normal(rw, addr.ToString())
 
 }
 
-func (s *account) Delete(rw web.ResponseWriter, req *web.Request) {
+func (s *Account) Delete(rw web.ResponseWriter, req *web.Request) {
 	logger.Debug("Received delete account request")
 
 	// Check accountID
@@ -227,19 +264,19 @@ func (s *account) Delete(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Delete account
-	err := DefaultWallet.RemovePrivKey(s.accountID)
+	err := s.wallet.RemovePrivKey(s.accountID)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
-	s.normal(rw, nil)
+	s.Normal(rw, nil)
 
 	// Persist wallet data
 	s.shouldPersist = true
 }
 
-func (s *account) ExportKey(rw web.ResponseWriter, req *web.Request) {
+func (s *Account) ExportKey(rw web.ResponseWriter, req *web.Request) {
 
 	logger.Debug("Received export private key request")
 
@@ -247,16 +284,16 @@ func (s *account) ExportKey(rw web.ResponseWriter, req *web.Request) {
 	logger.Debugf("input : accountID(%v)", s.accountID)
 
 	// Load private key
-	priv, err := DefaultWallet.LoadPrivKey(s.accountID)
+	priv, err := s.wallet.LoadPrivKey(s.accountID)
 	if err != nil {
-		s.normalError(rw, err)
+		s.NormalError(rw, err)
 		return
 	}
 
-	s.normal(rw, priv.Str())
+	s.Normal(rw, priv.Str())
 }
 
-func (s *account) ImportKey(rw web.ResponseWriter, req *web.Request) {
+func (s *Account) ImportKey(rw web.ResponseWriter, req *web.Request) {
 
 	logger.Debug("Received import private key request")
 
@@ -274,7 +311,7 @@ func (s *account) ImportKey(rw web.ResponseWriter, req *web.Request) {
 	for i, privstr := range privkeyS {
 		priv, err := crypto.PrivatekeyFromString(privstr)
 		if err != nil {
-			s.normalError(rw, err)
+			s.NormalError(rw, err)
 			return
 		}
 
@@ -286,16 +323,16 @@ func (s *account) ImportKey(rw web.ResponseWriter, req *web.Request) {
 		}
 
 		// Import private key
-		err = DefaultWallet.ImportPrivateKey(id, priv)
+		err = s.wallet.ImportPrivateKey(id, priv)
 		if err != nil {
-			s.normalError(rw, err)
+			s.NormalError(rw, err)
 			return
 		}
 
 		// Generate Address
 		addr, err := abchainTx.NewAddressFromPrivateKey(priv)
 		if err != nil {
-			s.normalError(rw, err)
+			s.NormalError(rw, err)
 			return
 		}
 
@@ -306,9 +343,9 @@ func (s *account) ImportKey(rw web.ResponseWriter, req *web.Request) {
 	s.shouldPersist = true
 
 	if len(retAddr) > 1 {
-		s.normal(rw, retAddr)
+		s.Normal(rw, retAddr)
 	} else {
-		s.normal(rw, retAddr[0])
+		s.Normal(rw, retAddr[0])
 	}
 
 }

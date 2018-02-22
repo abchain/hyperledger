@@ -4,12 +4,13 @@ import (
 	"github.com/gocraft/web"
 	token "hyperledger.abchain.org/chaincode/generaltoken"
 	reg "hyperledger.abchain.org/chaincode/registrar"
+	"hyperledger.abchain.org/client"
 	"math/big"
 	"net/http"
 )
 
 type deploy struct {
-	*apiCore
+	*client.FabricRPCCore
 }
 
 func (s *deploy) Deploy(rw web.ResponseWriter, req *web.Request) {
@@ -50,15 +51,20 @@ func (s *deploy) Deploy(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	if !offlineMode {
-		http.Error(rw, "Not implied", http.StatusBadRequest)
-		return
-	} else {
-		_, err = ccCaller.MockInit("regtest_deploy_test", "INIT", args)
+		caller, err := defaultRpcConfig.NewCall()
 		if err != nil {
 			http.Error(rw, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		caller.Function = "INIT"
+		_, err = caller.Deploy(args)
+	} else {
+		_, err = ccCaller.MockInit("regtest_deploy_test", "INIT", args)
 	}
 
-	s.normal(rw, "OK")
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.Normal(rw, "OK")
 }
