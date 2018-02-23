@@ -48,7 +48,7 @@ func buildRouter() *web.Router {
 	//blockchain
 	client.CreateFabricProxyRouter(root, "chain").Init(defaultFabricEP, nil).BuildRoutes()
 
-	rpcrouter := client.CreateRPCRouter(root, URIPrefix)
+	rpcrouter := client.CreateRPCRouter(root, "")
 	rpcrouter.Init(&rpcCfg{})
 
 	// Deploy

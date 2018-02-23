@@ -97,7 +97,7 @@ func StartService() {
 	}
 
 	// Init REST ClientConfig
-	defaultFabricEP := viper.GetString("rest.server")
+	defaultFabricEP = viper.GetString("rest.server")
 	logger.Debugf("Use fabric peer REST server: %v", defaultFabricEP)
 
 	offlineMode = viper.GetBool("setting.offline")
