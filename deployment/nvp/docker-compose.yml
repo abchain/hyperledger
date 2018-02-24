@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+
+  nvp0:
+    image: abchain/nvp
+    build: .
+    command: sh -c "sleep 10; peer node start"
+    environment:
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ID=nvp0
+      - CORE_SECURITY_ENROLLID=nvp0
+      - CORE_SECURITY_ENROLLSECRET=TQz4j7trvodH
+      - CORE_PEER_DISCOVERY_ROOTNODE=
+      - CORE_PEER_PKI_ECA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLSCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLS_SERVERHOSTOVERRIDE=member.abchain.org
+    volumes:
+      - ~/abchain/nvp0:/var/hyperledger/data
+    ports:
+      - "7051:7051"
+      - "8000:8000"

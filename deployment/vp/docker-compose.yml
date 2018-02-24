@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+
+  vp0:
+    image: abchain/vp
+    build: .
+    command: sh -c "sleep 10 && peer node start"
+    environment:
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_VALIDATOR_CONSENSUS_PLUGIN=pbft
+#      - CORE_PEER_VALIDATOR_CONSENSUS_PLUGIN=noops
+      - CORE_PEER_ADDRESSAUTODETECT=false
+      - CORE_PEER_ADDRESS=192.168.8.159:17051
+      - CORE_PEER_ID=vp0
+      - CORE_SECURITY_ENROLLID=vp0
+      - CORE_SECURITY_ENROLLSECRET=lCShL53o15QT
+      - CORE_PEER_DISCOVERY_ROOTNODE=gateway.abchain.org:7051
+      - CORE_PEER_PKI_ECA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLSCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLS_SERVERHOSTOVERRIDE=member.abchain.org
+    ports:
+      - "17051:7051"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/abchain/vp:/var/hyperledger/data

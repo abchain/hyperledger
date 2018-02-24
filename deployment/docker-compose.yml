@@ -1,0 +1,150 @@
+version: '3'
+
+services:
+
+  membersrvc:
+    image: abchain/membersrvc
+    build: membersrvc
+    hostname: member.abchain.org
+    command: sh -c "membersrvc"
+    ports:
+      - "8002:8002"
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  vp0:
+    image: abchain/vp
+    build: vp
+    command: sh -c "sleep 10 && peer node start"
+    environment:
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_VALIDATOR_CONSENSUS_PLUGIN=pbft
+      - CORE_PEER_ID=vp0
+      - CORE_SECURITY_ENROLLID=vp0
+      - CORE_SECURITY_ENROLLSECRET=lCShL53o15QT
+      - CORE_PEER_DISCOVERY_ROOTNODE=gateway.abchain.org:7051
+      - CORE_PEER_PKI_ECA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLSCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLS_SERVERHOSTOVERRIDE=member.abchain.org
+    ports:
+      - "17050:7051"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  vp1:
+    image: abchain/vp
+    build: vp
+    command: sh -c "sleep 10 && peer node start"
+    environment:
+      - CORE_LOGGING_LEVEL=INFO
+      - CORE_PEER_VALIDATOR_CONSENSUS_PLUGIN=pbft
+      - CORE_PEER_ID=vp1
+      - CORE_SECURITY_ENROLLID=vp1
+      - CORE_SECURITY_ENROLLSECRET=8YkcfaPFUpZ8
+      - CORE_PEER_DISCOVERY_ROOTNODE=gateway.abchain.org:7051
+      - CORE_PEER_PKI_ECA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLSCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLS_SERVERHOSTOVERRIDE=member.abchain.org
+    ports:
+      - "17051:7051"
+      - "8081:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  vp2:
+    image: abchain/vp
+    build: vp
+    command: sh -c "sleep 10 && peer node start"
+    environment:
+      - CORE_LOGGING_LEVEL=INFO
+      - CORE_PEER_VALIDATOR_CONSENSUS_PLUGIN=pbft
+      - CORE_PEER_ID=vp2
+      - CORE_SECURITY_ENROLLID=vp2
+      - CORE_SECURITY_ENROLLSECRET=v2lF8Q2oA6mv
+      - CORE_PEER_DISCOVERY_ROOTNODE=gateway.abchain.org:7051
+      - CORE_PEER_PKI_ECA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLSCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLS_SERVERHOSTOVERRIDE=member.abchain.org
+    ports:
+      - "17052:7051"
+      - "8082:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  vp3:
+    image: abchain/vp
+    build: vp
+    command: sh -c "sleep 10 && peer node start"
+    environment:
+      - CORE_LOGGING_LEVEL=INFO
+      - CORE_PEER_VALIDATOR_CONSENSUS_PLUGIN=pbft
+      - CORE_PEER_ID=vp3
+      - CORE_SECURITY_ENROLLID=vp3
+      - CORE_SECURITY_ENROLLSECRET=509wqvz27TXd
+      - CORE_PEER_DISCOVERY_ROOTNODE=gateway.abchain.org:7051
+      - CORE_PEER_PKI_ECA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLSCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLS_SERVERHOSTOVERRIDE=member.abchain.org
+    ports:
+      - "17053:7051"
+      - "8083:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  nvp0:
+    image: abchain/nvp
+    build: nvp
+    hostname: gateway.abchain.org
+    command: sh -c "sleep 10; peer node start"
+    environment:
+      - CORE_LOGGING_LEVEL=INFO
+      - CORE_PEER_ID=nvp0
+      - CORE_SECURITY_ENROLLID=nvp0
+      - CORE_SECURITY_ENROLLSECRET=TQz4j7trvodH
+      - CORE_PEER_DISCOVERY_ROOTNODE=
+      - CORE_PEER_PKI_ECA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLSCA_PADDR=member.abchain.org:8002
+      - CORE_PEER_PKI_TLS_SERVERHOSTOVERRIDE=member.abchain.org
+    ports:
+      - "7051:7051"
+      - "8000:8000"
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
