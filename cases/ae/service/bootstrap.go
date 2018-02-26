@@ -2,6 +2,7 @@ package service
 
 import (
 	"hyperledger.abchain.org/asset/wallet"
+	"hyperledger.abchain.org/cases/ae/chaincode/cc"
 	"hyperledger.abchain.org/client"
 	"hyperledger.abchain.org/config"
 	"path/filepath"
@@ -94,6 +95,10 @@ func StartService() {
 	username := viper.GetString("grpc.username")
 	if username != "" {
 		defaultRpcConfig.SetUser(username)
+		defaultRpcConfig.SetAttrs([]string{
+			chaincode.RegionAttr,
+			chaincode.PrivilegeAttr,
+		}, false)
 	}
 
 	// Init REST ClientConfig
