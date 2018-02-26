@@ -27,7 +27,7 @@ service:
 
 grpc:
     # gRPC Server 地址
-    # server: "localhost:8000"
+    server: "localhost:8000"
     # Fabric user name
     username: "user1"
     # Chaincode Name
