@@ -37,13 +37,13 @@ func (r FundRouter) Init() FundRouter {
 func (r FundRouter) BuildFundRoutes() {
 
 	r.Post("/", (*Fund).Fund)
-	r.Get(":/"+FundID, (*Fund).QueryTransfer)
+	r.Get("/:"+FundID, (*Fund).QueryTransfer)
 }
 
 func (r FundRouter) BuildAddressRoutes() {
 
-	r.Get(":/"+AddressFlag, (*Fund).QueryAddress)
-	r.Get(":/"+AccountID+":/"+AccountIndex, (*Fund).Query)
+	r.Get("/:"+AddressFlag, (*Fund).QueryAddress)
+	r.Get("/:"+AccountID+"/:"+AccountIndex, (*Fund).Query)
 }
 
 func (r FundRouter) BuildGlobalRoutes() {

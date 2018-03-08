@@ -34,7 +34,7 @@ func (r RegistrarRouter) Init() RegistrarRouter {
 func (r RegistrarRouter) BuildRoutes() {
 
 	r.Post("/", (*Registrar).Reg)
-	r.Get(":/"+RegPkID, (*Registrar).Query)
+	r.Get("/:"+RegPkID, (*Registrar).Query)
 	// regRouter.Post("/audit", (*RegistrarREST).Audit)
 }
 

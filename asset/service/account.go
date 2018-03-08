@@ -59,15 +59,15 @@ func (r AccountRouter) Init(wallet wallet.Wallet) AccountRouter {
 func (r AccountRouter) BuildRoutes() {
 	r.Post("/", (*Account).Create)
 	r.Get("/", (*Account).List)
-	r.Get(":/"+AccountID, (*Account).Query)
-	r.Patch(":/"+AccountID, (*Account).Update)
-	r.Delete(":/"+AccountID, (*Account).Delete)
-	r.Get(":/"+AccountID+":/"+AccountIndex, (*Account).QueryChild)
+	r.Get("/:"+AccountID, (*Account).Query)
+	r.Patch("/:"+AccountID, (*Account).Update)
+	r.Delete("/:"+AccountID, (*Account).Delete)
+	r.Get("/:"+AccountID+"/:"+AccountIndex, (*Account).QueryChild)
 }
 
 func (r AccountRouter) BuildPrivkeyRoutes() {
 	r.Post("/", (*Account).ImportKey)
-	r.Get(":/"+AccountID, (*Account).ExportKey)
+	r.Get("/:"+AccountID, (*Account).ExportKey)
 }
 
 func (s *Account) ParseParameters(rw web.ResponseWriter,
