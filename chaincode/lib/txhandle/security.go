@@ -44,3 +44,32 @@ func (req TxMultiAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ s
 
 	return nil
 }
+
+type ParseAddress interface {
+	GetAddress() *txutil.Address
+}
+
+type AddrCredVerifier struct {
+	ParseAddress
+}
+
+func (v AddrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
+
+	if v.ParseAddress == nil {
+		panic("Uninit interface")
+	}
+
+	cred := tx.GetAddrCredential()
+
+	if cred == nil {
+		return fmt.Errorf("Tx contains no credentials")
+	}
+
+	addr := v.GetAddress()
+
+	if addr == nil {
+		return fmt.Errorf("Invalid address")
+	}
+
+	return cred.Verify(*addr)
+}

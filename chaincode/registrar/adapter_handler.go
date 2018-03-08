@@ -9,13 +9,18 @@ import (
 	txutil "hyperledger.abchain.org/tx"
 )
 
+//wrap ccpb.RegPublicKey with ParseAddress interface
+type RegPkMsg struct {
+	msg ccpb.RegPublicKey
+}
+
 type registrarHandler struct {
-	RegCredPreHandler
+	RegPkMsg
 	RegistrarConfig
 }
 
 type adminRegistrarHandler struct {
-	RegCredPreHandler
+	RegPkMsg
 	RegistrarConfig
 }
 type revokePkHandler struct {

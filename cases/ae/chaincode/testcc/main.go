@@ -6,5 +6,7 @@ import (
 )
 
 func main() {
-	<-ccutil.ExecuteCC(new(chaincode.AECC))
+	cc := new(chaincode.AECC)
+	cc.DebugMode = true
+	<-ccutil.ExecuteCC(cc)
 }

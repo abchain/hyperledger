@@ -48,7 +48,7 @@ func init() {
 	fundH := token.TransferHandler(tokencfg)
 	fundTx := &tx.ChaincodeTx{CC_NAME, fundH, nil, nil}
 	//transferHandler is also an prehandler
-	fundTx.PreHandlers = append(fundTx.PreHandlers, fundH)
+	fundTx.PreHandlers = append(fundTx.PreHandlers, tx.AddrCredVerifier{fundH})
 	//publickey reg policy
 	fundTx.PreHandlers = append(fundTx.PreHandlers,
 		reg.RegistrarPreHandler(registrarQuerycfg, fundH))
@@ -64,7 +64,7 @@ func init() {
 	newContractTx := &tx.ChaincodeTx{CC_NAME, newContractH, nil, nil}
 	newContractTx.PreHandlers = append(newContractTx.PreHandlers,
 		reg.RegistrarPreHandler(registrarQuerycfg, newContractH))
-	newContractTx.PreHandlers = append(newContractTx.PreHandlers, newContractH)
+	newContractTx.PreHandlers = append(newContractTx.PreHandlers, tx.AddrCredVerifier{newContractH})
 	invokeMapper[share.Method_NewContract] = newContractTx
 
 	redeemH := share.RedeemHandler(sharecfg)
@@ -72,7 +72,7 @@ func init() {
 	// Never restrict the redeem address is registred
 	// redeemTx.PreHandlers = append(redeemTx.PreHandlers,
 	// 	reg.RegistrarPreHandler(registrarQuerycfg, redeemH))
-	redeemTx.PreHandlers = append(redeemTx.PreHandlers, redeemH)
+	redeemTx.PreHandlers = append(redeemTx.PreHandlers, tx.AddrCredVerifier{redeemH})
 	invokeMapper[share.Method_Redeem] = redeemTx
 
 	queryMapper[token.Method_QueryToken] = &tx.ChaincodeTx{CC_NAME, token.TokenQueryHandler(tokenQuerycfg), nil, nil}

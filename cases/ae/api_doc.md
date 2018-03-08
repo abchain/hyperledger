@@ -480,7 +480,6 @@ FORMAT:1A
                     "from": "CAESFH-nFRqmcVEGQ31enumWC-PrfLiuGgTFYBnHIgh_pxUapnFRBg==",
                     "to": "CAESFFA3jJnD6W3tgf6664j780gIKkvuGgQOgdxdIghQN4yZw-lt7Q==",
                     "amount": 1000,
-                    "payout": 1000,
                 }
             }
 

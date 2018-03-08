@@ -4,18 +4,25 @@ import (
 	"errors"
 	"github.com/abchain/fabric/core/chaincode/shim"
 	"github.com/golang/protobuf/proto"
+	token "hyperledger.abchain.org/chaincode/generaltoken"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	pb "hyperledger.abchain.org/chaincode/sharesubscription/protos"
+	"hyperledger.abchain.org/crypto"
 	txutil "hyperledger.abchain.org/tx"
 )
 
+type RegContractMsg struct {
+	msg pb.RegContract
+}
+
 type newContractHandler struct {
-	newContractPreHandler
+	RegContractMsg
 	ContractConfig
+	pk *crypto.PublicKey
 }
 
 type redeemHandler struct {
-	redeemPreHandler
+	token.FundMsg
 	ContractConfig
 }
 
@@ -45,7 +52,7 @@ func MemberQueryHandler(cfg ContractConfig) *memberQueryHandler {
 }
 
 func (h *newContractHandler) Msg() proto.Message { return &h.msg }
-func (h *redeemHandler) Msg() proto.Message      { return &h.msg }
+func (h *redeemHandler) Msg() proto.Message      { return h.FundMsg.Msg() }
 func (h *queryHandler) Msg() proto.Message       { return &h.msg }
 func (h *memberQueryHandler) Msg() proto.Message { return &h.msg }
 
@@ -69,7 +76,7 @@ func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 }
 
 func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+	msg := h.FundMsg.Msg()
 
 	from, err := txutil.NewAddressFromPBMessage(msg.From)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
+	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
 	"hyperledger.abchain.org/crypto"
 	tx "hyperledger.abchain.org/tx"
 	"math/big"
@@ -249,7 +250,7 @@ func TestFund(t *testing.T) {
 	h := token.TransferHandler(tokencfg)
 	caller := bolt.GetCaller(h)
 	tokenSpout.Dispatcher = caller
-	err := bolt.AppendPreHandler(caller, h)
+	err := bolt.AppendPreHandler(caller, txhandle.AddrCredVerifier{h})
 	if err != nil {
 		t.Fatal(err)
 	}

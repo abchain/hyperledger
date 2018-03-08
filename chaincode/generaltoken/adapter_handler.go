@@ -9,13 +9,21 @@ import (
 	"math/big"
 )
 
+type FundMsg struct {
+	msg ccpb.SimpleFund
+}
+
+func (m *FundMsg) Msg() *ccpb.SimpleFund {
+	return &m.msg
+}
+
 type transferHandler struct {
-	FundCredPreHandler
+	FundMsg
 	TokenConfig
 }
 
 type assignHandler struct {
-	FundCredPreHandler
+	FundMsg
 	TokenConfig
 }
 type tokenQueryHandler struct {
@@ -24,7 +32,7 @@ type tokenQueryHandler struct {
 }
 
 type globalQueryHandler struct {
-	msg ccpb.SimpleFund
+	FundMsg
 	TokenConfig
 }
 

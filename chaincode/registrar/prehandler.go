@@ -3,23 +3,18 @@ package registrar
 import (
 	"errors"
 	"github.com/abchain/fabric/core/chaincode/shim"
-	ccpb "hyperledger.abchain.org/chaincode/registrar/protos"
+	"hyperledger.abchain.org/chaincode/lib/txhandle"
 	"hyperledger.abchain.org/crypto"
 	txutil "hyperledger.abchain.org/tx"
 )
 
-//provide prehandlers for other tx
-type CheckAddressReg interface {
-	GetAddress() *txutil.Address
-}
-
 type regPreHandler struct {
+	tx.ParseAddress
 	RegistrarConfig
-	getter CheckAddressReg
 }
 
-func RegistrarPreHandler(cfg RegistrarConfig, getter CheckAddressReg) *regPreHandler {
-	return &regPreHandler{cfg, getter}
+func RegistrarPreHandler(cfg RegistrarConfig, getter tx.ParseAddress) *regPreHandler {
+	return &regPreHandler{getter, cfg}
 }
 
 func (h *regPreHandler) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
@@ -29,7 +24,7 @@ func (h *regPreHandler) PreHandling(stub shim.ChaincodeStubInterface, _ string, 
 		return errors.New("Tx not include credentials")
 	}
 
-	addr := h.getter.GetAddress()
+	addr := h.GetAddress()
 	if addr == nil {
 		return errors.New("No address provided")
 	}
@@ -68,29 +63,18 @@ func (h *regPreHandler) PreHandling(stub shim.ChaincodeStubInterface, _ string, 
 	return nil
 }
 
-//RegPublicKey is also a prehandler
-type RegCredPreHandler struct {
-	msg ccpb.RegPublicKey
-}
+func (m *RegPkMsg) GetAddress() *txutil.Address {
 
-func (h *RegCredPreHandler) PreHandling(_ shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
-
-	cred := tx.GetAddrCredential()
-
-	if cred == nil {
-		return errors.New("Tx contains no credentials")
-	}
-
-	pk, err := crypto.PublicKeyFromPBMessage(h.msg.Pk)
+	pk, err := crypto.PublicKeyFromPBMessage(m.msg.Pk)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	addr, err := txutil.NewAddress(pk)
 
 	if err != nil {
-		return err
+		return nil
 	}
 
-	return cred.Verify(*addr)
+	return addr
 }
