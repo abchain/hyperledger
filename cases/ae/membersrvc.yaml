@@ -1,0 +1,162 @@
+# CA server parameters
+#
+server:
+
+        # limits the number of operating system threads used by the CA
+        # set to negative to use the system default setting
+        gomaxprocs: -1
+
+        # path to the OBC state directory and CA state subdirectory
+        rootpath: '%appdata%\hyperledger'
+        cadir: ".membersrvc"
+
+        # port the CA services are listening on
+        port: "127.0.0.1:7054"
+
+        # TLS certificate and key file paths
+        tls:
+            cert:
+                file: '%appdata%\hyperledger\cert\membersrvc.crt'
+            key:
+                file: '%appdata%\hyperledger\cert\membersrvc.key'
+
+security:
+    # Either 256 or 384   (note: must be the exact same value as specified in the core.yaml file)
+    level: 256
+
+    # Either SHA2 or SHA3 (note: must be the exact same value as specified in the core.yaml file)
+    hashAlgorithm: SHA3
+
+    # The server host CN (Common Name) to be used (needs to match the TLS Server Certificate)
+    serverhostoverride: gateway.example.abchain.org
+
+    # Boolean (true/false) value indicating whether TLS should be used between the client and
+    # the various CA services (ECA, TCA, TLSCA, ACA)
+    tls_enabled: false
+
+    # A PEM-encoded (X509 v3, Base64) certificate to use for establishing the TLS connection
+    # between the client and the ACA service
+    client:
+       cert:
+           file: '%appdata%\hyperledger\ca.crt'
+
+
+# Enabling/disabling different logging levels of the CA.
+#
+logging:
+
+# Please see fabric/docs/Setup/logging-control.md for more
+# options.
+    server: warning
+    ca: info
+    eca: debug
+    ecap: debug
+    ecaa: info
+    aca: warning
+    acap: warning
+    tca: warning
+    tcap: warning
+    tcaa: warning
+    tlsca: warning
+
+# Default users to be registered with the CA on first launch.  The role is a binary OR
+# of the different roles a user can have:
+#
+# - simple client such as a wallet: CLIENT
+# - non-validating peer: PEER
+# - validating client: VALIDATOR
+# - auditing client: AUDITOR
+#
+eca:
+        # This hierarchy is used to create the Pre-key tree, affiliations is the top of this hierarchy, 'banks_and_institutions' is used to create the key associated to auditors of both banks and
+        # institutions, 'banks' is used to create a key associated to auditors of banks, 'bank_a' is used to create a key associated to auditors of bank_a, etc.
+        affiliations:
+           example_affs:
+              example_aff1:
+                  - default
+                  - aff1_dep1
+                  - aff1_dep2
+              example_aff2:
+                  - aff2_dep1
+        users:
+                #
+                # The fields of each user are as follows:
+                #    <EnrollmentID>: <system_role (1:client, 2: peer, 4: validator, 8: auditor)> <EnrollmentPWD> <Affiliation> <JSON_Metadata>
+                #
+                # The optional JSON_Metadata field is of the following format:
+                #   { "registrar": { "roles": <array-of-role-names>, "delegateRoles": <array-of-role-names> } }
+                # The 'registrar' section is used to control access to registration of new users directly via the ECAA.RegisterUser GRPC call.
+                # (See the 'fabric/membersrvc/protos/ca.proto' file for the definition of ECAA.RegisterUser.)
+                # Note that this also controls who can register users via the client SDK.
+                #
+                # Only users with a 'registrar' section may be a registrar to register other users.  In particular,
+                # 1) the "roles" field specifies which member roles may be registered by this user, and
+                # 2) the "delegateRoles" field specifies which member roles may become the "roles" field of registered users.
+                # The valid role names are "client", "peer", "validator", and "auditor".
+                #
+                # Example1:
+                #    The 'admin' user below can register clients, peers, validators, or auditors; furthermore, the 'admin' user can register other
+                #    users who can then register clients only.
+                #
+                # Example2:
+                #    The 'WebAppAdmin' user below can register clients only, but none of the users registered by this user can register other users.
+                #
+                admin: 1 Xurw3yU9zI0l default '{"registrar":{"roles":["client","peer","validator","auditor"],"delegateRoles":["client"]}}'
+                powerUser1: 1 NPKYL39uKbkj default
+                powerUser2: 1 DRJ23pEQl16a default
+
+                user1: 1 CMS10pEQlB16 aff1_dep1
+                user2: 1 NOE63pEQbL25 aff1_dep1
+                user3: 1 Tc43PeqBl11 aff1_dep2
+
+                vp0: 4 MwYpmSRjupbT
+                vp1: 4 5wgHK9qqYaPy
+                vp2: 4 vQelbRvja7cJ
+                vp3: 4 9LKqKH5peurL
+                vp4: 4 Pqh90CEW5juZ
+                vp5: 4 FfdvDkAdY81P
+                vp6: 4 QiXJgHyV4t7A
+                vp7: 4 twoKZouEyLyB
+                vp8: 4 BxP7QNh778gI
+                vp9: 4 wu3F1EwJWHvQ
+                vp10: 4 hNeS24SKJtMD
+
+                nvp0: 2 iywrPBDEPl0K default
+                nvp1: 2 DcYXuRSocuqd aff1_dep1
+                nvp2: 2 flpChShlY7xt aff1_dep1
+                nvp3: 2 jeruawMomclo aff1_dep1
+                nvp4: 2 RMYVxSZCk370 aff1_dep1
+                nvp5: 2 XHYVCIJGZGK7 aff1_dep2
+                nvp6: 2 4cIn63j8ahYp aff1_dep2
+                nvp7: 2 E7FAJUtWVn2h aff1_dep2
+                nvp8: 2 LJu8DkUilBEH aff2_dep1
+                nvp9: 2 VlEsBsiyXSjw aff2_dep1
+
+tca:
+          # Enabling/disabling attributes encryption, currently false is unique possible value due attributes encryption is not yet implemented.
+          attribute-encryption:
+                 enabled: false
+aca:
+          # Attributes is a list of the valid attributes to each user, attribute certificate authority is emulated temporarily using this file entries.
+          # In the future an external attribute certificate authority will be invoked. The format to each entry is:
+          #
+          #     attribute-entry-#:{userid};{affiliation};{attributeName};{attributeValue};{valid from};{valid to}
+          #
+          # If valid to is empty the attribute never expire, if the valid from is empty the attribute is valid from the time zero.
+          attributes:
+              attribute-entry-0: admin;default;Role;Admin;;;
+              attribute-entry-1: powerUser1;default;Role;Admin;2018-01-01T00:00:00-03:00;;
+              attribute-entry-2: powerUser2;default;Role;Admin;2018-01-01T00:00:00-03:00;;
+              attribute-entry-3: user1;aff1_dep1;Role;User;2018-01-01T00:00:00-03:00;;
+              attribute-entry-4: user2;aff1_dep1;Role;User;2018-01-01T00:00:00-03:00;;
+              attribute-entry-5: user3;aff1_dep2;Role;User;2018-03-01T00:00:00-03:00;;
+
+          address: localhost:7054
+          server-name: acap
+          # Enabling/disabling Attribute Certificate Authority, if ACA is enabled attributes will be added into the TCert.
+          enabled: true
+pki:
+          ca:
+                 subject:
+                         organization: Abchain Fund.
+                         country: CN
