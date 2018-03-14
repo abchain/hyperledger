@@ -142,9 +142,9 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 }
 
 type contractMemberEntry struct {
-	Weight     uint32 `json:"weight"`
-	TotalAsset string `json:"shares"`
-	Rest       string `json:"availiable"`
+	Weight     float64 `json:"weight"`
+	TotalAsset string  `json:"shares"`
+	Rest       string  `json:"availiable"`
 }
 
 type contractQueryEntry struct {
@@ -172,7 +172,7 @@ func toContractEntry(contract *pb.Contract, balance []byte) (*contractQueryEntry
 		canRedeem := big.NewInt(int64(s.Weight))
 		canRedeem = canRedeem.Mul(totalShare, canRedeem).Div(canRedeem, wb)
 
-		ret.Weight = s.Weight
+		ret.Weight = float64(s.Weight) / float64(share.WeightBase)
 		ret.TotalAsset = canRedeem.String()
 		ret.Rest = haveRedeem.Sub(canRedeem, haveRedeem).String()
 
