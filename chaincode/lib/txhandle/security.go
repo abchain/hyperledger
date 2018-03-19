@@ -49,13 +49,21 @@ type ParseAddress interface {
 	GetAddress() *txutil.Address
 }
 
+//matchAddress do not require the interface has immutable nature
+//side-effect is allowed for "anchored" the matched/unmatched result for the following process
+type MatchAddress interface {
+	Match(*txutil.Address) bool
+}
+
+//One of the interface is used, And interface is tried from top to bottom
 type AddrCredVerifier struct {
 	ParseAddress
+	MatchAddress
 }
 
 func (v AddrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
 
-	if v.ParseAddress == nil {
+	if v.ParseAddress == nil && v.MatchAddress == nil {
 		panic("Uninit interface")
 	}
 
@@ -65,6 +73,19 @@ func (v AddrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string
 		return fmt.Errorf("Tx contains no credentials")
 	}
 
+	if tryAddrParser(v.ParseAddress, cred) == nil {
+		return nil
+	}
+
+	if err := tryAddrMatcher(v.MatchAddress, cred); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func tryAddrParser(v ParseAddress, cred txutil.AddrCredentials) error {
+
 	addr := v.GetAddress()
 
 	if addr == nil {
@@ -72,4 +93,19 @@ func (v AddrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string
 	}
 
 	return cred.Verify(*addr)
+}
+
+func tryAddrMatcher(v MatchAddress, cred txutil.AddrCredentials) error {
+
+	allpks := cred.ListCredPubkeys()
+
+	for _, pk := range allpks {
+		addr, err := txutil.NewAddress(pk)
+		if err == nil && v.Match(addr) {
+			//match!
+			return nil
+		}
+	}
+
+	return fmt.Errorf("No valid creds found")
 }

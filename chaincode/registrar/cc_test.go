@@ -250,7 +250,7 @@ func TestFund(t *testing.T) {
 	h := token.TransferHandler(tokencfg)
 	caller := bolt.GetCaller(h)
 	tokenSpout.Dispatcher = caller
-	err := bolt.AppendPreHandler(caller, txhandle.AddrCredVerifier{h})
+	err := bolt.AppendPreHandler(caller, txhandle.AddrCredVerifier{h, nil})
 	if err != nil {
 		t.Fatal(err)
 	}

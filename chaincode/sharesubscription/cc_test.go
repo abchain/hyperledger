@@ -167,7 +167,7 @@ func TestContract(t *testing.T) {
 	stub.MockTransactionStart("redeem1")
 	spout.Dispatcher = bolt.GetCaller(RedeemHandler(cfg))
 
-	_, err = spout.Redeem(addr, []byte(addr1), big.NewInt(0))
+	_, err = spout.Redeem(addr, []byte(addr1), big.NewInt(0), nil)
 
 	stub.MockTransactionEnd("", err)
 	tokenSpout.Dispatcher = bolt.GetCaller(token.TokenQueryHandler(tokenQuerycfg))
@@ -195,7 +195,7 @@ func TestContract(t *testing.T) {
 
 	stub.MockTransactionStart("redeem2")
 
-	_, err = spout.Redeem(addr, []byte(addr2), bal)
+	_, err = spout.Redeem(addr, []byte(addr2), bal, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

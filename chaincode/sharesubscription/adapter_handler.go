@@ -4,12 +4,16 @@ import (
 	"errors"
 	"github.com/abchain/fabric/core/chaincode/shim"
 	"github.com/golang/protobuf/proto"
-	token "hyperledger.abchain.org/chaincode/generaltoken"
+	tokenpb "hyperledger.abchain.org/chaincode/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	pb "hyperledger.abchain.org/chaincode/sharesubscription/protos"
 	"hyperledger.abchain.org/crypto"
 	txutil "hyperledger.abchain.org/tx"
 )
+
+type RedeemMsg struct {
+	msg tokenpb.SimpleFund
+}
 
 type RegContractMsg struct {
 	msg pb.RegContract
@@ -22,7 +26,7 @@ type newContractHandler struct {
 }
 
 type redeemHandler struct {
-	token.FundMsg
+	RedeemMsg
 	ContractConfig
 }
 

@@ -62,6 +62,7 @@ func (s *Fund) InitCaller(rw web.ResponseWriter,
 type FundEntry struct {
 	Txid  string `json:"txID"`
 	Entry string `json:"fundNonce"`
+	Nonce []byte `json:"Nonce"`
 }
 
 func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
@@ -103,6 +104,7 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 	s.Normal(rw, &FundEntry{
 		string(s.token.Dispatcher.LastInvokeTxId()),
 		s.EncodeEntry(nonceid),
+		s.TxGenerator.GetBuilder().GetNonce(),
 	})
 }
 
@@ -130,6 +132,7 @@ func (s *Fund) Assign(rw web.ResponseWriter, req *web.Request) {
 	s.Normal(rw, &FundEntry{
 		string(s.token.Dispatcher.LastInvokeTxId()),
 		s.EncodeEntry(nonceid),
+		s.TxGenerator.GetBuilder().GetNonce(),
 	})
 
 }

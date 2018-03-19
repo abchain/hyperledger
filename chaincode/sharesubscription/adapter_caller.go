@@ -47,6 +47,9 @@ func (i *GeneralCall) New(contract map[string]uint32, pk *crypto.PublicKey) ([]b
 
 	msg := &pb.RegContract{addr.PBMessage(), contractTx}
 	_, err = i.Invoke(Method_NewContract, msg)
+	if err != nil {
+		return nil, err
+	}
 
 	//gen the contract addr
 	data, err := newContract(contract, pk)

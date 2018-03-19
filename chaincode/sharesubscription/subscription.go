@@ -181,7 +181,7 @@ func (db *baseContractTx) QueryOne(conaddr []byte, addr []byte) (error, *pb.Cont
 
 }
 
-func (db *baseContractTx) Redeem(conaddr []byte, addr []byte, amount *big.Int) ([]byte, error) {
+func (db *baseContractTx) Redeem(conaddr []byte, addr []byte, amount *big.Int, redeemAddr []byte) ([]byte, error) {
 
 	conAddrs := tx.NewAddressFromHash(conaddr).ToString()
 
@@ -230,5 +230,9 @@ func (db *baseContractTx) Redeem(conaddr []byte, addr []byte, amount *big.Int) (
 		return nil, err
 	}
 
-	return db.token.Transfer(conaddr, addr, amount)
+	if redeemAddr == nil {
+		redeemAddr = addr
+	}
+
+	return db.token.Transfer(conaddr, redeemAddr, amount)
 }
