@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/abchain/fabric/core/chaincode/shim"
 	"github.com/golang/protobuf/proto"
-	tokenpb "hyperledger.abchain.org/chaincode/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	pb "hyperledger.abchain.org/chaincode/sharesubscription/protos"
 	"hyperledger.abchain.org/crypto"
@@ -12,7 +11,8 @@ import (
 )
 
 type RedeemMsg struct {
-	msg tokenpb.SimpleFund
+	msg        pb.RedeemContract
+	redeemAddr *txutil.Address
 }
 
 type RegContractMsg struct {
@@ -56,7 +56,7 @@ func MemberQueryHandler(cfg ContractConfig) *memberQueryHandler {
 }
 
 func (h *newContractHandler) Msg() proto.Message { return &h.msg }
-func (h *redeemHandler) Msg() proto.Message      { return h.FundMsg.Msg() }
+func (h *redeemHandler) Msg() proto.Message      { return &h.msg }
 func (h *queryHandler) Msg() proto.Message       { return &h.msg }
 func (h *memberQueryHandler) Msg() proto.Message { return &h.msg }
 
@@ -80,19 +80,28 @@ func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 }
 
 func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := h.FundMsg.Msg()
+	msg := &h.msg
 
-	from, err := txutil.NewAddressFromPBMessage(msg.From)
+	if h.redeemAddr == nil {
+		addr, err := txutil.NewAddressFromPBMessage(msg.Redeem)
+		if err != nil {
+			return nil, err
+		}
+		h.redeemAddr = addr
+	}
+
+	contract, err := txutil.NewAddressFromPBMessage(msg.Contract)
 	if err != nil {
 		return nil, err
 	}
 
-	to, err := txutil.NewAddressFromPBMessage(msg.To)
-	if err != nil {
-		return nil, err
+	var redeemTo []byte
+
+	if to, err := txutil.NewAddressFromPBMessage(msg.To); err == nil {
+		redeemTo = to.Hash
 	}
 
-	return h.NewTx(stub, parser.GetNounce()).Redeem(from.Hash, to.Hash, toAmount(msg.Amount))
+	return h.NewTx(stub, parser.GetNounce()).Redeem(contract.Hash, h.redeemAddr.Hash, toAmount(msg.Amount), redeemTo)
 }
 
 func (h *queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {

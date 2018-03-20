@@ -93,7 +93,7 @@ func initTest(t *testing.T) {
 	}
 
 	stub.MockTransactionEnd("", err)
-	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname)}
+	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname), false}
 }
 
 func TestContract(t *testing.T) {

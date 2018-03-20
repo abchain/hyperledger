@@ -55,6 +55,7 @@ type MatchAddress interface {
 	Match(*txutil.Address) bool
 }
 
+//Verify only one address and its corresponding cred
 //One of the interface is used, And interface is tried from top to bottom
 type AddrCredVerifier struct {
 	ParseAddress
@@ -101,7 +102,7 @@ func tryAddrMatcher(v MatchAddress, cred txutil.AddrCredentials) error {
 
 	for _, pk := range allpks {
 		addr, err := txutil.NewAddress(pk)
-		if err == nil && v.Match(addr) {
+		if err == nil && v.Match(addr) && cred.Verify(*addr) == nil {
 			//match!
 			return nil
 		}

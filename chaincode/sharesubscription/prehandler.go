@@ -31,3 +31,19 @@ func (h *RegContractMsg) GetAddress() *txutil.Address {
 
 	return addr
 }
+
+//redeem take any address found in credentials and omit the Redeem in msg
+func (m *RedeemMsg) GetAddress() *txutil.Address {
+	addr, err := txutil.NewAddressFromPBMessage(m.msg.Redeem)
+	if err != nil {
+		return nil
+	}
+
+	return addr
+}
+
+//in match mode, redeem take any address found in credentials and omit the Redeem in msg
+func (h *RedeemMsg) Match(addr *txutil.Address) bool {
+	h.redeemAddr = addr
+	return true
+}

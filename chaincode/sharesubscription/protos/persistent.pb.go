@@ -12,6 +12,7 @@ It has these top-level messages:
 	Contract
 	RegContract
 	QueryContract
+	RedeemContract
 */
 package ccprotos
 
