@@ -22,3 +22,9 @@ message QueryContract {
 	protos.TxAddr memberAddr = 2;
 }
 
+message RedeemContract {
+	protos.TxAddr  contract = 1;
+	bytes	amount  = 2;
+	protos.TxAddr  to      = 3;
+	protos.TxAddr  redeem  = 4;
+}

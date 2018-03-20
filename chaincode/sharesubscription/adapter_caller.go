@@ -3,7 +3,6 @@ package subscription
 import (
 	"errors"
 	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
-	tokenpb "hyperledger.abchain.org/chaincode/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	pb "hyperledger.abchain.org/chaincode/sharesubscription/protos"
@@ -14,6 +13,7 @@ import (
 
 type GeneralCall struct {
 	*txgen.TxGenerator
+	omitRedeemAddr bool
 }
 
 const (
@@ -47,6 +47,9 @@ func (i *GeneralCall) New(contract map[string]uint32, pk *crypto.PublicKey) ([]b
 
 	msg := &pb.RegContract{addr.PBMessage(), contractTx}
 	_, err = i.Invoke(Method_NewContract, msg)
+	if err != nil {
+		return nil, err
+	}
 
 	//gen the contract addr
 	data, err := newContract(contract, pk)
@@ -62,12 +65,20 @@ func (i *GeneralCall) New(contract map[string]uint32, pk *crypto.PublicKey) ([]b
 	return conaddr.Hash, err
 }
 
-func (i *GeneralCall) Redeem(conaddr []byte, addr []byte, amount *big.Int) ([]byte, error) {
+func (i *GeneralCall) Redeem(conaddr []byte, addr []byte, amount *big.Int, redeemAddr []byte) ([]byte, error) {
 
-	msg := &tokenpb.SimpleFund{
-		amount.Bytes(),
-		txutil.NewAddressFromHash(addr).PBMessage(),
+	msg := &pb.RedeemContract{
 		txutil.NewAddressFromHash(conaddr).PBMessage(),
+		amount.Bytes(),
+		nil, nil,
+	}
+
+	if !i.omitRedeemAddr {
+		msg.Redeem = txutil.NewAddressFromHash(addr).PBMessage()
+	}
+
+	if redeemAddr != nil {
+		msg.To = txutil.NewAddressFromHash(redeemAddr).PBMessage()
 	}
 
 	_, err := i.Invoke(Method_Redeem, msg)

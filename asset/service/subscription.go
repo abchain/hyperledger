@@ -137,6 +137,7 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 	s.Normal(rw, &FundEntry{
 		string(s.share.Dispatcher.LastInvokeTxId()),
 		s.EncodeEntry(nonceid),
+		s.TxGenerator.GetBuilder().GetNonce(),
 	})
 
 }
