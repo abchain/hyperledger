@@ -74,15 +74,25 @@ func (v AddrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string
 		return fmt.Errorf("Tx contains no credentials")
 	}
 
-	if tryAddrParser(v.ParseAddress, cred) == nil {
-		return nil
+	var e error
+
+	if v.ParseAddress != nil {
+		if err := tryAddrParser(v.ParseAddress, cred); err == nil {
+			return nil
+		} else {
+			e = err
+		}
 	}
 
-	if err := tryAddrMatcher(v.MatchAddress, cred); err != nil {
-		return err
+	if v.MatchAddress != nil {
+		if err := tryAddrMatcher(v.MatchAddress, cred); err == nil {
+			return nil
+		} else {
+			e = err
+		}
 	}
 
-	return nil
+	return e
 }
 
 func tryAddrParser(v ParseAddress, cred txutil.AddrCredentials) error {

@@ -82,17 +82,17 @@ func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
 
-	if h.redeemAddr == nil {
-		addr, err := txutil.NewAddressFromPBMessage(msg.Redeem)
-		if err != nil {
-			return nil, err
-		}
-		h.redeemAddr = addr
-	}
-
 	contract, err := txutil.NewAddressFromPBMessage(msg.Contract)
 	if err != nil {
 		return nil, err
+	}
+
+	redeemAddr := h.redeemAddr
+	if redeemAddr == nil {
+		redeemAddr, err = txutil.NewAddressFromPBMessage(msg.Redeem)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var redeemTo []byte
@@ -101,7 +101,7 @@ func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Par
 		redeemTo = to.Hash
 	}
 
-	return h.NewTx(stub, parser.GetNounce()).Redeem(contract.Hash, h.redeemAddr.Hash, toAmount(msg.Amount), redeemTo)
+	return h.NewTx(stub, parser.GetNounce()).Redeem(contract.Hash, redeemAddr.Hash, toAmount(msg.Amount), redeemTo)
 }
 
 func (h *queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {

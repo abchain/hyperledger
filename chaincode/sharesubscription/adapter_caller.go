@@ -23,6 +23,8 @@ const (
 	Method_MemberQuery = "CONTRACT.SUBSCRIPTION.QUERYONE"
 )
 
+func (i *GeneralCall) CanOmitRedeemAddr() { i.omitRedeemAddr = true }
+
 func (i *GeneralCall) New(contract map[string]uint32, pk *crypto.PublicKey) ([]byte, error) {
 
 	if len(contract) == 0 {

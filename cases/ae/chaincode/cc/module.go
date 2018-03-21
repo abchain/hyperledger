@@ -73,7 +73,7 @@ func init() {
 	// Never restrict the redeem address is registred
 	// redeemTx.PreHandlers = append(redeemTx.PreHandlers,
 	// 	reg.RegistrarPreHandler(registrarQuerycfg, redeemH))
-	redeemTx.PreHandlers = append(redeemTx.PreHandlers, tx.AddrCredVerifier{redeemH, nil})
+	redeemTx.PreHandlers = append(redeemTx.PreHandlers, tx.AddrCredVerifier{nil, redeemH})
 	invokeMapper[share.Method_Redeem] = redeemTx
 
 	queryMapper[token.Method_QueryToken] = &tx.ChaincodeTx{CC_NAME, token.TokenQueryHandler(tokenQuerycfg), nil, nil}

@@ -62,6 +62,7 @@ func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
 	s.Normal(rw, &accsrv.FundEntry{
 		string(s.reg.Dispatcher.LastInvokeTxId()),
 		s.EncodeEntry(s.ActivePrivk.Public().RootFingerPrint),
+		s.TxGenerator.GetBuilder().GetNonce(),
 	})
 
 }
