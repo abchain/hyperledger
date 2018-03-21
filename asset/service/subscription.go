@@ -49,7 +49,8 @@ func (s *Subscription) InitCaller(rw web.ResponseWriter,
 	req *web.Request, next web.NextMiddlewareFunc) {
 
 	s.token = token.GeneralCall{s.TxGenerator}
-	s.share = share.GeneralCall{s.TxGenerator}
+	s.share = share.GeneralCall{TxGenerator: s.TxGenerator}
+	s.share.CanOmitRedeemAddr()
 
 	next(rw, req)
 }
@@ -114,20 +115,25 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 
 	amount, ok := big.NewInt(0).SetString(req.PostFormValue("amount"), 0)
 
-	if !ok || (amount.IsUint64() && amount.Uint64() == 0) {
+	if !ok && (!amount.IsUint64() || amount.Uint64() != 0) {
 		s.NormalErrorF(rw, 0, "Invalid amount")
 		return
 	}
 
-	redeemAddr, err := tx.NewAddress(s.ActivePrivk.Public())
+	toAddr, err := tx.NewAddressFromString(req.PostFormValue("to"))
 	if err != nil {
-		s.NormalError(rw, err)
-		return
+		toAddr = &tx.Address{}
 	}
+	// redeemAddr, err := tx.NewAddress(s.ActivePrivk.Public())
+	// if err != nil {
+	// 	s.NormalError(rw, err)
+	// 	return
+	// }
 
 	s.share.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 
-	nonceid, err := s.share.Redeem(conaddr.Hash, redeemAddr.Hash, amount)
+	//we can omit redeem addr in calling message
+	nonceid, err := s.share.Redeem(conaddr.Hash, nil, amount, toAddr.Hash)
 
 	if err != nil {
 		s.NormalError(rw, err)

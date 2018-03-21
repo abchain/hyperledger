@@ -211,9 +211,14 @@ func (s *Fund) QueryAddress(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	var noncekey []byte
+	if data.LastFund != nil {
+		noncekey = data.LastFund.Noncekey
+	}
+
 	s.Normal(rw, &balanceEntry{
 		big.NewInt(0).SetBytes(data.Balance).String(),
-		s.EncodeEntry(data.LastFund.Noncekey),
+		s.EncodeEntry(noncekey),
 	})
 }
 
