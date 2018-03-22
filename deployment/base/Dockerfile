@@ -1,4 +1,4 @@
-FROM golang:1.7
+FROM golang:1.9
 
 RUN apt-get update \
         && apt-get install -y libsnappy-dev zlib1g-dev libbz2-dev \
@@ -13,19 +13,15 @@ RUN cd /tmp \
         && ldconfig \
         && rm -rf /tmp/rocksdb
 
-# this is only a workaround for current hard-coded problem when using as fabric-baseimage.
-RUN ln -s $GOPATH /opt/gopath
-
 # Set workdir and env
-WORKDIR $GOPATH
+WORKDIR /opt/gopath
+ENV GOPATH=/opt/gopath
 
-# Copy source files
-COPY src/github.com/abchain/fabric $GOPATH/src/github.com/abchain/fabric
-COPY src/hyperledger.abchain.org $GOPATH/src/hyperledger.abchain.org
-
-# Build membersrvc, peer 
-RUN go install github.com/abchain/fabric/membersrvc
-RUN go install github.com/abchain/fabric/peer
+# clone hyperledger
+RUN go get -d hyperledger.abchain.org/utils
+# Build membersrvc, peer
+RUN go get github.com/abchain/fabric/membersrvc
+RUN go get github.com/abchain/fabric/peer
 
 # Install membersrvc and peer to $PATH
 RUN cp $GOPATH/bin/membersrvc /usr/bin/ \
