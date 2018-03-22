@@ -23,10 +23,6 @@ WORKDIR $GOPATH
 COPY src/github.com/abchain/fabric $GOPATH/src/github.com/abchain/fabric
 COPY src/hyperledger.abchain.org $GOPATH/src/hyperledger.abchain.org
 
-# Copy cert files
-RUN mkdir -p /var/hyperledger/data
-COPY ca.crt /var/hyperledger/
-
 # Build membersrvc, peer 
 RUN go install github.com/abchain/fabric/membersrvc
 RUN go install github.com/abchain/fabric/peer
