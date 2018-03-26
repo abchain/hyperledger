@@ -138,11 +138,8 @@ func initFabric() error {
 	}
 
 	defaultViperSetting[config.Fabric_DataPath] = viper.GetString("wallet.path")
-
-	if viper.GetBool("grpc.tlsenabled") {
-		defaultViperSetting[config.FabricRPC_SSL] = true
-		defaultViperSetting[config.FabricRPC_SSLCERT] = viper.GetString("grpc.certfile")
-	}
+	defaultViperSetting[config.FabricRPC_SSL] = viper.GetBool("grpc.tlsenabled")
+	defaultViperSetting[config.FabricRPC_SSLCERT] = viper.GetString("grpc.certfile")
 
 	logLvl := viper.GetString("logging.level")
 	if logLvl != "" {
