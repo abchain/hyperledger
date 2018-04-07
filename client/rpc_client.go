@@ -49,17 +49,17 @@ func (c *connBuilder) reset(ctx context.Context) {
 	}
 }
 
-func (c *connBuilder) obtainConn(ctx context.Context) *peerex.ClientConn {
+func (c *connBuilder) obtainConn(ctx context.Context) (*peerex.ClientConn, error) {
 
 	c.Lock()
 	defer c.Unlock()
 
 	if c.C != nil {
-		return &peerex.ClientConn{c.C, true}
+		return &peerex.ClientConn{c.C, true}, nil
 	}
 
 	if c.connFail != nil {
-		return nil
+		return nil, c.connFail
 	}
 
 	//response to do submit
@@ -92,9 +92,9 @@ func (c *connBuilder) obtainConn(ctx context.Context) *peerex.ClientConn {
 	}
 
 	if c.C != nil {
-		return &peerex.ClientConn{c.C, true}
+		return &peerex.ClientConn{c.C, true}, nil
 	} else {
-		return nil
+		return nil, c.connFail
 	}
 
 }
@@ -152,9 +152,9 @@ type rPCClient struct {
 //and wait for connect finish
 func (c *RpcClientConfig) NewCall() (*rPCClient, error) {
 
-	conn := c.conn.obtainConn(c.connManager.Context())
+	conn, err := c.conn.obtainConn(c.connManager.Context())
 	if conn == nil {
-		return nil, c.conn.connFail
+		return nil, err
 	}
 
 	builder := &peerex.RpcBuilder{

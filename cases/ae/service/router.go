@@ -23,6 +23,7 @@ func (*rpcCfg) GetCaller() rpc.Caller {
 	} else {
 		c, err := defaultRpcConfig.NewCall()
 		if err != nil {
+			logger.Error("Create remote call fail:", err)
 			return nil
 		}
 
