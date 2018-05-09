@@ -6,12 +6,16 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
+var fabric_support_UnifiedTS = false
+
 //timestamp return by stub used package in their own vendor
 func GetTimeStamp(stub shim.ChaincodeStubInterface) (ts *timestamp.Timestamp) {
 
-	tss, _ := stub.GetTxTimestamp()
-	if tss != nil {
-		ts = &timestamp.Timestamp{tss.Seconds, tss.Nanos}
+	if fabric_support_UnifiedTS {
+		tss, _ := stub.GetTxTimestamp()
+		if tss != nil {
+			ts = &timestamp.Timestamp{tss.Seconds, tss.Nanos}
+		}
 	}
 	return
 }

@@ -62,10 +62,6 @@ func (i *GeneralCall) Account(addr []byte) (error, *pb.AccountData) {
 		return err, nil
 	}
 
-	if ret == nil {
-		return nil, nil
-	}
-
 	d := &pb.AccountData{}
 
 	err = rpc.DecodeRPCResult(d, ret)
@@ -84,10 +80,6 @@ func (i *GeneralCall) Nonce(key []byte) (error, *pb.NonceData) {
 		return err, nil
 	}
 
-	if ret == nil {
-		return nil, nil
-	}
-
 	d := &pb.NonceData{}
 
 	err = rpc.DecodeRPCResult(d, ret)
@@ -104,10 +96,6 @@ func (i *GeneralCall) Global() (error, *pb.TokenGlobalData) {
 
 	if err != nil {
 		return err, nil
-	}
-
-	if ret == nil {
-		return nil, nil
 	}
 
 	d := &pb.TokenGlobalData{}
