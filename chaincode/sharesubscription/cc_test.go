@@ -131,7 +131,7 @@ func TestContract(t *testing.T) {
 		t.Fatalf("Invalid status count %d", len(cont.Status))
 	}
 
-	a1, ok := cont.Status[addr1S]
+	a1, ok := cont.Find(addr1S)
 	if !ok {
 		t.Fatal("No record for addr1")
 	}
@@ -140,7 +140,7 @@ func TestContract(t *testing.T) {
 		t.Fatalf("Invalid weight for a1: %d", a1.Weight)
 	}
 
-	a4, ok := cont.Status[addr4S]
+	a4, ok := cont.Find(addr4S)
 	if !ok {
 		t.Fatal("No record for addr4")
 	}

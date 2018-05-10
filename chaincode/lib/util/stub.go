@@ -6,7 +6,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
-var fabric_support_UnifiedTS = false
+var fabric_support_UnifiedTS = true
 
 //timestamp return by stub used package in their own vendor
 func GetTimeStamp(stub shim.ChaincodeStubInterface) (ts *timestamp.Timestamp) {

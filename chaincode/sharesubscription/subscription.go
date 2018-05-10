@@ -30,7 +30,6 @@ func newContract(contract map[string]uint32, delePk *crypto.PublicKey) (*pb.Cont
 
 	pcon := &pb.Contract{
 		DelegatorPk: delePk.PBMessage(),
-		Status:      make(map[string]*pb.Contract_MemberStatus),
 	}
 
 	var totalweight uint64
@@ -42,25 +41,26 @@ func newContract(contract map[string]uint32, delePk *crypto.PublicKey) (*pb.Cont
 		keys = append(keys, k)
 	}
 
-	for saddr, weight := range contract {
+	//the data MUST be added in a deterministic manner
+	sort.Strings(keys)
 
+	for _, saddr := range keys {
+
+		weight := contract[saddr]
 		//turn the weight into a base of weightBase
 		weight = uint32(uint64(weight) * uint64(WeightBase) / totalweight)
 		usedweight = weight + usedweight
 
-		pcon.Status[saddr] = &pb.Contract_MemberStatus{weight, nil}
+		pcon.Status = append(pcon.Status, &pb.Contract_MemberStatus{weight, nil, saddr})
 	}
 
-	//handle the resident, so the total weight is always equal to WeightBase
-	//this MUST be done in a deterministic manner
-	sort.Strings(keys)
 	if usedweight < uint32(WeightBase) {
 
 		resident := uint32(WeightBase) - usedweight
 
 		for resident > 0 {
-			//simply add them into some keys ...
-			for _, k := range keys {
+			//simply add them into first N contractors ...
+			for k, _ := range pcon.Status {
 
 				pcon.Status[k].Weight++
 				resident--
@@ -91,10 +91,10 @@ func hashContract(contract *pb.Contract, nonce []byte) (*tx.Address, error) {
 	}
 
 	var maphash []byte
-	for k, v := range contract.Status {
+	for _, v := range contract.Status {
 		maphashItem, err := cryptoUtil.DoubleSHA256(
 			bytes.Join([][]byte{
-				[]byte(k),
+				[]byte(v.MemberID),
 				[]byte(strconv.Itoa(int(v.Weight)))}, nil))
 
 		if err != nil {
@@ -170,14 +170,14 @@ func (db *baseContractTx) QueryOne(conaddr []byte, addr []byte) (error, *pb.Cont
 
 	saddr := tx.NewAddressFromHash(addr).ToString()
 
-	rec, ok := data.Status[saddr]
-	if !ok {
-		return errors.New("Not a member"), nil
+	for _, v := range data.Status {
+		if v.MemberID == saddr {
+			data.Status = []*pb.Contract_MemberStatus{v}
+			return nil, data
+		}
 	}
 
-	data.Status = map[string]*pb.Contract_MemberStatus{saddr: rec}
-
-	return nil, data
+	return errors.New("Not a member"), nil
 
 }
 
@@ -197,7 +197,7 @@ func (db *baseContractTx) Redeem(conaddr []byte, addr []byte, amount *big.Int, r
 		return nil, err
 	}
 
-	member, ok := contract.Status[tx.NewAddressFromHash(addr).ToString()]
+	member, ok := contract.Find(tx.NewAddressFromHash(addr).ToString())
 	if !ok {
 		return nil, errors.New("Not a member")
 	}

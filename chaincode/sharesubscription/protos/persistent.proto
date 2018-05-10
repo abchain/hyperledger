@@ -14,10 +14,11 @@ message Contract {
 
 	message MemberStatus{
 		uint32    weight = 2;
-		bytes     totalRedeem = 3;		
+		bytes     totalRedeem = 3;	
+		string    memberID = 5;	
 	}
 
-	map<string, MemberStatus> status = 5;
+	repeated MemberStatus status = 5;
 	google.protobuf.Timestamp contractTs = 6;
 	google.protobuf.Timestamp frozenTo = 8;
 	bool      isFrozen = 10;
