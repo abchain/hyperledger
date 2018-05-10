@@ -171,7 +171,7 @@ func toContractEntry(contract *pb.Contract, balance []byte) (*contractQueryEntry
 	status := make(map[string]*contractMemberEntry)
 
 	wb := big.NewInt(int64(share.WeightBase))
-	for addr, s := range contract.Status {
+	for _, s := range contract.Status {
 
 		ret := &contractMemberEntry{}
 
@@ -183,7 +183,7 @@ func toContractEntry(contract *pb.Contract, balance []byte) (*contractQueryEntry
 		ret.TotalAsset = canRedeem.String()
 		ret.Rest = haveRedeem.Sub(canRedeem, haveRedeem).String()
 
-		status[addr] = ret
+		status[s.MemberID] = ret
 	}
 
 	out.Members = status
