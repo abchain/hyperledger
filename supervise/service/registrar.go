@@ -73,6 +73,7 @@ func (s *Registrar) Query(rw web.ResponseWriter, req *web.Request) {
 	key, err := s.DecodeEntry(req.PathParams[RegPkID])
 	if err != nil {
 		s.NormalError(rw, err)
+		return
 	}
 
 	err, data := s.reg.Pubkey(key)
