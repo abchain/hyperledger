@@ -57,6 +57,7 @@ func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
 	err := s.reg.AdminRegistrar(s.ActivePrivk.Public())
 	if err != nil {
 		s.NormalError(rw, err)
+		return
 	}
 
 	s.Normal(rw, &accsrv.FundEntry{
@@ -77,6 +78,7 @@ func (s *Registrar) Query(rw web.ResponseWriter, req *web.Request) {
 	err, data := s.reg.Pubkey(key)
 	if err != nil {
 		s.NormalError(rw, err)
+		return
 	}
 
 	s.Normal(rw, data.RegTxid)
