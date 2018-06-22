@@ -4,32 +4,10 @@ import (
 	"fmt"
 	"github.com/gocraft/web"
 	mainsrv "hyperledger.abchain.org/asset/service"
-	"hyperledger.abchain.org/cases/ae/chaincode/cc"
-	"hyperledger.abchain.org/chaincode/lib/caller"
 	"hyperledger.abchain.org/client"
 	regsrv "hyperledger.abchain.org/supervise/service"
 	"net/http"
 )
-
-type rpcCfg struct{}
-
-func (*rpcCfg) GetCCName() string {
-	return chaincode.CC_NAME
-}
-
-func (*rpcCfg) GetCaller() rpc.Caller {
-	if offlineMode {
-		return ccCaller
-	} else {
-		c, err := defaultRpcConfig.NewCall()
-		if err != nil {
-			logger.Error("Create remote call fail:", err)
-			return nil
-		}
-
-		return c
-	}
-}
 
 var URIPrefix = "/api/v1/"
 
@@ -50,7 +28,7 @@ func buildRouter() *web.Router {
 	client.CreateFabricProxyRouter(root, "chain").Init(defaultFabricEP, nil).BuildRoutes()
 
 	rpcrouter := client.CreateRPCRouter(root, "")
-	rpcrouter.Init(&rpcCfg{})
+	rpcrouter.Init(defaultRpcConfig)
 
 	// Deploy
 	rpcrouter.Subrouter(deploy{}, "deploy").Post("/", (*deploy).Deploy)

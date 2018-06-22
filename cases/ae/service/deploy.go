@@ -51,13 +51,8 @@ func (s *deploy) Deploy(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	if !offlineMode {
-		caller, err := defaultRpcConfig.NewCall()
-		if err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		caller.Function = "INIT"
-		_, err = caller.Deploy(args)
+		http.Error(rw, "Method is unavailiable for real peer", http.StatusInternalServerError)
+		return
 	} else {
 		_, err = ccCaller.MockInit("regtest_deploy_test", "INIT", args)
 	}

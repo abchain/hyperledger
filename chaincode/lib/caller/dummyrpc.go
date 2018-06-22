@@ -57,6 +57,11 @@ type ChaincodeAdapter struct {
 	LastInvokeId []byte
 }
 
+func (c *ChaincodeAdapter) Deploy(method string, arg []string) error {
+	_, err := c.MockInit("regtest_deploy_test", method, arg)
+	return err
+}
+
 func (c *ChaincodeAdapter) Invoke(method string, arg []string) ([]byte, error) {
 	txid := time.Now().String()
 	c.LastInvokeId = []byte(txid)

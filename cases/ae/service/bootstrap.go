@@ -3,6 +3,7 @@ package service
 import (
 	"hyperledger.abchain.org/asset/wallet"
 	"hyperledger.abchain.org/cases/ae/chaincode/cc"
+	"hyperledger.abchain.org/chaincode/lib/caller"
 	"hyperledger.abchain.org/client"
 	"hyperledger.abchain.org/config"
 	"path/filepath"
@@ -12,9 +13,23 @@ const (
 	defaultCCDeployName = "aecc"
 )
 
+type rpcCfg string
+
+func (s rpcCfg) GetCCName() string {
+	return string(s)
+}
+
+func (rpcCfg) Quit() {
+
+}
+
+func (rpcCfg) GetCaller() (rpc.Caller, error) {
+	return ccCaller, nil
+}
+
 var (
 	defaultWallet    wallet.Wallet
-	defaultRpcConfig *client.RpcClientConfig
+	defaultRpcConfig client.FabricRPCCfg
 	defaultFabricEP  string
 
 	offlineMode bool
@@ -90,17 +105,6 @@ func StartService() {
 		return
 	}
 
-	// Init gRPC ClientConfig
-	defaultRpcConfig = client.NewRPCConfig(viper.GetString("grpc.chaincode"))
-	username := viper.GetString("grpc.username")
-	if username != "" {
-		defaultRpcConfig.SetUser(username)
-		defaultRpcConfig.SetAttrs([]string{
-			chaincode.RegionAttr,
-			chaincode.PrivilegeAttr,
-		}, false)
-	}
-
 	// Init REST ClientConfig
 	defaultFabricEP = viper.GetString("rest.server")
 	logger.Debugf("Use fabric peer REST server: %v", defaultFabricEP)
@@ -108,6 +112,23 @@ func StartService() {
 	offlineMode = viper.GetBool("setting.offline")
 	if offlineMode {
 		logger.Warning("Running offline mode")
+		defaultRpcConfig = rpcCfg(chaincode.CC_NAME)
+	} else {
+		// Init gRPC ClientConfig
+		cfg := client.NewFabricRPCConfig(chaincode.CC_NAME)
+
+		// TODO: allow different implenents of client
+		yacfg := cfg.UseYAFabricCli(viper.GetString("grpc.chaincode"))
+		username := viper.GetString("grpc.username")
+		if username != "" {
+			yacfg.SetUser(username)
+			yacfg.SetAttrs([]string{
+				chaincode.RegionAttr,
+				chaincode.PrivilegeAttr,
+			}, false)
+		}
+
+		defaultRpcConfig = cfg
 	}
 
 	// Start Local HTTP server

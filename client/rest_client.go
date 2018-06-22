@@ -16,8 +16,9 @@ type FabricClientBase struct {
 }
 
 type FabricRPCCfg interface {
-	GetCaller() rpc.Caller
+	GetCaller() (rpc.Caller, error)
 	GetCCName() string
+	Quit()
 }
 
 type FabricRPCCore struct {
@@ -41,11 +42,12 @@ func (r RPCRouter) Init(cfg FabricRPCCfg) {
 	initCall := func(s *FabricRPCCore, rw web.ResponseWriter,
 		req *web.Request, next web.NextMiddlewareFunc) {
 
+		var err error
 		s.TxGenerator = txgen.SimpleTxGen(cfg.GetCCName())
-		s.TxGenerator.Dispatcher = cfg.GetCaller()
+		s.TxGenerator.Dispatcher, err = cfg.GetCaller()
 
-		if s.TxGenerator.Dispatcher == nil {
-			http.Error(rw, "No caller", http.StatusInternalServerError)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
 		} else {
 			next(rw, req)
 		}
