@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	"github.com/abchain/fabric/peerex"
+	"github.com/spf13/viper"
 	"sync"
 	"time"
 )
@@ -13,7 +13,7 @@ const (
 
 type connBuilder struct {
 	sync.Mutex
-	peerex.ClientConn
+	ClientConn
 	waitConn      *sync.Cond
 	connFail      error
 	resetInterval time.Duration
@@ -49,13 +49,13 @@ func (c *connBuilder) reset(ctx context.Context) {
 	}
 }
 
-func (c *connBuilder) obtainConn(ctx context.Context) (*peerex.ClientConn, error) {
+func (c *connBuilder) obtainConn(ctx context.Context) (*ClientConn, error) {
 
 	c.Lock()
 	defer c.Unlock()
 
 	if c.C != nil {
-		return &peerex.ClientConn{c.C, true}, nil
+		return &ClientConn{c.C, true}, nil
 	}
 
 	if c.connFail != nil {
@@ -66,7 +66,7 @@ func (c *connBuilder) obtainConn(ctx context.Context) (*peerex.ClientConn, error
 	if c.waitConn == nil {
 		c.waitConn = sync.NewCond(c)
 		go func() {
-			conn := &peerex.ClientConn{nil, true}
+			conn := &ClientConn{nil, true}
 			err := conn.Dialdefault()
 
 			c.Lock()
@@ -92,7 +92,7 @@ func (c *connBuilder) obtainConn(ctx context.Context) (*peerex.ClientConn, error
 	}
 
 	if c.C != nil {
-		return &peerex.ClientConn{c.C, true}, nil
+		return &ClientConn{c.C, true}, nil
 	} else {
 		return nil, c.connFail
 	}
@@ -102,17 +102,20 @@ func (c *connBuilder) obtainConn(ctx context.Context) (*peerex.ClientConn, error
 type RpcClientConfig struct {
 	chaincodeName string
 	conn          connBuilder
-	security      *peerex.SecurityPolicy
-	connManager   *peerex.RPCManager
+	security      *SecurityPolicy
+	connManager   *RPCManager
 	TxTimeout     time.Duration
 }
 
-func NewRPCConfig(ccName string) *RpcClientConfig {
+func NewRPCConfig() *RpcClientConfig {
 
 	return &RpcClientConfig{
-		chaincodeName: ccName,
-		connManager:   peerex.NewRpcManager(),
+		connManager: NewRpcManager(),
 	}
+}
+
+func (c *RpcClientConfig) SetChaincode(ccName string) {
+	c.chaincodeName = ccName
 }
 
 func (c *RpcClientConfig) SetUser(username string) {
@@ -122,7 +125,7 @@ func (c *RpcClientConfig) SetUser(username string) {
 	}
 
 	if c.security == nil {
-		c.security = &peerex.SecurityPolicy{username, nil, nil, ""}
+		c.security = &SecurityPolicy{username, nil, nil, ""}
 	} else {
 		c.security.User = username
 	}
@@ -135,7 +138,7 @@ func (c *RpcClientConfig) SetAttrs(attrs []string, isAppend bool) {
 	}
 
 	if c.security == nil {
-		c.security = &peerex.SecurityPolicy{"", nil, nil, ""}
+		c.security = &SecurityPolicy{"", nil, nil, ""}
 	}
 
 	if isAppend {
@@ -157,7 +160,7 @@ func (c *RpcClientConfig) Quit() {
 
 //adapter of the rpc caller
 type rPCClient struct {
-	*peerex.RpcBuilder
+	*RpcBuilder
 	lastTxid string
 }
 
@@ -171,7 +174,7 @@ func (c *RpcClientConfig) GetCaller() (*rPCClient, error) {
 		return nil, err
 	}
 
-	builder := &peerex.RpcBuilder{
+	builder := &RpcBuilder{
 		c.chaincodeName,
 		"",
 		c.security,

@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+	"github.com/spf13/viper"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	yafabric_cli "hyperledger.abchain.org/client/yafabric"
 )
@@ -17,9 +18,9 @@ func NewFabricRPCConfig(ccN string) *fabricRPCCfg {
 	return &fabricRPCCfg{ccName: ccN}
 }
 
-func (c *fabricRPCCfg) UseYAFabricCli(deployName string) *yafabric_cli.RpcClientConfig {
+func (c *fabricRPCCfg) UseYAFabricCli() *yafabric_cli.RpcClientConfig {
 
-	c.yacli = yafabric_cli.NewRPCConfig(deployName)
+	c.yacli = yafabric_cli.NewRPCConfig()
 	c.caller = func() (rpc.Caller, error) {
 		return c.yacli.GetCaller()
 	}
