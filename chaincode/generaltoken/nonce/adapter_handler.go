@@ -1,7 +1,6 @@
 package nonce
 
 import (
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"github.com/golang/protobuf/proto"
 	ccpb "hyperledger.abchain.org/chaincode/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/lib/caller"
@@ -19,7 +18,7 @@ func NonceQueryHandler(cfg NonceConfig) *nonceQueryHandler {
 
 func (h *nonceQueryHandler) Msg() proto.Message { return &h.msg }
 
-func (h *nonceQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h *nonceQueryHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
 
 	msg := &h.msg
 

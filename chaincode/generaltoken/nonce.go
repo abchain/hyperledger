@@ -23,7 +23,7 @@ func (db *baseTokenTx) txNonce(txnonce []byte, from []byte, to []byte, amount *b
 	r = &tokenTxNonce{
 		Key: nonce.GeneralTokenNonceKey(txnonce, from, to, abyte),
 		Data: &pb.NonceData{
-			db.stub.GetTxID(),
+			util.GetTxID(db.stub),
 			abyte,
 			nil, nil, util.GetTimeStamp(db.stub),
 		},

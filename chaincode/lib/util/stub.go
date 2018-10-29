@@ -1,40 +1,43 @@
 package util
 
 import (
-	"github.com/abchain/fabric/core/chaincode/shim"
-	"github.com/abchain/fabric/core/chaincode/shim/crypto/attr"
+	abchain_shim "github.com/abchain/fabric/core/chaincode/shim"
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
-var fabric_support_UnifiedTS = true
-
 //timestamp return by stub used package in their own vendor
-func GetTimeStamp(stub shim.ChaincodeStubInterface) (ts *timestamp.Timestamp) {
+func GetTimeStamp(stub interface{}) (ts *timestamp.Timestamp) {
 
-	if fabric_support_UnifiedTS {
-		tss, _ := stub.GetTxTimestamp()
+	switch s := stub.(type) {
+	case abchain_shim.ChaincodeStubInterface:
+		tss, _ := s.GetTxTimestamp()
 		if tss != nil {
 			ts = &timestamp.Timestamp{tss.Seconds, tss.Nanos}
 		}
+		return
+
+	default:
+		panic("No corresponding stub")
 	}
-	return
 }
 
-func GetAttributes(stub shim.ChaincodeStubInterface,
-	attributeName string) string {
+func GetTxID(stub interface{}) string {
+	switch s := stub.(type) {
+	case abchain_shim.ChaincodeStubInterface:
+		return s.GetTxID()
 
-	attrHandler, err := attr.NewAttributesHandlerImpl(stub)
-	if err != nil {
-		return ""
+	default:
+		panic("No corresponding stub")
 	}
+}
 
-	var attrStr string
-	attr, err := attrHandler.GetValue(attributeName)
-	if err != nil {
-		attrStr = ""
-	} else {
-		attrStr = string(attr)
+func GetAttributes(stub interface{}, attributeName string) string {
+
+	switch s := stub.(type) {
+	case abchain_shim.ChaincodeStubInterface:
+		return getF06Attributes(s, attributeName)
+
+	default:
+		panic("No corresponding stub")
 	}
-
-	return attrStr
 }

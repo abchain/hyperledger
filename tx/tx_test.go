@@ -43,7 +43,7 @@ func TestTx(t *testing.T) {
 
 	msgPending := &pb.TxMsgExample{}
 
-	parser, err := ParseTx(msgPending, nil, "example", args)
+	parser, err := ParseTx(msgPending, "example", args)
 
 	if err != nil {
 		t.Fatal("Parse arg fail", err)

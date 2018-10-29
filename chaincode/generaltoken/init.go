@@ -2,7 +2,7 @@ package generaltoken
 
 import (
 	"errors"
-	"github.com/abchain/fabric/core/chaincode/shim"
+
 	pb "hyperledger.abchain.org/chaincode/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txutil "hyperledger.abchain.org/tx"
@@ -27,7 +27,7 @@ func CCDeploy(amount *big.Int, args []string) ([]string, error) {
 
 type CCDeployHandler string
 
-func (tag CCDeployHandler) Call(stub shim.ChaincodeStubInterface, deployarg []byte) error {
+func (tag CCDeployHandler) Call(stub interface{}, deployarg []byte) error {
 	msg := &pb.BaseToken{}
 	err := rpc.DecodeRPCResult(msg, deployarg)
 	if err != nil {

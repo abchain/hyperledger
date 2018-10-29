@@ -14,6 +14,6 @@ type AddrCredentials interface {
 
 type AddrCredentialBuilder interface {
 	AddSignature(pub *crypto.PublicKey, sign *crypto.ECSignature)
-	AddCc(ccname string, addr Address, pub *crypto.PublicKey)
+	AddCc(ccname string, addr Address, pub *crypto.PublicKey) //is deprecated
 	Update(msg *pb.TxCredential) error
 }

@@ -6,13 +6,8 @@ Package protos is a generated protocol buffer package.
 
 It is generated from these files:
 	crypto.proto
-	event.proto
-	fabric.proto
-	lightning.proto
-	transaction.proto
 	tx.proto
 	txaddr.proto
-	world_state.proto
 
 It has these top-level messages:
 	PrivateKey
@@ -20,34 +15,11 @@ It has these top-level messages:
 	Signature
 	ECPoint
 	ECSignature
-	Event
-	BlockchainInfo
-	Block
-	FabricTransaction
-	FabricError
-	Receipt
-	StreamState
-	Address
-	Transaction
-	DeployParam
-	RegistrarParam
-	RegistrarAuditParam
-	FundParam
-	SettleParam
-	QueryUserParam
-	QueryFundParam
 	TxBase
 	TxHeader
 	TxCredential
 	TxAddr
 	TxMsgExample
-	FundState
-	UserState
-	RegistrarState
-	RootUserState
-	UserNonceState
-	UUIDState
-	ConfigState
 */
 package protos
 

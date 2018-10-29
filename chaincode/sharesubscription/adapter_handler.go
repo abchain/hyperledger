@@ -2,7 +2,6 @@ package subscription
 
 import (
 	"errors"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	pb "hyperledger.abchain.org/chaincode/sharesubscription/protos"
@@ -60,7 +59,7 @@ func (h *redeemHandler) Msg() proto.Message      { return &h.msg }
 func (h *queryHandler) Msg() proto.Message       { return &h.msg }
 func (h *memberQueryHandler) Msg() proto.Message { return &h.msg }
 
-func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h *newContractHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
 
 	if h.pk == nil {
 		return nil, errors.New("No publickey")
@@ -79,7 +78,7 @@ func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 	return h.NewTx(stub, parser.GetNounce()).New(contract, h.pk)
 }
 
-func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h *redeemHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
 
 	contract, err := txutil.NewAddressFromPBMessage(msg.Contract)
@@ -104,7 +103,7 @@ func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Par
 	return h.NewTx(stub, parser.GetNounce()).Redeem(contract.Hash, redeemAddr.Hash, toAmount(msg.Amount), redeemTo)
 }
 
-func (h *queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h *queryHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
 
 	msg := &h.msg
 
@@ -122,7 +121,7 @@ func (h *queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pars
 
 }
 
-func (h *memberQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h *memberQueryHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
 
 	contAddr, err := txutil.NewAddressFromPBMessage(msg.ContractAddr)

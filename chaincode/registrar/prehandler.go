@@ -2,7 +2,6 @@ package registrar
 
 import (
 	"errors"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"hyperledger.abchain.org/chaincode/lib/txhandle"
 	"hyperledger.abchain.org/crypto"
 	txutil "hyperledger.abchain.org/tx"
@@ -17,7 +16,7 @@ func RegistrarPreHandler(cfg RegistrarConfig, getter tx.ParseAddress) *regPreHan
 	return &regPreHandler{getter, cfg}
 }
 
-func (h *regPreHandler) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
+func (h *regPreHandler) PreHandling(stub interface{}, _ string, tx txutil.Parser) error {
 
 	cred := tx.GetAddrCredential()
 	if cred == nil {

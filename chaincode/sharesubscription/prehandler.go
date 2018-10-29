@@ -2,11 +2,10 @@ package subscription
 
 import (
 	"errors"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	txutil "hyperledger.abchain.org/tx"
 )
 
-func (h *newContractHandler) PreHandling(_ shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
+func (h *newContractHandler) PreHandling(_ interface{}, _ string, tx txutil.Parser) error {
 
 	cred := tx.GetAddrCredential()
 	if cred == nil {

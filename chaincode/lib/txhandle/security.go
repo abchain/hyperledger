@@ -2,7 +2,6 @@ package tx
 
 import (
 	"fmt"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"hyperledger.abchain.org/chaincode/lib/util"
 	txutil "hyperledger.abchain.org/tx"
 	"strings"
@@ -11,7 +10,7 @@ import (
 type TxAttrVerifier map[string]string
 type TxMultiAttrVerifier map[string][]string
 
-func (req TxAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, _ txutil.Parser) error {
+func (req TxAttrVerifier) PreHandling(stub interface{}, _ string, _ txutil.Parser) error {
 
 	for attrkey, expect := range req {
 		attr := util.GetAttributes(stub, attrkey)
@@ -24,7 +23,7 @@ func (req TxAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string
 	return nil
 }
 
-func (req TxMultiAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, _ txutil.Parser) error {
+func (req TxMultiAttrVerifier) PreHandling(stub interface{}, _ string, _ txutil.Parser) error {
 
 	for attrkey, expects := range req {
 		attr := util.GetAttributes(stub, attrkey)
@@ -62,7 +61,7 @@ type AddrCredVerifier struct {
 	MatchAddress
 }
 
-func (v AddrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
+func (v AddrCredVerifier) PreHandling(stub interface{}, _ string, tx txutil.Parser) error {
 
 	if v.ParseAddress == nil && v.MatchAddress == nil {
 		panic("Uninit interface")

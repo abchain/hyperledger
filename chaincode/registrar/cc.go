@@ -2,7 +2,6 @@ package registrar
 
 import (
 	"encoding/base64"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"hyperledger.abchain.org/chaincode/lib/state"
 	pb "hyperledger.abchain.org/chaincode/registrar/protos"
 	"hyperledger.abchain.org/crypto"
@@ -19,7 +18,7 @@ type RegistrarTx interface {
 }
 
 type RegistrarConfig interface {
-	NewTx(shim.ChaincodeStubInterface) RegistrarTx
+	NewTx(interface{}) RegistrarTx
 }
 
 type StandardRegistrarConfig struct {
@@ -35,11 +34,11 @@ const (
 
 type registrarTx struct {
 	state.StateMap
-	stub shim.ChaincodeStubInterface
+	stub interface{}
 	*StandardRegistrarConfig
 }
 
-func (cfg *StandardRegistrarConfig) NewTx(stub shim.ChaincodeStubInterface) RegistrarTx {
+func (cfg *StandardRegistrarConfig) NewTx(stub interface{}) RegistrarTx {
 	rootname := reg_tag_prefix + cfg.Tag
 
 	return &registrarTx{state.NewShimMap(rootname, stub, cfg.Readonly), stub, cfg}

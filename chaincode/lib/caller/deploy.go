@@ -3,15 +3,14 @@ package rpc
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"github.com/golang/protobuf/proto"
 )
 
 type DeployHandler interface {
-	Call(stub shim.ChaincodeStubInterface, deployarg []byte) error
+	Call(stub interface{}, deployarg []byte) error
 }
 
-func DeployCC(stub shim.ChaincodeStubInterface, args []string,
+func DeployCC(stub interface{}, args []string,
 	handlers map[string]DeployHandler) error {
 
 	//build args mapper

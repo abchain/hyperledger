@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/abchain/fabric/core/chaincode/shim"
+	abchain_shim "github.com/abchain/fabric/core/chaincode/shim"
 	p "github.com/golang/protobuf/proto"
 )
 
@@ -14,7 +14,7 @@ type StateMap interface {
 	Set(string, p.Message) error
 }
 
-func NewFabric06ShimMap(root string, stub shim.ChaincodeStubInterface, readOnly bool) StateMap {
+func NewFabric06ShimMap(root string, stub abchain_shim.ChaincodeStubInterface, readOnly bool) StateMap {
 
 	if readOnly {
 		return &shimStateMapRO{
@@ -33,6 +33,12 @@ func NewFabric06ShimMap(root string, stub shim.ChaincodeStubInterface, readOnly 
 }
 
 //default
-func NewShimMap(root string, stub shim.ChaincodeStubInterface, readOnly bool) StateMap {
-	return NewFabric06ShimMap(root, stub, readOnly)
+func NewShimMap(root string, stub interface{}, readOnly bool) StateMap {
+	switch s := stub.(type) {
+	case abchain_shim.ChaincodeStubInterface:
+		return NewFabric06ShimMap(root, s, readOnly)
+	default:
+		panic("No corresponding stub")
+	}
+
 }

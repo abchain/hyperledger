@@ -1,7 +1,6 @@
 package registrar
 
 import (
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	ccpb "hyperledger.abchain.org/chaincode/registrar/protos"
@@ -63,7 +62,7 @@ func (h *revokePkHandler) Msg() proto.Message       { return &h.msg }
 func (h *activePkHandler) Msg() proto.Message       { return &h.msg }
 func (h *queryPkHandler) Msg() proto.Message        { return &h.msg }
 
-func (h *registrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h *registrarHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
 	pk, err := crypto.PublicKeyFromPBMessage(msg.Pk)
 	if err != nil {
@@ -73,7 +72,7 @@ func (h *registrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.
 	return h.NewTx(stub).Registrar(pk, msg.Region)
 }
 
-func (h *adminRegistrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h *adminRegistrarHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
 
 	pk, err := crypto.PublicKeyFromPBMessage(msg.Pk)
@@ -88,7 +87,7 @@ func (h *adminRegistrarHandler) Call(stub shim.ChaincodeStubInterface, parser tx
 	return []byte("OK"), nil
 }
 
-func (h *revokePkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h *revokePkHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
 
 	pk, err := crypto.PublicKeyFromPBMessage(msg.Pk)
@@ -103,7 +102,7 @@ func (h *revokePkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.P
 	return []byte("OK"), nil
 }
 
-func (h *activePkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h *activePkHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
 
 	msg := &h.msg
 
@@ -115,7 +114,7 @@ func (h *activePkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.P
 	return []byte("OK"), nil
 }
 
-func (h *queryPkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h *queryPkHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
 
 	msg := &h.msg
 

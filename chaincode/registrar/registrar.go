@@ -29,7 +29,7 @@ func (db *registrarTx) registrar(pk *crypto.PublicKey, region string, enable boo
 
 	data = &pb.RegData{
 		pk.PBMessage(),
-		db.stub.GetTxID(),
+		util.GetTxID(db.stub),
 		util.GetTimeStamp(db.stub), region, enable, nil,
 	}
 

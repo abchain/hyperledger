@@ -19,7 +19,7 @@ type TxAddr struct {
 func (m *TxAddr) Reset()                    { *m = TxAddr{} }
 func (m *TxAddr) String() string            { return proto.CompactTextString(m) }
 func (*TxAddr) ProtoMessage()               {}
-func (*TxAddr) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
+func (*TxAddr) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *TxAddr) GetHash() []byte {
 	if m != nil {
@@ -36,7 +36,7 @@ type TxMsgExample struct {
 func (m *TxMsgExample) Reset()                    { *m = TxMsgExample{} }
 func (m *TxMsgExample) String() string            { return proto.CompactTextString(m) }
 func (*TxMsgExample) ProtoMessage()               {}
-func (*TxMsgExample) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{1} }
+func (*TxMsgExample) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *TxMsgExample) GetParam1() []byte {
 	if m != nil {
@@ -57,9 +57,9 @@ func init() {
 	proto.RegisterType((*TxMsgExample)(nil), "protos.TxMsgExample")
 }
 
-func init() { proto.RegisterFile("txaddr.proto", fileDescriptor6) }
+func init() { proto.RegisterFile("txaddr.proto", fileDescriptor2) }
 
-var fileDescriptor6 = []byte{
+var fileDescriptor2 = []byte{
 	// 115 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x29, 0xa9, 0x48, 0x4c,
 	0x49, 0x29, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x03, 0x53, 0xc5, 0x4a, 0x32, 0x5c,

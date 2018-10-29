@@ -6,17 +6,18 @@ import (
 	"errors"
 	"github.com/abchain/fabric/core/chaincode/shim"
 	"hyperledger.abchain.org/chaincode/lib/txhandle"
+	"hyperledger.abchain.org/chaincode/lib/util"
 	"time"
 )
 
 type DummyCallerBuilder struct {
 	Ccname string
-	Stub   shim.ChaincodeStubInterface
+	Stub   interface{}
 }
 
 type dummyCaller struct {
 	tx.ChaincodeTx
-	stub shim.ChaincodeStubInterface
+	stub interface{}
 }
 
 func (d *DummyCallerBuilder) GetCaller(h tx.TxHandler) Caller {
@@ -49,7 +50,7 @@ func (c *dummyCaller) Query(method string, arg []string) ([]byte, error) {
 }
 
 func (c *dummyCaller) LastInvokeTxId() []byte {
-	return []byte(c.stub.GetTxID())
+	return []byte(util.GetTxID(c.stub))
 }
 
 type ChaincodeAdapter struct {
@@ -73,5 +74,5 @@ func (c *ChaincodeAdapter) Query(method string, arg []string) ([]byte, error) {
 }
 
 func (c *ChaincodeAdapter) LastInvokeTxId() []byte {
-	return []byte(c.LastInvokeId)
+	return c.LastInvokeId
 }

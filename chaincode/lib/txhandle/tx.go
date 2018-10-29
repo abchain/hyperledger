@@ -2,7 +2,6 @@ package tx
 
 import (
 	"errors"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"github.com/golang/protobuf/proto"
 	txutil "hyperledger.abchain.org/tx"
 	"strings"
@@ -10,16 +9,16 @@ import (
 
 type TxHandler interface {
 	Msg() proto.Message
-	//	Parse(stub shim.ChaincodeStubInterface, method string, args []string) (txutil.Parser, error)
-	Call(shim.ChaincodeStubInterface, txutil.Parser) ([]byte, error)
+	//	Parse(stub interface{}, method string, args []string) (txutil.Parser, error)
+	Call(interface{}, txutil.Parser) ([]byte, error)
 }
 
 type TxPreHandler interface {
-	PreHandling(shim.ChaincodeStubInterface, string, txutil.Parser) error
+	PreHandling(interface{}, string, txutil.Parser) error
 }
 
 type TxPostHandler interface {
-	PostHandling(shim.ChaincodeStubInterface, string, txutil.Parser, []byte) ([]byte, error)
+	PostHandling(interface{}, string, txutil.Parser, []byte) ([]byte, error)
 }
 
 type ChaincodeTx struct {
@@ -29,10 +28,10 @@ type ChaincodeTx struct {
 	PostHandlers []TxPostHandler
 }
 
-func (cci *ChaincodeTx) TxCall(stub shim.ChaincodeStubInterface,
+func (cci *ChaincodeTx) TxCall(stub interface{},
 	function string, args []string) ([]byte, error) {
 
-	parser, err := txutil.ParseTx(cci.Handler.Msg(), stub, function, args)
+	parser, err := txutil.ParseTx(cci.Handler.Msg(), function, args)
 	if err != nil {
 		return nil, err
 	}

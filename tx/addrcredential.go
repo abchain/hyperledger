@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	_ "fmt"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"hyperledger.abchain.org/crypto"
 	pb "hyperledger.abchain.org/protos"
 	_ "hyperledger.abchain.org/utils"
@@ -32,7 +31,6 @@ func (c *noAddrCred) ListCredPubkeys() []*crypto.PublicKey {
 
 type soleAddrCred struct {
 	hash []byte
-	stub shim.ChaincodeStubInterface
 	c    *pb.TxCredential_AddrCredentials
 }
 
@@ -67,7 +65,7 @@ func pubkeyFromCred(c *pb.TxCredential_AddrCredentials) (*crypto.PublicKey, erro
 	case *pb.TxCredential_AddrCredentials_User:
 		pkk = v.User.Pk
 	case *pb.TxCredential_AddrCredentials_Cc:
-		pkk = v.Cc.Pk
+		return nil, errors.New("use deprecatd cc credential")
 	default:
 		return nil, errors.New("Unrecognized cred type")
 	}
@@ -91,12 +89,6 @@ func verifyPk(pk *crypto.PublicKey, hash []byte, u *pb.TxCredential_UserCredenti
 
 }
 
-func verifyCc(u *pb.TxCredential_InnerCredential, _ shim.ChaincodeStubInterface) error {
-
-	//TODO: should verify ccname with stub
-	return errors.New("cc calling has no implement yet")
-}
-
 const (
 	fingerprintIndexLength int = 4
 )
@@ -112,7 +104,7 @@ func (addrc *soleAddrCred) Verify(addr Address) error {
 	case *pb.TxCredential_AddrCredentials_User:
 		return verifyPk(pk, addrc.hash, v.User)
 	case *pb.TxCredential_AddrCredentials_Cc:
-		return verifyCc(v.Cc, addrc.stub)
+		return errors.New("cc calling has been deprecated")
 	}
 
 	return errors.New("Cred type not recongnized")
@@ -154,7 +146,6 @@ func (addrc *soleAddrCred) ListCredPubkeys() []*crypto.PublicKey {
 
 type mutipleAddrCred struct {
 	hash  []byte
-	stub  shim.ChaincodeStubInterface
 	creds map[uint32]*pb.TxCredential_AddrCredentials
 }
 
@@ -184,7 +175,6 @@ func (maddrc *mutipleAddrCred) Verify(addr Address) error {
 
 	tc := &soleAddrCred{
 		maddrc.hash,
-		maddrc.stub,
 		cred,
 	}
 
@@ -225,17 +215,16 @@ func (maddrc *mutipleAddrCred) ListCredPubkeys() []*crypto.PublicKey {
 	return ret
 }
 
-func NewAddrCredential(hash []byte, stub shim.ChaincodeStubInterface,
-	addrc []*pb.TxCredential_AddrCredentials) (ret AddrCredentials, e error) {
+func NewAddrCredential(hash []byte, addrc []*pb.TxCredential_AddrCredentials) (ret AddrCredentials, e error) {
 
 	switch len(addrc) {
 	case 0:
 		ret = &noAddrCred{}
 	case 1:
-		ret = &soleAddrCred{hash, stub, addrc[0]}
+		ret = &soleAddrCred{hash, addrc[0]}
 	default:
 
-		rret := &mutipleAddrCred{hash, stub, make(map[uint32]*pb.TxCredential_AddrCredentials)}
+		rret := &mutipleAddrCred{hash, make(map[uint32]*pb.TxCredential_AddrCredentials)}
 		ret = rret
 		for _, c := range addrc {
 
@@ -301,23 +290,24 @@ func (b *builder) AddSignature(pk *crypto.PublicKey, sign *crypto.ECSignature) {
 
 func (b *builder) AddCc(ccname string, addr Address, pub *crypto.PublicKey) {
 
-	if len(addr.Hash) < b.indexLen {
-		b.e = errors.New("Wrong index for pk: too short")
-		return
-	}
+	b.e = errors.New("cc credential has been deprecated")
+	// if len(addr.Hash) < b.indexLen {
 
-	b.cache[toFingerPrint(addr.Hash)] = &builderCache{
-		addr.Hash,
-		pb.TxCredential_AddrCredentials{
-			&pb.TxCredential_AddrCredentials_Cc{
-				&pb.TxCredential_InnerCredential{
-					ccname,
-					nil,
-					pub.PBMessage(),
-				},
-			},
-		},
-	}
+	// 	return
+	// }
+
+	// b.cache[toFingerPrint(addr.Hash)] = &builderCache{
+	// 	addr.Hash,
+	// 	pb.TxCredential_AddrCredentials{
+	// 		&pb.TxCredential_AddrCredentials_Cc{
+	// 			&pb.TxCredential_InnerCredential{
+	// 				ccname,
+	// 				nil,
+	// 				pub.PBMessage(),
+	// 			},
+	// 		},
+	// 	},
+	// }
 }
 
 func (b *builder) Update(msg *pb.TxCredential) error {

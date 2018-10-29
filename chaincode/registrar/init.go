@@ -2,7 +2,6 @@ package registrar
 
 import (
 	"errors"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	pb "hyperledger.abchain.org/chaincode/registrar/protos"
 )
@@ -27,7 +26,7 @@ func CCDeployDebugMode(args []string) ([]string, error) {
 
 type CCDeployHandler string
 
-func (tag CCDeployHandler) Call(stub shim.ChaincodeStubInterface, deployarg []byte) error {
+func (tag CCDeployHandler) Call(stub interface{}, deployarg []byte) error {
 	msg := &pb.Settings{}
 	err := rpc.DecodeRPCResult(msg, deployarg)
 	if err != nil {

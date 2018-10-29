@@ -28,7 +28,6 @@ message TxCredential {
     message     InnerCredential{
         string   ccname         = 1;
         bytes    fingerprint    = 2;
-        PublicKey   pk          = 3;
     }
 
     message     AddrCredentials{

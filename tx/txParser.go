@@ -2,7 +2,6 @@ package abchainTx
 
 import (
 	"errors"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"github.com/golang/protobuf/proto"
 	pb "hyperledger.abchain.org/protos"
 	"strings"
@@ -45,8 +44,7 @@ func (t *txParser) GetAddrCredential() AddrCredentials {
 	return t.cred
 }
 
-func parseBase(header proto.Message, msg proto.Message,
-	stub shim.ChaincodeStubInterface, method string, args []string) (e error,
+func parseBase(header proto.Message, msg proto.Message, method string, args []string) (e error,
 	cred AddrCredentials) {
 
 	if len(args) < 2 {
@@ -99,20 +97,20 @@ func parseBase(header proto.Message, msg proto.Message,
 			return
 		}
 
-		cred, e = NewAddrCredential(hash, stub, credData.Addrc)
+		cred, e = NewAddrCredential(hash, credData.Addrc)
 
 	} else {
-		cred, e = NewAddrCredential(hash, stub, nil)
+		cred, e = NewAddrCredential(hash, nil)
 	}
 
 	return
 }
 
-func ParseTx(msg proto.Message, stub shim.ChaincodeStubInterface, method string, args []string) (Parser, error) {
+func ParseTx(msg proto.Message, method string, args []string) (Parser, error) {
 
 	header := &pb.TxHeader{}
 
-	err, cred := parseBase(header, msg, stub, method, args)
+	err, cred := parseBase(header, msg, method, args)
 
 	if err != nil {
 		return nil, err
