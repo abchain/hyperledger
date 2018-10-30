@@ -7,6 +7,22 @@ import (
 	"time"
 )
 
+// Chaincode interface must be implemented by all chaincodes. The fabric runs
+// the transactions by calling these functions as specified.
+type Chaincode interface {
+	// Init is called during Deploy transaction after the container has been
+	// established, allowing the chaincode to initialize its internal data
+	Init(stub ChaincodeStubInterface, function string, args []string) ([]byte, error)
+
+	// Invoke is called for every Invoke transactions. The chaincode may change
+	// its state variables
+	Invoke(stub ChaincodeStubInterface, function string, args []string) ([]byte, error)
+
+	// Query is called for Query transactions. The chaincode may only read
+	// (but not modify) its state variables and return the result
+	Query(stub ChaincodeStubInterface, function string, args []string) ([]byte, error)
+}
+
 type ChaincodeStubInterface interface {
 	// Get the arguments to the stub call as a 2D byte array
 	GetArgs() [][]byte
@@ -41,6 +57,13 @@ type ChaincodeStubInterface interface {
 	// DelState removes the specified `key` and its value from the ledger.
 	DelState(key string) error
 
+	// RangeQueryState function can be invoked by a chaincode to query of a range
+	// of keys in the state. Assuming the startKey and endKey are in lexical
+	// an iterator will be returned that can be used to iterate over all keys
+	// between the startKey and endKey, inclusive. The order in which keys are
+	// returned by the iterator is random.
+	RangeQueryState(startKey, endKey string) (StateRangeQueryIteratorInterface, error)
+
 	// used to read an specific attribute from the transaction certificate,
 	// *attributeName* is passed as input parameter to this function.
 	// Example:
@@ -58,4 +81,20 @@ type ChaincodeStubInterface interface {
 
 	// obtain the original chaincodestub interface for more implement-spec code
 	GetRawStub() interface{}
+}
+
+// StateRangeQueryIteratorInterface allows a chaincode to iterate over a range of
+// key/value pairs in the state.
+type StateRangeQueryIteratorInterface interface {
+
+	// HasNext returns true if the range query iterator contains additional keys
+	// and values.
+	HasNext() bool
+
+	// Next returns the next key and value in the range query iterator.
+	Next() (string, []byte, error)
+
+	// Close closes the range query iterator. This should be called when done
+	// reading from the iterator to free up resources.
+	Close() error
 }
