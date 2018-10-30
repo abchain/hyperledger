@@ -2,7 +2,7 @@ package tx
 
 import (
 	"fmt"
-	"hyperledger.abchain.org/chaincode/lib/util"
+	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/tx"
 	"strings"
 )
@@ -10,12 +10,15 @@ import (
 type TxAttrVerifier map[string]string
 type TxMultiAttrVerifier map[string][]string
 
-func (req TxAttrVerifier) PreHandling(stub interface{}, _ string, _ txutil.Parser) error {
+func (req TxAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, _ txutil.Parser) error {
 
 	for attrkey, expect := range req {
-		attr := util.GetAttributes(stub, attrkey)
+		attr, err := stub.GetCallerAttribute(attrkey)
+		if err != nil {
+			return err
+		}
 
-		if strings.Compare(attr, expect) != 0 {
+		if strings.Compare(string(attr), expect) != 0 {
 			return fmt.Errorf("No rivilege for attr %s, provide:[%s]", attrkey, attr)
 		}
 	}
@@ -23,14 +26,17 @@ func (req TxAttrVerifier) PreHandling(stub interface{}, _ string, _ txutil.Parse
 	return nil
 }
 
-func (req TxMultiAttrVerifier) PreHandling(stub interface{}, _ string, _ txutil.Parser) error {
+func (req TxMultiAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, _ txutil.Parser) error {
 
 	for attrkey, expects := range req {
-		attr := util.GetAttributes(stub, attrkey)
+		attr, err := stub.GetCallerAttribute(attrkey)
+		if err != nil {
+			return err
+		}
 		matched := false
 
 		for _, expect := range expects {
-			if strings.Compare(attr, expect) == 0 {
+			if strings.Compare(string(attr), expect) == 0 {
 				matched = true
 				break
 			}
@@ -61,7 +67,7 @@ type AddrCredVerifier struct {
 	MatchAddress
 }
 
-func (v AddrCredVerifier) PreHandling(stub interface{}, _ string, tx txutil.Parser) error {
+func (v AddrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
 
 	if v.ParseAddress == nil && v.MatchAddress == nil {
 		panic("Uninit interface")

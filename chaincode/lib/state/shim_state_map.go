@@ -1,8 +1,8 @@
 package state
 
 import (
-	"github.com/abchain/fabric/core/chaincode/shim"
 	p "github.com/golang/protobuf/proto"
+	"hyperledger.abchain.org/chaincode/shim"
 )
 
 type shimStateMap struct {

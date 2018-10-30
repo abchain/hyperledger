@@ -1,0 +1,60 @@
+syntax = "proto3";
+package protos;
+import "fabric.proto";
+
+service Gossip {
+    // Request a new stream for bi-direction gossip
+    // We must sent a peerId first for merging the stream with chatting,
+    // This can't be achieve by protobuf and we had to imple it manually
+    rpc In(stream GossipMsg) returns (stream GossipMsg) {} 
+}
+
+message GossipMsg {
+
+    message Digest{
+        message PeerState{
+            bytes state = 1;
+            uint64 num  = 2;
+        }
+/*string is used to represent peerID*/        
+        map<string, PeerState> data = 1;
+        bytes epoch = 2;
+        bool isFull = 3;//indicate digest include all peers I have known
+        bool noResp = 4;//prohibit a "responding pulling" from far end
+    }
+
+    message Update{
+        bytes  payload = 1;
+    }
+
+    //all the gossip message (with different catalog) MUST share the
+    //same series of seq
+    uint64 seq = 1;
+    string catalog = 2;
+    oneof m{
+        Digest dig = 3;
+        Update ud  = 4;
+    }
+}
+
+// TransactionBlock carries a batch of transactions.
+message HotTransactionBlock {
+    repeated Transaction transactions = 1;
+    uint64 beginSeries = 2;
+}
+
+message PeerTxState{
+    bytes digest = 1;
+    uint64 num  = 2;
+    bytes signature = 5;
+    bytes endorsement = 6;
+    uint32 endorsementVer = 7;
+}
+
+message Gossip_Tx{
+    map<string, HotTransactionBlock> txs = 1;
+}
+
+message Gossip_TxState{
+    map<string, PeerTxState> txs = 1;
+}

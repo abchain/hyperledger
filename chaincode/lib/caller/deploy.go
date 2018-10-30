@@ -4,13 +4,14 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"hyperledger.abchain.org/chaincode/shim"
 )
 
 type DeployHandler interface {
-	Call(stub interface{}, deployarg []byte) error
+	Call(stub shim.ChaincodeStubInterface, deployarg []byte) error
 }
 
-func DeployCC(stub interface{}, args []string,
+func DeployCC(stub shim.ChaincodeStubInterface, args []string,
 	handlers map[string]DeployHandler) error {
 
 	//build args mapper

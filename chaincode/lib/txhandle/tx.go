@@ -3,22 +3,22 @@ package tx
 import (
 	"errors"
 	"github.com/golang/protobuf/proto"
+	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/tx"
 	"strings"
 )
 
 type TxHandler interface {
 	Msg() proto.Message
-	//	Parse(stub interface{}, method string, args []string) (txutil.Parser, error)
-	Call(interface{}, txutil.Parser) ([]byte, error)
+	Call(shim.ChaincodeStubInterface, txutil.Parser) ([]byte, error)
 }
 
 type TxPreHandler interface {
-	PreHandling(interface{}, string, txutil.Parser) error
+	PreHandling(shim.ChaincodeStubInterface, string, txutil.Parser) error
 }
 
 type TxPostHandler interface {
-	PostHandling(interface{}, string, txutil.Parser, []byte) ([]byte, error)
+	PostHandling(shim.ChaincodeStubInterface, string, txutil.Parser, []byte) ([]byte, error)
 }
 
 type ChaincodeTx struct {
@@ -28,7 +28,7 @@ type ChaincodeTx struct {
 	PostHandlers []TxPostHandler
 }
 
-func (cci *ChaincodeTx) TxCall(stub interface{},
+func (cci *ChaincodeTx) TxCall(stub shim.ChaincodeStubInterface,
 	function string, args []string) ([]byte, error) {
 
 	parser, err := txutil.ParseTx(cci.Handler.Msg(), function, args)

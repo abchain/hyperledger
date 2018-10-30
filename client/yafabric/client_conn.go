@@ -1,9 +1,11 @@
 package client
 
 import (
-	"github.com/abchain/fabric/core/comm"
-	"github.com/spf13/viper"
+	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"hyperledger.abchain.org/utils"
+	"time"
 )
 
 type ClientConn struct {
@@ -11,33 +13,38 @@ type ClientConn struct {
 	BlockConn bool
 }
 
-// NewPeerClientConnection Returns a new grpc.ClientConn to the configured local PEER.
-func newPeerClientConnection(block bool) (*grpc.ClientConn, error) {
-	return newPeerClientConnectionWithAddress(block, viper.GetString("service.cliaddress"))
-}
+const defaultTimeout = time.Second * 3
 
-// NewPeerClientConnectionWithAddress Returns a new grpc.ClientConn to the configured PEER.
-func newPeerClientConnectionWithAddress(block bool, peerAddress string) (*grpc.ClientConn, error) {
-	if comm.TLSEnabledforService() {
-		return comm.NewClientConnectionWithAddress(peerAddress, block, true, comm.InitTLSForPeer())
-	}
-	return comm.NewClientConnectionWithAddress(peerAddress, block, false, nil)
-}
+func (conn *ClientConn) Dial(conf map[string]string) error {
 
-func (conn *ClientConn) Dialdefault() error {
-	c, err := newPeerClientConnection(conn.BlockConn)
-	if err != nil {
-		return err
+	addr := conf["server"]
+	if addr == "" {
+		return fmt.Errorf("Server is not specified")
 	}
 
-	conn.C = c
-	return nil
-}
+	var opts []grpc.DialOption
 
-func (conn *ClientConn) Dial(server string) error {
-	c, err := newPeerClientConnectionWithAddress(conn.BlockConn, server)
+	tls := conf["tlsenabled"]
+	if tls == "true" {
+		cert := conf["certfile"]
+		hostName := conf["hostname"]
+
+		creds, err := credentials.NewClientTLSFromFile(utils.CanonicalizeFilePath(cert), hostName)
+		if err != nil {
+			return fmt.Errorf("Failed to create TLS credentials %v", err)
+		}
+
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	}
+
+	//Todo: set timeout?
+	opts = append(opts, grpc.WithTimeout(defaultTimeout))
+	if conn.BlockConn {
+		opts = append(opts, grpc.WithBlock())
+	}
+	c, err := grpc.Dial(addr, opts...)
 	if err != nil {
-		return err
+		return fmt.Errorf("Dial fail: %s", err)
 	}
 
 	conn.C = c

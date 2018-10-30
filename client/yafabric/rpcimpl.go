@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	pb "github.com/abchain/fabric/protos"
-	"google.golang.org/grpc"
+	grpc_conn "google.golang.org/grpc/connectivity"
 	"time"
 )
 
@@ -88,7 +88,7 @@ func (b *RpcBuilder) VerifyConn() error {
 
 	s := b.Conn.C.GetState()
 
-	if s != grpc.Ready {
+	if s != grpc_conn.Ready {
 		return fmt.Errorf("Conn is not ready: <%s>", s)
 	}
 

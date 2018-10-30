@@ -4,13 +4,14 @@ package tx
 
 import (
 	"errors"
+	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/tx"
 	"time"
 )
 
 type IsTxExpired bool
 
-func (force IsTxExpired) PreHandling(_ interface{}, _ string, tx txutil.Parser) error {
+func (force IsTxExpired) PreHandling(_ shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
 	expT := tx.GetTxTime()
 
 	if expT.IsZero() && !bool(force) {

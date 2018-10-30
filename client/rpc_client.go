@@ -18,9 +18,10 @@ func NewFabricRPCConfig(ccN string) *fabricRPCCfg {
 	return &fabricRPCCfg{ccName: ccN}
 }
 
-func (c *fabricRPCCfg) UseYAFabricCli() *yafabric_cli.RpcClientConfig {
+func (c *fabricRPCCfg) UseYAFabricCli(vp *viper.Viper) *yafabric_cli.RpcClientConfig {
 
 	c.yacli = yafabric_cli.NewRPCConfig()
+	c.yacli.Load(vp)
 	c.caller = func() (rpc.Caller, error) {
 		return c.yacli.GetCaller()
 	}

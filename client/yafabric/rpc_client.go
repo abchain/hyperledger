@@ -14,6 +14,7 @@ const (
 type connBuilder struct {
 	sync.Mutex
 	ClientConn
+	endpointConf  map[string]string
 	waitConn      *sync.Cond
 	connFail      error
 	resetInterval time.Duration
@@ -67,7 +68,7 @@ func (c *connBuilder) obtainConn(ctx context.Context) (*ClientConn, error) {
 		c.waitConn = sync.NewCond(c)
 		go func() {
 			conn := &ClientConn{nil, true}
-			err := conn.Dialdefault()
+			err := conn.Dial(c.endpointConf)
 
 			c.Lock()
 			if err != nil {
@@ -111,6 +112,43 @@ func NewRPCConfig() *RpcClientConfig {
 
 	return &RpcClientConfig{
 		connManager: NewRpcManager(),
+	}
+}
+
+/*
+	the configuration for client can include these fields:
+	- chaincode
+	- username
+	- userattr (a list of strings)
+	- endpoint (for compatible, its subfield can be put in top level now but this
+			    will be deprecated later)
+		- server
+		- tlsenabled
+		- certfile
+		- hostname (override the hostname in certfile)
+
+*/
+func (c *RpcClientConfig) Load(vp *viper.Viper) {
+	if s := vp.GetString("chaincode"); s != "" {
+		c.SetChaincode(s)
+	}
+
+	if s := vp.GetString("username"); s != "" {
+		c.SetUser(s)
+	}
+
+	if s := vp.GetStringSlice("userattr"); s != nil {
+		c.SetAttrs(s, false)
+	}
+
+	if vp.IsSet("endpoint") {
+		c.conn.endpointConf = vp.GetStringMapString("endpoint")
+	} else {
+		c.conn.endpointConf = map[string]string{
+			"server":     vp.GetString("server"),
+			"tlsenabled": vp.GetString("tlsenabled"),
+			"certfile":   vp.GetString("certfile"),
+		}
 	}
 }
 
