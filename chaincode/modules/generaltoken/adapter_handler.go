@@ -4,6 +4,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	ccpb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
+	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/tx"
 	"math/big"
 )
@@ -55,7 +56,7 @@ func (h *assignHandler) Msg() proto.Message      { return &h.msg }
 func (h *tokenQueryHandler) Msg() proto.Message  { return &h.msg }
 func (h *globalQueryHandler) Msg() proto.Message { return &h.msg }
 
-func (h *transferHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
+func (h *transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
 	addrFrom, err := txutil.NewAddressFromPBMessage(msg.From)
 	if err != nil {
@@ -70,7 +71,7 @@ func (h *transferHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, 
 	return h.NewTx(stub, parser.GetNounce()).Transfer(addrFrom.Hash, addrTo.Hash, toAmount(msg.Amount))
 }
 
-func (h *assignHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
+func (h *assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
 
 	addrTo, err := txutil.NewAddressFromPBMessage(msg.To)
@@ -81,7 +82,7 @@ func (h *assignHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, er
 	return h.NewTx(stub, parser.GetNounce()).Assign(addrTo.Hash, toAmount(msg.Amount))
 }
 
-func (h *tokenQueryHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
+func (h *tokenQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
 
 	addr, err := txutil.NewAddressFromPBMessage(msg.Addr)
@@ -104,7 +105,7 @@ func (h *tokenQueryHandler) Call(stub interface{}, parser txutil.Parser) ([]byte
 	}
 }
 
-func (h *globalQueryHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
+func (h *globalQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 
 	err, data := h.NewTx(stub, parser.GetNounce()).Global()
 	if err != nil {

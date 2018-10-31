@@ -2,7 +2,6 @@ package generaltoken
 
 import (
 	"bytes"
-	"github.com/abchain/fabric/core/chaincode/shim"
 	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
@@ -32,18 +31,13 @@ const (
 )
 
 var spout *GeneralCall
-var bolt *rpc.DummyCallerBuilder
-var stub *shim.MockStub
+var bolt = &rpc.DummyCallerBuilder{CCName: test_ccname}
 var tokencfg = &StandardTokenConfig{nonce.StandardNonceConfig{test_tag, false}}
 var tokenQuerycfg = &StandardTokenConfig{nonce.StandardNonceConfig{test_tag, true}}
 
 func TestDeployCc(t *testing.T) {
 
-	//we only use the db in stub and never do mocking from chaincode interface
-	stub = shim.NewMockStub("TokenTest", nil)
-
 	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname)}
-	bolt = &rpc.DummyCallerBuilder{test_ccname, stub}
 
 	stub.MockTransactionStart("deployment")
 

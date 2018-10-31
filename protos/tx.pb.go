@@ -22,7 +22,7 @@ type TxBase struct {
 func (m *TxBase) Reset()                    { *m = TxBase{} }
 func (m *TxBase) String() string            { return proto.CompactTextString(m) }
 func (*TxBase) ProtoMessage()               {}
-func (*TxBase) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*TxBase) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *TxBase) GetNetwork() string {
 	if m != nil {
@@ -54,7 +54,7 @@ type TxHeader struct {
 func (m *TxHeader) Reset()                    { *m = TxHeader{} }
 func (m *TxHeader) String() string            { return proto.CompactTextString(m) }
 func (*TxHeader) ProtoMessage()               {}
-func (*TxHeader) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*TxHeader) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *TxHeader) GetBase() *TxBase {
 	if m != nil {
@@ -84,7 +84,7 @@ type TxCredential struct {
 func (m *TxCredential) Reset()                    { *m = TxCredential{} }
 func (m *TxCredential) String() string            { return proto.CompactTextString(m) }
 func (*TxCredential) ProtoMessage()               {}
-func (*TxCredential) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (*TxCredential) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
 func (m *TxCredential) GetAddrc() []*TxCredential_AddrCredentials {
 	if m != nil {
@@ -101,7 +101,7 @@ type TxCredential_UserCredential struct {
 func (m *TxCredential_UserCredential) Reset()                    { *m = TxCredential_UserCredential{} }
 func (m *TxCredential_UserCredential) String() string            { return proto.CompactTextString(m) }
 func (*TxCredential_UserCredential) ProtoMessage()               {}
-func (*TxCredential_UserCredential) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2, 0} }
+func (*TxCredential_UserCredential) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2, 0} }
 
 func (m *TxCredential_UserCredential) GetSignature() *ECSignature {
 	if m != nil {
@@ -125,7 +125,7 @@ type TxCredential_InnerCredential struct {
 func (m *TxCredential_InnerCredential) Reset()                    { *m = TxCredential_InnerCredential{} }
 func (m *TxCredential_InnerCredential) String() string            { return proto.CompactTextString(m) }
 func (*TxCredential_InnerCredential) ProtoMessage()               {}
-func (*TxCredential_InnerCredential) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2, 1} }
+func (*TxCredential_InnerCredential) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2, 1} }
 
 func (m *TxCredential_InnerCredential) GetCcname() string {
 	if m != nil {
@@ -151,7 +151,7 @@ type TxCredential_AddrCredentials struct {
 func (m *TxCredential_AddrCredentials) Reset()                    { *m = TxCredential_AddrCredentials{} }
 func (m *TxCredential_AddrCredentials) String() string            { return proto.CompactTextString(m) }
 func (*TxCredential_AddrCredentials) ProtoMessage()               {}
-func (*TxCredential_AddrCredentials) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2, 2} }
+func (*TxCredential_AddrCredentials) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2, 2} }
 
 type isTxCredential_AddrCredentials_Cred interface {
 	isTxCredential_AddrCredentials_Cred()
@@ -271,9 +271,9 @@ func init() {
 	proto.RegisterType((*TxCredential_AddrCredentials)(nil), "protos.TxCredential.AddrCredentials")
 }
 
-func init() { proto.RegisterFile("tx.proto", fileDescriptor1) }
+func init() { proto.RegisterFile("tx.proto", fileDescriptor2) }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 389 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x92, 0xc1, 0x6e, 0xd4, 0x30,
 	0x10, 0x86, 0x9b, 0xec, 0x36, 0x74, 0x27, 0x51, 0x2b, 0x0c, 0x42, 0x51, 0x2e, 0x2c, 0x81, 0x43,

@@ -6,6 +6,7 @@ Package protos is a generated protocol buffer package.
 
 It is generated from these files:
 	crypto.proto
+	deploytx.proto
 	tx.proto
 	txaddr.proto
 
@@ -15,6 +16,7 @@ It has these top-level messages:
 	Signature
 	ECPoint
 	ECSignature
+	DeployTx
 	TxBase
 	TxHeader
 	TxCredential

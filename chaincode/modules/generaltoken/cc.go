@@ -19,7 +19,7 @@ type TokenTx interface {
 }
 
 type TokenConfig interface {
-	NewTx(interface{}, []byte) TokenTx
+	NewTx(shim.ChaincodeStubInterface, []byte) TokenTx
 }
 
 //integrate both nonce and token

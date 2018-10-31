@@ -8,37 +8,42 @@ import (
 
 //build a chaincode with single chaincodetx
 type dummyCC struct {
-	tx.ChaincodeTx
+	*tx.ChaincodeTx
 }
 
-func (c *dummyCC) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (c dummyCC) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	return c.TxCall(stub, function, args)
 }
 
-func (c *dummyCC) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (c dummyCC) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	return c.TxCall(stub, function, args)
 }
 
 type DummyCallerBuilder struct {
 	CCName string
-	cc     *dummyCC
+	dummyCC
+	caller *ChaincodeAdapter
 }
 
-func (d *DummyCallerBuilder) GetCaller(h tx.TxHandler) Caller {
+func (d *DummyCallerBuilder) Reset() { d.caller = nil }
 
-	if d.cc != nil {
-		d.cc = &dummyCC{tx.ChaincodeTx{d.CCName, h, nil, nil}}
+func (d *DummyCallerBuilder) GetCaller(txid string, h tx.TxHandler) Caller {
+
+	d.dummyCC.ChaincodeTx = &tx.ChaincodeTx{d.CCName, h, nil, nil}
+	if d.caller == nil {
+		d.caller = NewLocalChaincode(d)
 	}
+	d.caller.TxIDGen = func() string { return txid }
 
-	return NewLocalChaincode(d.cc)
+	return d.caller
 }
 
 func (d *DummyCallerBuilder) AppendPreHandler(h tx.TxPreHandler) error {
 
-	if d.cc == nil {
+	if d.caller == nil {
 		return errors.New("Not inited")
 	}
-	d.cc.PreHandlers = append(d.cc.PreHandlers, h)
+	d.dummyCC.PreHandlers = append(d.dummyCC.PreHandlers, h)
 
 	return nil
 }
