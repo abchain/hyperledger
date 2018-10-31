@@ -142,7 +142,7 @@ func (stub *MockStub) MockInvoke(uuid string, function string, args []string) ([
 func (stub *MockStub) MockQuery(function string, args []string) ([]byte, error) {
 	stub.args = getBytes(function, args)
 	// no transaction needed for queries
-	bytes, err := stub.cc.Query(stub, function, args)
+	bytes, err := stub.cc.Invoke(stub, function, args)
 	return bytes, err
 }
 

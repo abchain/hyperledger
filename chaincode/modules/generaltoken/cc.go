@@ -2,10 +2,10 @@ package generaltoken
 
 import (
 	"encoding/base64"
-
-	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
-	pb "hyperledger.abchain.org/chaincode/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/lib/state"
+	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
+	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
+	"hyperledger.abchain.org/chaincode/shim"
 	"math/big"
 )
 
@@ -30,7 +30,7 @@ type StandardTokenConfig struct {
 type baseTokenTx struct {
 	state.StateMap
 	nonce      []byte
-	stub       interface{}
+	stub       shim.ChaincodeStubInterface
 	tokenNonce nonce.TokenNonceTx
 }
 
@@ -38,7 +38,7 @@ const (
 	tx_tag_prefix = "GenToken_"
 )
 
-func (cfg *StandardTokenConfig) NewTx(stub interface{}, nonce []byte) TokenTx {
+func (cfg *StandardTokenConfig) NewTx(stub shim.ChaincodeStubInterface, nonce []byte) TokenTx {
 	rootname := tx_tag_prefix + cfg.Tag
 
 	return &baseTokenTx{state.NewShimMap(rootname, stub, cfg.Readonly), nonce, stub,

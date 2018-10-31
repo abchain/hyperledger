@@ -1,9 +1,8 @@
 package generaltoken
 
 import (
-	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
-	pb "hyperledger.abchain.org/chaincode/generaltoken/protos"
-	"hyperledger.abchain.org/chaincode/lib/util"
+	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
+	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"math/big"
 )
 
@@ -23,7 +22,7 @@ func (db *baseTokenTx) txNonce(txnonce []byte, from []byte, to []byte, amount *b
 	r = &tokenTxNonce{
 		Key: nonce.GeneralTokenNonceKey(txnonce, from, to, abyte),
 		Data: &pb.NonceData{
-			util.GetTxID(db.stub),
+			db.stub.GetTxID(),
 			abyte,
 			nil, nil, util.GetTimeStamp(db.stub),
 		},

@@ -7,20 +7,18 @@ import (
 	"time"
 )
 
-// Chaincode interface must be implemented by all chaincodes. The fabric runs
-// the transactions by calling these functions as specified.
+// Chaincode interface purposed to be implemented by all chaincodes. The fabric runs
+// the transactions by calling these functions as specified. We use the
+// designation mixed with fabric 0.6 and 1.x
+// (this interface is not so important like it was in the real fabric implement, just
+// to provide a suitable interface in some tools)
 type Chaincode interface {
 	// Init is called during Deploy transaction after the container has been
 	// established, allowing the chaincode to initialize its internal data
 	Init(stub ChaincodeStubInterface, function string, args []string) ([]byte, error)
 
-	// Invoke is called for every Invoke transactions. The chaincode may change
-	// its state variables
+	// Invoke is called for every transactions.
 	Invoke(stub ChaincodeStubInterface, function string, args []string) ([]byte, error)
-
-	// Query is called for Query transactions. The chaincode may only read
-	// (but not modify) its state variables and return the result
-	Query(stub ChaincodeStubInterface, function string, args []string) ([]byte, error)
 }
 
 type ChaincodeStubInterface interface {

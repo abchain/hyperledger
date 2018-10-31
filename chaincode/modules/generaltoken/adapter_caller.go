@@ -1,10 +1,10 @@
 package generaltoken
 
 import (
-	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
-	pb "hyperledger.abchain.org/chaincode/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
+	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
+	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	txutil "hyperledger.abchain.org/tx"
 	"math/big"
 )

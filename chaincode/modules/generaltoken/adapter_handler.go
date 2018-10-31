@@ -2,8 +2,8 @@ package generaltoken
 
 import (
 	"github.com/golang/protobuf/proto"
-	ccpb "hyperledger.abchain.org/chaincode/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/lib/caller"
+	ccpb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	txutil "hyperledger.abchain.org/tx"
 	"math/big"
 )

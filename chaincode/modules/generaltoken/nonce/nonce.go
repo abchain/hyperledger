@@ -6,8 +6,9 @@ import (
 	"encoding/base64"
 	"errors"
 
-	pb "hyperledger.abchain.org/chaincode/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/lib/state"
+	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
+	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/tx"
 )
 
@@ -46,7 +47,7 @@ const (
 	nonce_tag_prefix = "GenTokenNonce_"
 )
 
-func (cfg *StandardNonceConfig) NewTx(stub interface{}) TokenNonceTx {
+func (cfg *StandardNonceConfig) NewTx(stub shim.ChaincodeStubInterface) TokenNonceTx {
 	rootname := nonce_tag_prefix + cfg.Tag
 
 	return baseNonceTx{state.NewShimMap(rootname, stub, cfg.Readonly)}

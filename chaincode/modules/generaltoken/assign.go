@@ -2,7 +2,7 @@ package generaltoken
 
 import (
 	"errors"
-	pb "hyperledger.abchain.org/chaincode/generaltoken/protos"
+	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"math/big"
 )
 
