@@ -13,12 +13,8 @@ import (
 // (this interface is not so important like it was in the real fabric implement, just
 // to provide a suitable interface in some tools)
 type Chaincode interface {
-	// Init is called during Deploy transaction after the container has been
-	// established, allowing the chaincode to initialize its internal data
-	Init(stub ChaincodeStubInterface, function string, args []string) ([]byte, error)
-
 	// Invoke is called for every transactions.
-	Invoke(stub ChaincodeStubInterface, function string, args []string) ([]byte, error)
+	Invoke(stub ChaincodeStubInterface, function string, args []string, readonly bool) ([]byte, error)
 }
 
 type ChaincodeStubInterface interface {

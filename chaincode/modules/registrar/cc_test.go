@@ -7,8 +7,8 @@ import (
 	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
-	"hyperledger.abchain.org/crypto"
-	tx "hyperledger.abchain.org/tx"
+	"hyperledger.abchain.org/core/crypto"
+	tx "hyperledger.abchain.org/core/tx"
 	"math/big"
 	"testing"
 )

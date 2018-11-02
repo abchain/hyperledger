@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/shim"
+	txutil "hyperledger.abchain.org/core/tx"
 	pb "hyperledger.abchain.org/protos"
-	txutil "hyperledger.abchain.org/tx"
 )
 
 //deployTx integrating mutiple init tx handlers and dispatching them

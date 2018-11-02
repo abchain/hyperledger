@@ -2,8 +2,8 @@ package tx
 
 import (
 	_ "errors"
-	"hyperledger.abchain.org/crypto"
-	txutil "hyperledger.abchain.org/tx"
+	"hyperledger.abchain.org/core/crypto"
+	txutil "hyperledger.abchain.org/core/tx"
 )
 
 type TxCredHandler interface {

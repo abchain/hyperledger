@@ -3,13 +3,12 @@ package chaincode
 import (
 	"fmt"
 
-	"github.com/abchain/fabric/core/chaincode/shim"
-	token "hyperledger.abchain.org/chaincode/generaltoken"
-	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
-	"hyperledger.abchain.org/chaincode/lib/caller"
 	"hyperledger.abchain.org/chaincode/lib/txhandle"
-	reg "hyperledger.abchain.org/chaincode/registrar"
-	share "hyperledger.abchain.org/chaincode/sharesubscription"
+	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
+	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
+	reg "hyperledger.abchain.org/chaincode/modules/registrar"
+	share "hyperledger.abchain.org/chaincode/modules/sharesubscription"
+	"hyperledger.abchain.org/chaincode/shim"
 )
 
 type AECC struct {
@@ -26,8 +25,6 @@ const (
 	RegionAttr    = "Region"
 )
 
-var logger = shim.NewLogger(CC_NAME)
-
 var invokeMapper map[string]*tx.ChaincodeTx
 var queryMapper map[string]*tx.ChaincodeTx
 var noncecfg = &nonce.StandardNonceConfig{CC_TAG, false}
@@ -43,6 +40,13 @@ func init() {
 
 	invokeMapper = make(map[string]*tx.ChaincodeTx)
 	queryMapper = make(map[string]*tx.ChaincodeTx)
+
+	//init handler
+	initH := tx.DeployTxHandler(map[string]tx.TxHandler{
+		token.DeployMethod: token.CCDeployHandler(tokencfg),
+		reg.DeployMethod:   reg.CCDeployHandler(registrarcfg),
+	})
+	invokeMapper["init"] = &tx.ChaincodeTx{CC_NAME, initH, nil, nil}
 
 	//fundTx hander
 	fundH := token.TransferHandler(tokencfg)
@@ -63,9 +67,9 @@ func init() {
 	newContractH := share.NewContractHandler(sharecfg)
 	newContractTx := &tx.ChaincodeTx{CC_NAME, newContractH, nil, nil}
 	newContractTx.PreHandlers = append(newContractTx.PreHandlers,
-		reg.RegistrarPreHandler(registrarQuerycfg, newContractH))
-	newContractTx.PreHandlers = append(newContractTx.PreHandlers, tx.AddrCredVerifier{newContractH, nil})
-	newContractTx.PreHandlers = append(newContractTx.PreHandlers, newContractH)
+		reg.RegistrarPreHandler(registrarQuerycfg, newContractH),
+		tx.AddrCredVerifier{newContractH, nil},
+		newContractH)
 	invokeMapper[share.Method_NewContract] = newContractTx
 
 	redeemH := share.RedeemHandler(sharecfg)
@@ -111,29 +115,7 @@ func (t *AECC) updateGlobal(stub shim.ChaincodeStubInterface) error {
 	return nil
 }
 
-func (t *AECC) Init(stub shim.ChaincodeStubInterface,
-	function string, args []string) ([]byte, error) {
-
-	if function == "INIT" {
-		handlers := make(map[string]rpc.DeployHandler)
-
-		handlers[token.DeployMethod] = token.CCDeployHandler(CC_TAG)
-		handlers[reg.DeployMethod] = reg.CCDeployHandler(CC_TAG)
-
-		err := rpc.DeployCC(stub, args, handlers)
-		if err != nil {
-			return nil, err
-		}
-
-		return []byte("OK"), nil
-	} else {
-		return nil, fmt.Errorf("Not support method %s", function)
-	}
-
-}
-
-func (t *AECC) Invoke(stub shim.ChaincodeStubInterface,
-	function string, args []string) ([]byte, error) {
+func (t *AECC) Invoke(stub shim.ChaincodeStubInterface, function string, args []string, readOnly bool) ([]byte, error) {
 
 	err := t.updateGlobal(stub)
 	if err != nil {
@@ -162,11 +144,4 @@ func (t *AECC) Query(stub shim.ChaincodeStubInterface,
 	}
 
 	return h.TxCall(stub, function, args)
-}
-
-func ExportMain() {
-	err := shim.Start(new(AECC))
-	if err != nil {
-		logger.Errorf("Error starting AE chaincode: %s", err)
-	}
 }

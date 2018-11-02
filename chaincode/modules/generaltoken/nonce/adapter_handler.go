@@ -5,7 +5,7 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	ccpb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/shim"
-	txutil "hyperledger.abchain.org/tx"
+	txutil "hyperledger.abchain.org/core/tx"
 )
 
 type nonceQueryHandler struct {

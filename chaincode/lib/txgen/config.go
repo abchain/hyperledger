@@ -2,7 +2,7 @@ package tx
 
 import (
 	_ "errors"
-	"hyperledger.abchain.org/crypto"
+	"hyperledger.abchain.org/core/crypto"
 )
 
 func SimpleTxGen(ccname string) *TxGenerator {

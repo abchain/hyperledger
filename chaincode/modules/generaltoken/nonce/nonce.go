@@ -8,7 +8,7 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/state"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/shim"
-	txutil "hyperledger.abchain.org/tx"
+	txutil "hyperledger.abchain.org/core/tx"
 )
 
 type TokenNonceTx interface {

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/lib/caller"
-	txutil "hyperledger.abchain.org/tx"
+	txutil "hyperledger.abchain.org/core/tx"
 )
 
 type TxGenerator struct {

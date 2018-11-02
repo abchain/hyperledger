@@ -5,7 +5,7 @@ import (
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
-	txutil "hyperledger.abchain.org/tx"
+	txutil "hyperledger.abchain.org/core/tx"
 	"math/big"
 )
 

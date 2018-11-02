@@ -3,7 +3,7 @@ package generaltoken
 import (
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
-	"hyperledger.abchain.org/utils"
+	"hyperledger.abchain.org/core/utils"
 	"math/big"
 )
 

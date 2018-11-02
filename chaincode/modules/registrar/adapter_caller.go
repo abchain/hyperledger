@@ -5,7 +5,7 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	pb "hyperledger.abchain.org/chaincode/modules/registrar/protos"
-	"hyperledger.abchain.org/crypto"
+	"hyperledger.abchain.org/core/crypto"
 )
 
 type GeneralCall struct {

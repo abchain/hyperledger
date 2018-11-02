@@ -6,7 +6,7 @@ import (
 	"github.com/gocraft/web"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
-	"hyperledger.abchain.org/utils"
+	"hyperledger.abchain.org/core/utils"
 	"net/http"
 )
 

@@ -5,7 +5,7 @@ package tx
 import (
 	"errors"
 	"hyperledger.abchain.org/chaincode/shim"
-	txutil "hyperledger.abchain.org/tx"
+	txutil "hyperledger.abchain.org/core/tx"
 	"time"
 )
 

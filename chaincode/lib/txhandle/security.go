@@ -2,8 +2,9 @@ package tx
 
 import (
 	"fmt"
+	"hyperledger.abchain.org/chaincode/impl"
 	"hyperledger.abchain.org/chaincode/shim"
-	txutil "hyperledger.abchain.org/tx"
+	txutil "hyperledger.abchain.org/core/tx"
 	"strings"
 )
 
@@ -12,8 +13,13 @@ type TxMultiAttrVerifier map[string][]string
 
 func (req TxAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, _ txutil.Parser) error {
 
+	attrif, err := impl.GetCallerAttributes(stub)
+	if err != nil {
+		return err
+	}
+
 	for attrkey, expect := range req {
-		attr, err := stub.GetCallerAttribute(attrkey)
+		attr, err := attrif.GetCallerAttribute(attrkey)
 		if err != nil {
 			return err
 		}
@@ -28,8 +34,13 @@ func (req TxAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string
 
 func (req TxMultiAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, _ txutil.Parser) error {
 
+	attrif, err := impl.GetCallerAttributes(stub)
+	if err != nil {
+		return err
+	}
+
 	for attrkey, expects := range req {
-		attr, err := stub.GetCallerAttribute(attrkey)
+		attr, err := attrif.GetCallerAttribute(attrkey)
 		if err != nil {
 			return err
 		}

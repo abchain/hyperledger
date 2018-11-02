@@ -4,8 +4,8 @@ import (
 	"errors"
 	"hyperledger.abchain.org/chaincode/lib/txhandle"
 	"hyperledger.abchain.org/chaincode/shim"
-	"hyperledger.abchain.org/crypto"
-	txutil "hyperledger.abchain.org/tx"
+	"hyperledger.abchain.org/core/crypto"
+	txutil "hyperledger.abchain.org/core/tx"
 )
 
 type regPreHandler struct {

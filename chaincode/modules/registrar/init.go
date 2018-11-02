@@ -6,7 +6,7 @@ import (
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	pb "hyperledger.abchain.org/chaincode/modules/registrar/protos"
 	"hyperledger.abchain.org/chaincode/shim"
-	txutil "hyperledger.abchain.org/tx"
+	txutil "hyperledger.abchain.org/core/tx"
 )
 
 const (

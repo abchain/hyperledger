@@ -11,11 +11,7 @@ type dummyCC struct {
 	*tx.ChaincodeTx
 }
 
-func (c dummyCC) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	return c.TxCall(stub, function, args)
-}
-
-func (c dummyCC) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (c dummyCC) Invoke(stub shim.ChaincodeStubInterface, function string, args []string, _ bool) ([]byte, error) {
 	return c.TxCall(stub, function, args)
 }
 

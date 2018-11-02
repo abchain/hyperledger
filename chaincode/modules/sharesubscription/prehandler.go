@@ -3,7 +3,7 @@ package subscription
 import (
 	"errors"
 	"hyperledger.abchain.org/chaincode/shim"
-	txutil "hyperledger.abchain.org/tx"
+	txutil "hyperledger.abchain.org/core/tx"
 )
 
 func (h *newContractHandler) PreHandling(_ shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {

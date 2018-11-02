@@ -1,11 +1,11 @@
 package registrar
 
 import (
-	pb "hyperledger.abchain.org/chaincode/modules/registrar/protos"
-	"hyperledger.abchain.org/crypto"
-	"hyperledger.abchain.org/utils"
-
 	"errors"
+	"hyperledger.abchain.org/chaincode/impl"
+	pb "hyperledger.abchain.org/chaincode/modules/registrar/protos"
+	"hyperledger.abchain.org/core/crypto"
+	"hyperledger.abchain.org/core/utils"
 )
 
 func (db *registrarTx) registrar(pk *crypto.PublicKey, region string, enable bool) error {
@@ -38,7 +38,12 @@ func (db *registrarTx) registrar(pk *crypto.PublicKey, region string, enable boo
 
 func (db *registrarTx) AdminRegistrar(pk *crypto.PublicKey) error {
 
-	attr, err := db.stub.GetCallerAttribute(db.RegionAttrName)
+	attrif, err := impl.GetCallerAttributes(db.stub)
+	if err != nil {
+		return err
+	}
+
+	attr, err := attrif.GetCallerAttribute(db.RegionAttrName)
 	if err != nil {
 		return err
 	}

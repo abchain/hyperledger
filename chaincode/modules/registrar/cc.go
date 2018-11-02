@@ -5,7 +5,7 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/state"
 	pb "hyperledger.abchain.org/chaincode/modules/registrar/protos"
 	"hyperledger.abchain.org/chaincode/shim"
-	"hyperledger.abchain.org/crypto"
+	"hyperledger.abchain.org/core/crypto"
 )
 
 type RegistrarTx interface {

@@ -1,11 +1,12 @@
 package service
 
 import (
-	"hyperledger.abchain.org/asset/wallet"
+	"github.com/spf13/viper"
+	"hyperledger.abchain.org/applications/asset/wallet"
 	"hyperledger.abchain.org/cases/ae/chaincode/cc"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	"hyperledger.abchain.org/client"
-	"hyperledger.abchain.org/config"
+	"hyperledger.abchain.org/core/config"
 	"path/filepath"
 )
 

@@ -5,8 +5,8 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	ccpb "hyperledger.abchain.org/chaincode/modules/registrar/protos"
 	"hyperledger.abchain.org/chaincode/shim"
-	"hyperledger.abchain.org/crypto"
-	txutil "hyperledger.abchain.org/tx"
+	"hyperledger.abchain.org/core/crypto"
+	txutil "hyperledger.abchain.org/core/tx"
 )
 
 //wrap ccpb.RegPublicKey with ParseAddress interface

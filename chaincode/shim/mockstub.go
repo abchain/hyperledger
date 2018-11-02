@@ -124,7 +124,7 @@ func (stub *MockStub) MockPeerChaincode(invokableChaincodeName string, otherStub
 func (stub *MockStub) MockInit(uuid string, function string, args []string) ([]byte, error) {
 	stub.args = getBytes(function, args)
 	stub.MockTransactionStart(uuid)
-	bytes, err := stub.cc.Init(stub, function, args)
+	bytes, err := stub.cc.Invoke(stub, function, args, true)
 	stub.MockTransactionEnd(uuid, err)
 	return bytes, err
 }
@@ -133,7 +133,7 @@ func (stub *MockStub) MockInit(uuid string, function string, args []string) ([]b
 func (stub *MockStub) MockInvoke(uuid string, function string, args []string) ([]byte, error) {
 	stub.args = getBytes(function, args)
 	stub.MockTransactionStart(uuid)
-	bytes, err := stub.cc.Invoke(stub, function, args)
+	bytes, err := stub.cc.Invoke(stub, function, args, true)
 	stub.MockTransactionEnd(uuid, err)
 	return bytes, err
 }
@@ -142,7 +142,7 @@ func (stub *MockStub) MockInvoke(uuid string, function string, args []string) ([
 func (stub *MockStub) MockQuery(function string, args []string) ([]byte, error) {
 	stub.args = getBytes(function, args)
 	// no transaction needed for queries
-	bytes, err := stub.cc.Invoke(stub, function, args)
+	bytes, err := stub.cc.Invoke(stub, function, args, false)
 	return bytes, err
 }
 

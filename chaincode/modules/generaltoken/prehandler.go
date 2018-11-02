@@ -1,7 +1,7 @@
 package generaltoken
 
 import (
-	txutil "hyperledger.abchain.org/tx"
+	txutil "hyperledger.abchain.org/core/tx"
 )
 
 //and set it as RegistrarPreHandler for registrar
