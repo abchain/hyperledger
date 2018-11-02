@@ -1,9 +1,10 @@
 package subscription
 
 import (
-	token "hyperledger.abchain.org/chaincode/generaltoken"
 	"hyperledger.abchain.org/chaincode/lib/state"
-	pb "hyperledger.abchain.org/chaincode/sharesubscription/protos"
+	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
+	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
+	"hyperledger.abchain.org/chaincode/shim"
 	"hyperledger.abchain.org/crypto"
 	"math/big"
 )
@@ -16,7 +17,7 @@ type ContractTx interface {
 }
 
 type ContractConfig interface {
-	NewTx(interface{}, []byte) ContractTx
+	NewTx(shim.ChaincodeStubInterface, []byte) ContractTx
 }
 
 type StandardContractConfig struct {
@@ -28,7 +29,7 @@ type StandardContractConfig struct {
 type baseContractTx struct {
 	state.StateMap
 	nonce []byte
-	stub  interface{}
+	stub  shim.ChaincodeStubInterface
 	token token.TokenTx
 }
 
@@ -36,7 +37,7 @@ const (
 	contract_tag_prefix = "Subscription_"
 )
 
-func (cfg *StandardContractConfig) NewTx(stub interface{}, nonce []byte) ContractTx {
+func (cfg *StandardContractConfig) NewTx(stub shim.ChaincodeStubInterface, nonce []byte) ContractTx {
 	rootname := contract_tag_prefix + cfg.Tag
 
 	return &baseContractTx{state.NewShimMap(rootname, stub, cfg.Readonly), nonce,

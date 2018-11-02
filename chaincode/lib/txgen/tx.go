@@ -16,7 +16,13 @@ type TxGenerator struct {
 	Ccname        string
 }
 
-func (t *TxGenerator) postHandling(method string, isInvoke bool) ([]byte, error) {
+const (
+	call_deploy = 0
+	call_invoke = 1
+	call_query  = 2
+)
+
+func (t *TxGenerator) postHandling(method string, callwhich int) ([]byte, error) {
 
 	var args []string
 	var err error
@@ -37,10 +43,17 @@ func (t *TxGenerator) postHandling(method string, isInvoke bool) ([]byte, error)
 	}
 
 	if t.Dispatcher != nil {
-		if isInvoke {
+		switch callwhich {
+		case call_deploy:
+			err = t.Dispatcher.Deploy(method, args)
+			return nil, err
+		case call_invoke:
 			return t.Dispatcher.Invoke(method, args)
-		} else {
+		case call_query:
 			return t.Dispatcher.Query(method, args)
+		default:
+			panic("Not a calling method")
+
 		}
 	}
 
@@ -75,7 +88,7 @@ func (t *TxGenerator) Invoke(method string, msg proto.Message) ([]byte, error) {
 		return nil, err
 	}
 
-	return t.postHandling(method, true)
+	return t.postHandling(method, call_invoke)
 }
 
 func (t *TxGenerator) Query(method string, msg proto.Message) ([]byte, error) {
@@ -83,7 +96,7 @@ func (t *TxGenerator) Query(method string, msg proto.Message) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return t.postHandling(method, false)
+	return t.postHandling(method, call_query)
 }
 
 func (t *TxGenerator) methodName(method string) string {

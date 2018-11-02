@@ -2,9 +2,10 @@ package generaltoken
 
 import (
 	"bytes"
-	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
+	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
+	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	"math/big"
 	"testing"
 )
@@ -37,9 +38,8 @@ var tokenQuerycfg = &StandardTokenConfig{nonce.StandardNonceConfig{test_tag, tru
 
 func TestDeployCc(t *testing.T) {
 
+	bolt.Reset()
 	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname)}
-
-	stub.MockTransactionStart("deployment")
 
 	total, ok := big.NewInt(0).SetString(totalToken, 10)
 
@@ -47,30 +47,27 @@ func TestDeployCc(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	deployargs, err := CCDeploy(total, nil)
+	deployTx := DeployCall{txgen.NewDeployTx()}
+	deployTx.Init(total)
+
+	//init bolt and do deploy tx
+	spout.Dispatcher = bolt.GetCaller("deployment",
+		txhandle.DeployTxHandler(map[string]txhandle.TxHandler{DeployMethod: CCDeployHandler(tokencfg)}))
+
+	deployTx.TxGenerator = spout.TxGenerator
+
+	err := deployTx.Deploy("init")
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var h CCDeployHandler = test_tag
-	handlers := make(map[string]rpc.DeployHandler)
-	handlers[DeployMethod] = h
-
-	err = rpc.DeployCC(stub, deployargs, handlers)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(stub.State) != 1 {
+	if len(bolt.Stub().State) != 1 {
 		t.Fatal("Invalid state count")
 	}
 
-	stub.MockTransactionEnd("", err)
-
 	//init bolt and do first query tx
-	spout.Dispatcher = bolt.GetCaller(GlobalQueryHandler(tokenQuerycfg))
+	spout.Dispatcher = bolt.GetQueryer(GlobalQueryHandler(tokenQuerycfg))
 
 	err, data := spout.Global()
 	if err != nil {
@@ -108,27 +105,20 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	spout.Dispatcher = bolt.GetCaller(AssignHandler(tokencfg))
-
-	stub.MockTransactionStart("assigment1")
+	spout.Dispatcher = bolt.GetCaller("assigment1", AssignHandler(tokencfg))
 
 	nc1, err := spout.Assign([]byte(addr1), assignt1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-
-	stub.MockTransactionStart("assigment2")
-
+	spout.Dispatcher = bolt.GetCaller("assigment2", AssignHandler(tokencfg))
 	nc2, err := spout.Assign([]byte(addr2), assignt2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-
-	stub.MockTransactionStart("assigment3")
+	spout.Dispatcher = bolt.GetCaller("assigment3", AssignHandler(tokencfg))
 	fixednc := "fixednc"
 	spout.BeginTx([]byte(fixednc))
 
@@ -137,19 +127,14 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-
-	stub.MockTransactionStart("assigment3_fail")
-
+	spout.Dispatcher = bolt.GetCaller("assigment3_fail", AssignHandler(tokencfg))
 	spout.BeginTx([]byte(fixednc))
 	_, err = spout.Assign([]byte(addr3), assignt3)
 	if err == nil {
 		t.Fatal("Execute duplicated assigment")
 	}
 
-	stub.MockTransactionEnd("", err)
-
-	spout.Dispatcher = bolt.GetCaller(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
+	spout.Dispatcher = bolt.GetQueryer(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
 
 	err, nc1data := spout.Nonce(nc1)
 	if nc1data == nil {
@@ -174,7 +159,7 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal("Get nonce key fail")
 	}
 
-	spout.Dispatcher = bolt.GetCaller(GlobalQueryHandler(tokenQuerycfg))
+	spout.Dispatcher = bolt.GetQueryer(GlobalQueryHandler(tokenQuerycfg))
 
 	err, gdata := spout.Global()
 	if err != nil {
@@ -217,26 +202,20 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	spout.Dispatcher = bolt.GetCaller(TransferHandler(tokencfg))
-
-	stub.MockTransactionStart("transfer1")
+	spout.Dispatcher = bolt.GetCaller("transfer1", TransferHandler(tokencfg))
 
 	nc1, err := spout.Transfer([]byte(addr1), []byte(addr4), transt1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-
-	stub.MockTransactionStart("transfer2")
+	spout.Dispatcher = bolt.GetCaller("transfer2", TransferHandler(tokencfg))
 
 	nc2, err := spout.Transfer([]byte(addr2), []byte(addr4), transt2)
 	if err != nil {
 	}
 
-	stub.MockTransactionEnd("", err)
-
-	stub.MockTransactionStart("transfer3")
+	spout.Dispatcher = bolt.GetCaller("transfer3", TransferHandler(tokencfg))
 	fixednc := "fixednc"
 	spout.BeginTx([]byte(fixednc))
 
@@ -245,9 +224,7 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-
-	stub.MockTransactionStart("transfer3_fail")
+	spout.Dispatcher = bolt.GetCaller("transfer3_fail", TransferHandler(tokencfg))
 
 	spout.BeginTx([]byte(fixednc))
 	_, err = spout.Transfer([]byte(addr3), []byte(addr1), transt3)
@@ -255,9 +232,7 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("Execute duplicated transfer")
 	}
 
-	stub.MockTransactionEnd("", err)
-
-	stub.MockTransactionStart("transfer3_fail")
+	spout.Dispatcher = bolt.GetCaller("transfer3_fail2", TransferHandler(tokencfg))
 
 	transtf, ok := big.NewInt(0).SetString(transfail, 10)
 
@@ -271,9 +246,7 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("Execute overflow transfer")
 	}
 
-	stub.MockTransactionEnd("", err)
-
-	spout.Dispatcher = bolt.GetCaller(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
+	spout.Dispatcher = bolt.GetQueryer(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
 
 	err, nc1data := spout.Nonce(nc1)
 	if nc1data == nil {
@@ -298,7 +271,7 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("Get nonce key fail")
 	}
 
-	spout.Dispatcher = bolt.GetCaller(TokenQueryHandler(tokenQuerycfg))
+	spout.Dispatcher = bolt.GetQueryer(TokenQueryHandler(tokenQuerycfg))
 
 	addr1bal, ok := big.NewInt(0).SetString(result1, 10)
 

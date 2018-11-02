@@ -4,6 +4,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	ccpb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
+	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/tx"
 )
 
@@ -18,7 +19,7 @@ func NonceQueryHandler(cfg NonceConfig) *nonceQueryHandler {
 
 func (h *nonceQueryHandler) Msg() proto.Message { return &h.msg }
 
-func (h *nonceQueryHandler) Call(stub interface{}, parser txutil.Parser) ([]byte, error) {
+func (h *nonceQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 
 	msg := &h.msg
 

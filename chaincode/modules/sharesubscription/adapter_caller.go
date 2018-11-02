@@ -2,10 +2,10 @@ package subscription
 
 import (
 	"errors"
-	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
-	pb "hyperledger.abchain.org/chaincode/sharesubscription/protos"
+	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
+	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
 	"hyperledger.abchain.org/crypto"
 	txutil "hyperledger.abchain.org/tx"
 	"math/big"

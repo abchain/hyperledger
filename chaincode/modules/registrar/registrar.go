@@ -1,10 +1,9 @@
 package registrar
 
 import (
-	_ "github.com/abchain/fabric/core/chaincode/shim"
-	"hyperledger.abchain.org/chaincode/lib/util"
-	pb "hyperledger.abchain.org/chaincode/registrar/protos"
+	pb "hyperledger.abchain.org/chaincode/modules/registrar/protos"
 	"hyperledger.abchain.org/crypto"
+	"hyperledger.abchain.org/utils"
 
 	"errors"
 )
@@ -27,17 +26,24 @@ func (db *registrarTx) registrar(pk *crypto.PublicKey, region string, enable boo
 		return errors.New("Public key has been reg")
 	}
 
+	t, _ := db.stub.GetTxTime()
 	data = &pb.RegData{
 		pk.PBMessage(),
-		util.GetTxID(db.stub),
-		util.GetTimeStamp(db.stub), region, enable, nil,
+		db.stub.GetTxID(),
+		utils.CreatePBTimestamp(t), region, enable, nil,
 	}
 
 	return db.Set(regkey, data)
 }
 
 func (db *registrarTx) AdminRegistrar(pk *crypto.PublicKey) error {
-	return db.registrar(pk, util.GetAttributes(db.stub, db.RegionAttrName), true)
+
+	attr, err := db.stub.GetCallerAttribute(db.RegionAttrName)
+	if err != nil {
+		return err
+	}
+
+	return db.registrar(pk, string(attr), true)
 }
 
 func (r *registrarTx) Registrar(pk *crypto.PublicKey, region string) ([]byte, error) {

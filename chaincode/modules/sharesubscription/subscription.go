@@ -3,11 +3,10 @@ package subscription
 import (
 	"bytes"
 	"errors"
-	"hyperledger.abchain.org/chaincode/lib/util"
-	pb "hyperledger.abchain.org/chaincode/sharesubscription/protos"
+	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
 	"hyperledger.abchain.org/crypto"
 	tx "hyperledger.abchain.org/tx"
-	cryptoUtil "hyperledger.abchain.org/utils"
+	"hyperledger.abchain.org/utils"
 	"math/big"
 	"sort"
 	"strconv"
@@ -92,7 +91,7 @@ func hashContract(contract *pb.Contract, nonce []byte) (*tx.Address, error) {
 
 	var maphash []byte
 	for _, v := range contract.Status {
-		maphashItem, err := cryptoUtil.DoubleSHA256(
+		maphashItem, err := utils.DoubleSHA256(
 			bytes.Join([][]byte{
 				[]byte(v.MemberID),
 				[]byte(strconv.Itoa(int(v.Weight)))}, nil))
@@ -115,7 +114,7 @@ func hashContract(contract *pb.Contract, nonce []byte) (*tx.Address, error) {
 		}
 	}
 
-	hash, err := cryptoUtil.DoubleSHA256(bytes.Join([][]byte{
+	hash, err := utils.DoubleSHA256(bytes.Join([][]byte{
 		pkAddr.Hash, maphash, nonce}, nil))
 	if err != nil {
 		return nil, err
@@ -138,7 +137,8 @@ func (db *baseContractTx) New(contract map[string]uint32,
 	}
 
 	//Ts is not the part of new contract!
-	pcon.ContractTs = util.GetTimeStamp(db.stub)
+	t, _ := db.stub.GetTxTime()
+	pcon.ContractTs = utils.CreatePBTimestamp(t)
 
 	err = db.Set(conAddr.ToString(), pcon)
 	if err != nil {

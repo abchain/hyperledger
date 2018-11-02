@@ -2,12 +2,11 @@ package registrar
 
 import (
 	"bytes"
-	"github.com/abchain/fabric/core/chaincode/shim"
-	token "hyperledger.abchain.org/chaincode/generaltoken"
-	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
+	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
+	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	"hyperledger.abchain.org/crypto"
 	tx "hyperledger.abchain.org/tx"
 	"math/big"
@@ -30,8 +29,7 @@ const (
 )
 
 var spout *GeneralCall
-var bolt *rpc.DummyCallerBuilder
-var stub *shim.MockStub
+var bolt = &rpc.DummyCallerBuilder{CCName: test_ccname}
 
 var cfg = &StandardRegistrarConfig{test_tag, false, managattrN, regionattrN}
 var querycfg = &StandardRegistrarConfig{test_tag, true, managattrN, regionattrN}
@@ -42,13 +40,10 @@ var privkey *crypto.PrivateKey
 var privkeyNotReg *crypto.PrivateKey
 
 func assign(t *testing.T) {
-	stub = shim.NewMockStub("RegTest", nil)
+	bolt.Reset()
+
 	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname)}
-	bolt = &rpc.DummyCallerBuilder{test_ccname, stub}
-
 	tokenSpout := &token.GeneralCall{txgen.SimpleTxGen(test_ccname)}
-
-	stub.MockTransactionStart("deployment")
 
 	total, ok := big.NewInt(0).SetString(totalToken, 10)
 
@@ -56,24 +51,25 @@ func assign(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	deployargs, err := token.CCDeploy(total, nil)
+	deployTx := txgen.NewDeployTx()
+	regD := &DeployCall{deployTx}
+	regD.InitDebugMode()
+	tokenD := token.DeployCall{deployTx}
+	tokenD.Init(total)
+
+	spout.Dispatcher = bolt.GetCaller("deployment",
+		txhandle.DeployTxHandler(map[string]txhandle.TxHandler{
+			DeployMethod:       CCDeployHandler(cfg),
+			token.DeployMethod: token.CCDeployHandler(tokencfg),
+		}))
+
+	deployTx.TxGenerator = spout.TxGenerator
+
+	err := deployTx.Deploy("init")
 
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	handlers := map[string]rpc.DeployHandler{
-		token.DeployMethod: token.CCDeployHandler(test_tag)}
-
-	err = rpc.DeployCC(stub, deployargs, handlers)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	stub.MockTransactionEnd("", err)
-
-	tokenSpout.Dispatcher = bolt.GetCaller(token.AssignHandler(tokencfg))
 
 	privkey, err = crypto.NewPrivatekey(crypto.DefaultCurveType)
 	if err != nil {
@@ -90,26 +86,22 @@ func assign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionStart("assigment1")
-
 	assignt1, ok := big.NewInt(0).SetString(assign1, 10)
 
 	if !ok {
 		t.Fatal("parse int fail")
 	}
 
+	tokenSpout.Dispatcher = bolt.GetCaller("assigment1", token.AssignHandler(tokencfg))
 	_, err = tokenSpout.Assign(addr.Hash, assignt1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
 	addr, err = tx.NewAddressFromPrivateKey(privkeyNotReg)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	stub.MockTransactionStart("assigment2")
 
 	assignt2, ok := big.NewInt(0).SetString(assign2, 10)
 
@@ -117,43 +109,36 @@ func assign(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
+	tokenSpout.Dispatcher = bolt.GetCaller("assigment2", token.AssignHandler(tokencfg))
 	_, err = tokenSpout.Assign(addr.Hash, assignt2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
 	return
 }
 
 func TestReg(t *testing.T) {
 	assign(t)
 
-	spout.Dispatcher = bolt.GetCaller(RegistrarHandler(cfg))
-
-	stub.MockTransactionStart("registrar1")
-
+	spout.Dispatcher = bolt.GetCaller("registrar1", RegistrarHandler(cfg))
 	qkey, err := spout.Registrar(privkey.Public(), "Yosemite")
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	stub.MockTransactionEnd("", err)
 
 	subk, err := privkey.ChildKey(big.NewInt(184467442737))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionStart("registrar2")
-
+	spout.Dispatcher = bolt.GetCaller("registrar2", RegistrarHandler(cfg))
 	_, err = spout.Registrar(subk.Public(), "Yosemite")
 	if err == nil {
 		t.Fatal("reg a childkey")
 	}
 
-	stub.MockTransactionEnd("", err)
-	spout.Dispatcher = bolt.GetCaller(QueryPkHandler(querycfg))
+	spout.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
 
 	err, data := spout.Pubkey(qkey)
 	if err != nil {
@@ -181,17 +166,14 @@ func TestReg(t *testing.T) {
 		t.Fatal("wrong pkey index")
 	}
 
-	stub.MockTransactionStart("active")
-
-	spout.Dispatcher = bolt.GetCaller(ActivePkHandler(cfg))
+	spout.Dispatcher = bolt.GetCaller("active", ActivePkHandler(cfg))
 
 	err = spout.ActivePk(qkey)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-	spout.Dispatcher = bolt.GetCaller(QueryPkHandler(querycfg))
+	spout.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
 
 	err, data = spout.Pubkey(qkey)
 	if err != nil {
@@ -207,17 +189,13 @@ func TestReg(t *testing.T) {
 func TestDirectReg(t *testing.T) {
 	assign(t)
 
-	spout.Dispatcher = bolt.GetCaller(AdminRegistrarHandler(cfg))
-
-	stub.MockTransactionStart("adminreg1")
-
+	spout.Dispatcher = bolt.GetCaller("adminreg1", AdminRegistrarHandler(cfg))
 	err := spout.AdminRegistrar(privkey.Public())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-	spout.Dispatcher = bolt.GetCaller(QueryPkHandler(querycfg))
+	spout.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
 
 	err, data := spout.Pubkey(privkey.Public().RootFingerPrint)
 	if err != nil {
@@ -248,14 +226,14 @@ func TestFund(t *testing.T) {
 
 	tokenSpout := &token.GeneralCall{txgen.DefaultTxGen(test_ccname, privkey)}
 	h := token.TransferHandler(tokencfg)
-	caller := bolt.GetCaller(h)
+	caller := bolt.GetCaller("transfer1", h)
 	tokenSpout.Dispatcher = caller
-	err := bolt.AppendPreHandler(caller, txhandle.AddrCredVerifier{h, nil})
+	err := bolt.AppendPreHandler(txhandle.AddrCredVerifier{h, nil})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = bolt.AppendPreHandler(caller, RegistrarPreHandler(querycfg, h))
+	err = bolt.AppendPreHandler(RegistrarPreHandler(querycfg, h))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,15 +258,12 @@ func TestFund(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionStart("transfer1")
-
 	_, err = tokenSpout.Transfer(addr1.Hash, addr2.Hash, transt1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-	stub.MockTransactionStart("transfer2")
+	bolt.NewTxID("transfer2")
 	tokenSpout.Credgenerator = txgen.NewSingleKeyCred(privkeyNotReg)
 
 	_, err = tokenSpout.Transfer(addr2.Hash, addr1.Hash, transt2)
@@ -296,8 +271,7 @@ func TestFund(t *testing.T) {
 		t.Fatal("Do transfer without reg publickey")
 	}
 
-	stub.MockTransactionEnd("", err)
-	tokenSpout.Dispatcher = bolt.GetCaller(token.TokenQueryHandler(tokenQuerycfg))
+	tokenSpout.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
 
 	addr1bal, ok := big.NewInt(0).SetString(result1, 10)
 

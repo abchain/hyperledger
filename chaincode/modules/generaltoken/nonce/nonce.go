@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-
 	"hyperledger.abchain.org/chaincode/lib/state"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/shim"
@@ -18,7 +17,7 @@ type TokenNonceTx interface {
 }
 
 type NonceConfig interface {
-	NewTx(interface{}) TokenNonceTx
+	NewTx(shim.ChaincodeStubInterface) TokenNonceTx
 }
 
 type StandardNonceConfig struct {

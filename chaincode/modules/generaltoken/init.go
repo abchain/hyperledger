@@ -2,9 +2,10 @@ package generaltoken
 
 import (
 	"errors"
-
-	"hyperledger.abchain.org/chaincode/lib/caller"
+	"github.com/golang/protobuf/proto"
+	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
+	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/tx"
 	"math/big"
 )
@@ -16,47 +17,69 @@ const (
 
 var DeployMethod = deployMethod
 
-func CCDeploy(amount *big.Int, args []string) ([]string, error) {
-	msg := &pb.BaseToken{
-		amount.Bytes(),
-		nil,
-	}
-
-	return rpc.BuildDeployArg(deployMethod, msg, args)
+type DeployCall struct {
+	*txgen.DeployTxCall
 }
 
-type CCDeployHandler string
+func (i *DeployCall) getParam() *pb.BaseToken {
 
-func (tag CCDeployHandler) Call(stub interface{}, deployarg []byte) error {
-	msg := &pb.BaseToken{}
-	err := rpc.DecodeRPCResult(msg, deployarg)
-	if err != nil {
-		return err
+	if v, ok := i.InitParams[deployMethod]; ok {
+		return v.(*pb.BaseToken)
+	} else {
+		ret := new(pb.BaseToken)
+		i.InitParams[deployMethod] = ret
+		return ret
 	}
+}
 
-	cfg := StandardTokenConfig{}
-	cfg.Tag = string(tag)
-	cfg.Readonly = false
-	token := cfg.NewTx(stub, []byte("DEPLOYTXS"))
+func (i *DeployCall) Init(amount *big.Int) {
 
-	err = token.Init(toAmount(msg.TotalTokens))
-	if err != nil {
-		return err
+	msg := i.getParam()
+	msg.TotalTokens = amount.Bytes()
+}
+
+func (i *DeployCall) Assign(to []byte, amount *big.Int) {
+
+	msg := i.getParam()
+	msg.Assigns = append(msg.Assigns, &pb.BaseToken_Assign{
+		Recv:   txutil.NewAddressFromHash(to).PBMessage(),
+		Amount: amount.Bytes(),
+	})
+}
+
+type initHandler struct {
+	msg pb.BaseToken
+	TokenConfig
+}
+
+func CCDeployHandler(cfg TokenConfig) *initHandler {
+	return &initHandler{TokenConfig: cfg}
+}
+
+func (h *initHandler) Msg() proto.Message { return &h.msg }
+
+func (h *initHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := &h.msg
+
+	token := h.NewTx(stub, parser.GetNounce())
+
+	if err := token.Init(toAmount(msg.TotalTokens)); err != nil {
+		return nil, err
 	}
 
 	for _, assign := range msg.Assigns {
 		addr, err := txutil.NewAddressFromPBMessage(assign.Recv)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		_, err = token.Assign(addr.Hash, toAmount(assign.Amount))
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return []byte("Ok"), nil
 
 }
 

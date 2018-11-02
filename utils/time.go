@@ -1,6 +1,9 @@
 package utils
 
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+	"time"
+)
 
 // if t1 > t2, return 1
 // else if t1 < t2, return -1
@@ -18,4 +21,14 @@ func ComparePBTimestamp(t1 *google_protobuf.Timestamp, t2 *google_protobuf.Times
 	} else {
 		return 0
 	}
+}
+
+func CreatePBTimestamp(t time.Time) *google_protobuf.Timestamp {
+
+	ret := new(google_protobuf.Timestamp)
+
+	ret.Seconds = t.Unix()
+	ret.Nanos = int32(t.Nanosecond())
+
+	return ret
 }

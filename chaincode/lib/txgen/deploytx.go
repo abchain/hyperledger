@@ -1,28 +1,42 @@
 package tx
 
 import (
-	"errors"
 	"github.com/golang/protobuf/proto"
-	"hyperledger.abchain.org/chaincode/lib/caller"
-	txutil "hyperledger.abchain.org/tx"
+	pb "hyperledger.abchain.org/protos"
 )
 
 type DeployTxCall struct {
+	InitParams map[string]proto.Message
 	*TxGenerator
 }
 
-func (i *GeneralCall) BuildDeployArg(from []byte, to []byte, amount *big.Int) ([]byte, error) {
+func NewDeployTx() *DeployTxCall {
 
-	msg := &pb.SimpleFund{
-		amount.Bytes(),
-		txutil.NewAddressFromHash(to).PBMessage(),
-		txutil.NewAddressFromHash(from).PBMessage(),
+	ret := new(DeployTxCall)
+	ret.InitParams = make(map[string]proto.Message)
+
+	return ret
+}
+
+func (i *DeployTxCall) Deploy(method string) error {
+
+	msg := new(pb.DeployTx)
+	msg.InitParams = make(map[string][]byte)
+
+	for method, v := range i.InitParams {
+		payload, err := proto.Marshal(v)
+		if err != nil {
+			return err
+		}
+
+		msg.InitParams[method] = payload
 	}
 
-	_, err := i.Invoke(Method_Transfer, msg)
+	err := i.txcall(method, msg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return nonce.GeneralTokenNonceKey(i.GetBuilder().GetNonce(), from, to, amount.Bytes()), nil
+	_, err = i.postHandling(method, call_deploy)
+	return err
 }

@@ -2,11 +2,11 @@ package subscription
 
 import (
 	_ "bytes"
-	"github.com/abchain/fabric/core/chaincode/shim"
-	token "hyperledger.abchain.org/chaincode/generaltoken"
-	"hyperledger.abchain.org/chaincode/generaltoken/nonce"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
+	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
+	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
+	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	"hyperledger.abchain.org/crypto"
 	tx "hyperledger.abchain.org/tx"
 	"math/big"
@@ -36,8 +36,7 @@ const (
 
 var spout *GeneralCall
 var tokenSpout *token.GeneralCall
-var bolt *rpc.DummyCallerBuilder
-var stub *shim.MockStub
+var bolt = &rpc.DummyCallerBuilder{CCName: test_ccname}
 var tokencfg = &token.StandardTokenConfig{nonce.StandardNonceConfig{test_tag, false}}
 var tokenQuerycfg = &token.StandardTokenConfig{nonce.StandardNonceConfig{test_tag, true}}
 var cfg = &StandardContractConfig{test_tag, false, tokencfg}
@@ -63,12 +62,10 @@ func initContract(t *testing.T) {
 func initTest(t *testing.T) {
 
 	//we only use the db in stub and never do mocking from chaincode interface
-	stub = shim.NewMockStub("ShareTest", nil)
+	bolt.Reset()
 
 	tokenSpout = &token.GeneralCall{txgen.SimpleTxGen(test_ccname)}
-	bolt = &rpc.DummyCallerBuilder{test_ccname, stub}
-
-	stub.MockTransactionStart("deployment")
+	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname), false}
 
 	total, ok := big.NewInt(0).SetString(totalToken, 10)
 
@@ -76,24 +73,22 @@ func initTest(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	deployargs, err := token.CCDeploy(total, nil)
+	deployTx := &token.DeployCall{txgen.NewDeployTx()}
+
+	tokenSpout.Dispatcher = bolt.GetCaller("deployment",
+		txhandle.DeployTxHandler(map[string]txhandle.TxHandler{
+			token.DeployMethod: token.CCDeployHandler(tokencfg),
+		}))
+
+	deployTx.TxGenerator = tokenSpout.TxGenerator
+	deployTx.Init(total)
+
+	err := deployTx.Deploy("init")
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var h token.CCDeployHandler = test_tag
-	handlers := make(map[string]rpc.DeployHandler)
-	handlers[token.DeployMethod] = h
-
-	err = rpc.DeployCC(stub, deployargs, handlers)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	stub.MockTransactionEnd("", err)
-	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname), false}
 }
 
 func TestContract(t *testing.T) {
@@ -104,11 +99,8 @@ func TestContract(t *testing.T) {
 	spout.Credgenerator = txgen.NewSingleKeyCred(priv)
 
 	contractH := NewContractHandler(cfg)
-	caller := bolt.GetCaller(contractH)
-	bolt.AppendPreHandler(caller, contractH)
-	spout.Dispatcher = caller
-
-	stub.MockTransactionStart("contract")
+	spout.Dispatcher = bolt.GetCaller("contract", contractH)
+	bolt.AppendPreHandler(contractH)
 
 	if err != nil {
 		t.Fatal(err)
@@ -119,8 +111,7 @@ func TestContract(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-	spout.Dispatcher = bolt.GetCaller(QueryHandler(querycfg))
+	spout.Dispatcher = bolt.GetQueryer(QueryHandler(querycfg))
 
 	err, cont := spout.Query(addr)
 	if err != nil {
@@ -155,22 +146,18 @@ func TestContract(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	stub.MockTransactionStart("assign")
-	tokenSpout.Dispatcher = bolt.GetCaller(token.AssignHandler(tokencfg))
+	tokenSpout.Dispatcher = bolt.GetCaller("assign", token.AssignHandler(tokencfg))
 
 	_, err = tokenSpout.Assign(addr, assignt1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-	stub.MockTransactionStart("redeem1")
-	spout.Dispatcher = bolt.GetCaller(RedeemHandler(cfg))
+	spout.Dispatcher = bolt.GetCaller("redeem1", RedeemHandler(cfg))
 
 	_, err = spout.Redeem(addr, []byte(addr1), big.NewInt(0), nil)
 
-	stub.MockTransactionEnd("", err)
-	tokenSpout.Dispatcher = bolt.GetCaller(token.TokenQueryHandler(tokenQuerycfg))
+	tokenSpout.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
 
 	err, data1 := tokenSpout.Account([]byte(addr1))
 	if err != nil {
@@ -193,15 +180,13 @@ func TestContract(t *testing.T) {
 		t.Fatalf("wrong redeem amount: %s", bal.String())
 	}
 
-	stub.MockTransactionStart("redeem2")
-
+	spout.Dispatcher = bolt.GetCaller("redeem2", RedeemHandler(cfg))
 	_, err = spout.Redeem(addr, []byte(addr2), bal, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	stub.MockTransactionEnd("", err)
-
+	tokenSpout.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
 	err, data2 := tokenSpout.Account([]byte(addr2))
 	if err != nil {
 		t.Fatal(err)
