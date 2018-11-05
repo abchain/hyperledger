@@ -36,6 +36,11 @@ type globalQueryHandler struct {
 	TokenConfig
 }
 
+type initHandler struct {
+	msg ccpb.BaseToken
+	TokenConfig
+}
+
 func TransferHandler(cfg TokenConfig) *transferHandler {
 	return &transferHandler{TokenConfig: cfg}
 }
@@ -51,10 +56,15 @@ func GlobalQueryHandler(cfg TokenConfig) *globalQueryHandler {
 	return &globalQueryHandler{TokenConfig: cfg}
 }
 
+func InitHandler(cfg TokenConfig) *initHandler {
+	return &initHandler{TokenConfig: cfg}
+}
+
 func (h *transferHandler) Msg() proto.Message    { return &h.msg }
 func (h *assignHandler) Msg() proto.Message      { return &h.msg }
 func (h *tokenQueryHandler) Msg() proto.Message  { return &h.msg }
 func (h *globalQueryHandler) Msg() proto.Message { return &h.msg }
+func (h *initHandler) Msg() proto.Message        { return &h.msg }
 
 func (h *transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
@@ -113,4 +123,17 @@ func (h *globalQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 	}
 
 	return rpc.EncodeRPCResult(data)
+}
+
+func (h *initHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := &h.msg
+
+	token := h.NewTx(stub, parser.GetNounce())
+
+	if err := token.Init(toAmount(msg.TotalTokens)); err != nil {
+		return nil, err
+	}
+
+	return []byte("Ok"), nil
+
 }

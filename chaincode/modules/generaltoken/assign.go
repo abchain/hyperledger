@@ -6,6 +6,10 @@ import (
 	"math/big"
 )
 
+const (
+	deployName = ":deploy"
+)
+
 func (db *baseTokenTx) Assign(to []byte, amount *big.Int) ([]byte, error) {
 
 	global := &pb.TokenGlobalData{}

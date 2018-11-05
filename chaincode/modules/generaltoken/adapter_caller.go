@@ -1,7 +1,6 @@
 package generaltoken
 
 import (
-	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
@@ -10,10 +9,11 @@ import (
 )
 
 type GeneralCall struct {
-	*txgen.TxGenerator
+	txgen.TxCaller
 }
 
 const (
+	Method_Init        = "TOKEN.INIT"
 	Method_Transfer    = "TOKEN.TRANSFER"
 	Method_Assign      = "TOKEN.ASSIGN"
 	Method_QueryToken  = "TOKEN.BALANCEQUERY"
@@ -29,12 +29,12 @@ func (i *GeneralCall) Transfer(from []byte, to []byte, amount *big.Int) ([]byte,
 		txutil.NewAddressFromHash(from).PBMessage(),
 	}
 
-	_, err := i.Invoke(Method_Transfer, msg)
+	err := i.Invoke(Method_Transfer, msg)
 	if err != nil {
 		return nil, err
 	}
 
-	return nonce.GeneralTokenNonceKey(i.GetBuilder().GetNonce(), from, to, amount.Bytes()), nil
+	return nonce.GeneralTokenNonceKey(i.Result().Nonce(), from, to, amount.Bytes()), nil
 }
 
 func (i *GeneralCall) Assign(to []byte, amount *big.Int) ([]byte, error) {
@@ -45,12 +45,19 @@ func (i *GeneralCall) Assign(to []byte, amount *big.Int) ([]byte, error) {
 		nil,
 	}
 
-	_, err := i.Invoke(Method_Assign, msg)
+	err := i.Invoke(Method_Assign, msg)
 	if err != nil {
 		return nil, err
 	}
 
-	return nonce.GeneralTokenNonceKey(i.GetBuilder().GetNonce(), nil, to, amount.Bytes()), nil
+	return nonce.GeneralTokenNonceKey(i.Result().Nonce(), nil, to, amount.Bytes()), nil
+}
+
+func (i *GeneralCall) Init(amount *big.Int) error {
+
+	msg := &pb.BaseToken{TotalTokens: amount.Bytes()}
+
+	return i.Invoke(Method_Init, msg)
 }
 
 func (i *GeneralCall) Account(addr []byte) (error, *pb.AccountData) {
@@ -64,7 +71,7 @@ func (i *GeneralCall) Account(addr []byte) (error, *pb.AccountData) {
 
 	d := &pb.AccountData{}
 
-	err = rpc.DecodeRPCResult(d, ret)
+	err = txgen.SyncQueryResult(d, ret)
 	if err != nil {
 		return err, nil
 	}
@@ -82,7 +89,7 @@ func (i *GeneralCall) Nonce(key []byte) (error, *pb.NonceData) {
 
 	d := &pb.NonceData{}
 
-	err = rpc.DecodeRPCResult(d, ret)
+	err = txgen.SyncQueryResult(d, ret)
 	if err != nil {
 		return err, nil
 	}
@@ -100,7 +107,7 @@ func (i *GeneralCall) Global() (error, *pb.TokenGlobalData) {
 
 	d := &pb.TokenGlobalData{}
 
-	err = rpc.DecodeRPCResult(d, ret)
+	err = txgen.SyncQueryResult(d, ret)
 	if err != nil {
 		return err, nil
 	}

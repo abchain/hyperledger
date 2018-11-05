@@ -7,10 +7,10 @@ import (
 
 func SimpleTxGen(ccname string) *TxGenerator {
 
-	return &TxGenerator{nil, nil, nil, nil, nil, ccname}
+	return &TxGenerator{Ccname: ccname}
 }
 
 func DefaultTxGen(ccname string, privkey *crypto.PrivateKey) *TxGenerator {
 
-	return &TxGenerator{nil, nil, NewSingleKeyCred(privkey), nil, nil, ccname}
+	return &TxGenerator{Credgenerator: NewSingleKeyCred(privkey), Ccname: ccname}
 }

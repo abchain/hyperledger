@@ -74,3 +74,19 @@ func (db *baseTokenTx) Account(addr []byte) (error, *pb.AccountData) {
 	return nil, acc
 
 }
+
+func (db *baseTokenTx) Init(total *big.Int) error {
+	deploy := &pb.TokenGlobalData{}
+	err := db.Get(deployName, deploy)
+
+	if deploy.TotalTokens != nil {
+		return errors.New("Can not re-deploy existed data")
+	}
+
+	err = db.Set(deployName, &pb.TokenGlobalData{total.Bytes(), total.Bytes()})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

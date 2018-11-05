@@ -31,12 +31,6 @@ message QueryGlobal {}
 
 message BaseToken{
 	bytes totalTokens = 1;
-
-	message Assign {
-		protos.TxAddr  recv = 1;
-		bytes   amount = 2;
-	}
-	repeated Assign assigns = 2;		 
 }
 
 message Assign {

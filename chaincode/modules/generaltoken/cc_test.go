@@ -31,7 +31,7 @@ const (
 	addr4      = "BigBrother"
 )
 
-var spout *GeneralCall
+var spoutcore = txgen.SimpleTxGen(test_ccname)
 var bolt = &rpc.DummyCallerBuilder{CCName: test_ccname}
 var tokencfg = &StandardTokenConfig{nonce.StandardNonceConfig{test_tag, false}}
 var tokenQuerycfg = &StandardTokenConfig{nonce.StandardNonceConfig{test_tag, true}}
@@ -39,7 +39,6 @@ var tokenQuerycfg = &StandardTokenConfig{nonce.StandardNonceConfig{test_tag, tru
 func TestDeployCc(t *testing.T) {
 
 	bolt.Reset()
-	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname)}
 
 	total, ok := big.NewInt(0).SetString(totalToken, 10)
 
@@ -47,16 +46,21 @@ func TestDeployCc(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	deployTx := DeployCall{txgen.NewDeployTx()}
-	deployTx.Init(total)
+	deployer := &txgen.BatchTxCall{}
+	deployer.TxGenerator = spoutcore
+	spout := &GeneralCall{deployer}
+	err := spout.Init(total)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	//init bolt and do deploy tx
-	spout.Dispatcher = bolt.GetCaller("deployment",
-		txhandle.DeployTxHandler(map[string]txhandle.TxHandler{DeployMethod: CCDeployHandler(tokencfg)}))
+	spoutcore.SetDeploy()
+	spoutcore.Dispatcher = bolt.GetCaller("deployment",
+		txhandle.BatchTxHandler(map[string]*txhandle.ChaincodeTx{
+			Method_Init: &txhandle.ChaincodeTx{test_ccname, InitHandler(tokencfg), nil, nil}}))
 
-	deployTx.TxGenerator = spout.TxGenerator
-
-	err := deployTx.Deploy("init")
+	err = deployer.CommitBatch("init")
 
 	if err != nil {
 		t.Fatal(err)
@@ -66,8 +70,9 @@ func TestDeployCc(t *testing.T) {
 		t.Fatal("Invalid state count")
 	}
 
+	spout = &GeneralCall{spoutcore}
 	//init bolt and do first query tx
-	spout.Dispatcher = bolt.GetQueryer(GlobalQueryHandler(tokenQuerycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(GlobalQueryHandler(tokenQuerycfg))
 
 	err, data := spout.Global()
 	if err != nil {
@@ -86,6 +91,7 @@ func TestDeployCc(t *testing.T) {
 func TestAssignCc(t *testing.T) {
 
 	TestDeployCc(t)
+	spout := &GeneralCall{spoutcore}
 
 	assignt1, ok := big.NewInt(0).SetString(assign1, 10)
 
@@ -105,36 +111,44 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	spout.Dispatcher = bolt.GetCaller("assigment1", AssignHandler(tokencfg))
+	spoutcore.Dispatcher = bolt.GetCaller("assigment1", AssignHandler(tokencfg))
+	spoutcore.BeginTx(nil)
 
 	nc1, err := spout.Assign([]byte(addr1), assignt1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	spout.Dispatcher = bolt.GetCaller("assigment2", AssignHandler(tokencfg))
+	spoutcore.Dispatcher = bolt.GetCaller("assigment2", AssignHandler(tokencfg))
+	spoutcore.BeginTx(nil)
+
 	nc2, err := spout.Assign([]byte(addr2), assignt2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	spout.Dispatcher = bolt.GetCaller("assigment3", AssignHandler(tokencfg))
+	spoutcore.Dispatcher = bolt.GetCaller("assigment3", AssignHandler(tokencfg))
 	fixednc := "fixednc"
-	spout.BeginTx([]byte(fixednc))
+	spoutcore.BeginTx([]byte(fixednc))
 
 	nc3, err := spout.Assign([]byte(addr3), assignt3)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	spout.Dispatcher = bolt.GetCaller("assigment3_fail", AssignHandler(tokencfg))
-	spout.BeginTx([]byte(fixednc))
+	spoutcore.Dispatcher = bolt.GetCaller("assigment3_fail", AssignHandler(tokencfg))
+	spoutcore.BeginTx([]byte(fixednc))
 	_, err = spout.Assign([]byte(addr3), assignt3)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = spoutcore.Result().TxID()
 	if err == nil {
 		t.Fatal("Execute duplicated assigment")
 	}
 
-	spout.Dispatcher = bolt.GetQueryer(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
+	spoutcore.Dispatcher = bolt.GetQueryer(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
 
 	err, nc1data := spout.Nonce(nc1)
 	if nc1data == nil {
@@ -159,7 +173,7 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal("Get nonce key fail")
 	}
 
-	spout.Dispatcher = bolt.GetQueryer(GlobalQueryHandler(tokenQuerycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(GlobalQueryHandler(tokenQuerycfg))
 
 	err, gdata := spout.Global()
 	if err != nil {
@@ -183,6 +197,7 @@ func TestAssignCc(t *testing.T) {
 func TestTransferCc(t *testing.T) {
 
 	TestAssignCc(t)
+	spout := &GeneralCall{spoutcore}
 
 	transt1, ok := big.NewInt(0).SetString(trans1, 10)
 
@@ -202,37 +217,45 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	spout.Dispatcher = bolt.GetCaller("transfer1", TransferHandler(tokencfg))
+	spoutcore.Dispatcher = bolt.GetCaller("transfer1", TransferHandler(tokencfg))
+	spoutcore.BeginTx(nil)
 
 	nc1, err := spout.Transfer([]byte(addr1), []byte(addr4), transt1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	spout.Dispatcher = bolt.GetCaller("transfer2", TransferHandler(tokencfg))
+	spoutcore.Dispatcher = bolt.GetCaller("transfer2", TransferHandler(tokencfg))
+	spoutcore.BeginTx(nil)
 
 	nc2, err := spout.Transfer([]byte(addr2), []byte(addr4), transt2)
 	if err != nil {
 	}
 
-	spout.Dispatcher = bolt.GetCaller("transfer3", TransferHandler(tokencfg))
+	spoutcore.Dispatcher = bolt.GetCaller("transfer3", TransferHandler(tokencfg))
 	fixednc := "fixednc"
-	spout.BeginTx([]byte(fixednc))
+	spoutcore.BeginTx([]byte(fixednc))
 
 	nc3, err := spout.Transfer([]byte(addr3), []byte(addr1), transt3)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	spout.Dispatcher = bolt.GetCaller("transfer3_fail", TransferHandler(tokencfg))
+	spoutcore.Dispatcher = bolt.GetCaller("transfer3_fail", TransferHandler(tokencfg))
 
-	spout.BeginTx([]byte(fixednc))
+	spoutcore.BeginTx([]byte(fixednc))
 	_, err = spout.Transfer([]byte(addr3), []byte(addr1), transt3)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = spoutcore.Result().TxID()
+
 	if err == nil {
 		t.Fatal("Execute duplicated transfer")
 	}
 
-	spout.Dispatcher = bolt.GetCaller("transfer3_fail2", TransferHandler(tokencfg))
+	spoutcore.Dispatcher = bolt.GetCaller("transfer3_fail2", TransferHandler(tokencfg))
 
 	transtf, ok := big.NewInt(0).SetString(transfail, 10)
 
@@ -240,13 +263,19 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	spout.BeginTx(nil)
+	spoutcore.BeginTx(nil)
 	_, err = spout.Transfer([]byte(addr1), []byte(addr1), transtf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = spoutcore.Result().TxID()
+
 	if err == nil {
 		t.Fatal("Execute overflow transfer")
 	}
 
-	spout.Dispatcher = bolt.GetQueryer(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
+	spoutcore.Dispatcher = bolt.GetQueryer(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
 
 	err, nc1data := spout.Nonce(nc1)
 	if nc1data == nil {
@@ -271,7 +300,7 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("Get nonce key fail")
 	}
 
-	spout.Dispatcher = bolt.GetQueryer(TokenQueryHandler(tokenQuerycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(TokenQueryHandler(tokenQuerycfg))
 
 	addr1bal, ok := big.NewInt(0).SetString(result1, 10)
 

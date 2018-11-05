@@ -12,22 +12,41 @@ type QueryResp struct {
 	ErrMsg  error
 }
 
+func SyncQueryResult(msg proto.Message, out chan QueryResp) error {
+
+	resp := <-out
+	if resp.ErrMsg != nil {
+		return resp.ErrMsg
+	} else {
+		return rpc.DecodeRPCResult(msg, resp.SuccMsg)
+	}
+}
+
 type TxCallResult interface {
 	Nonce() []byte
-	TxID() string
+	TxID() (string, error)
 }
 
 type TxCaller interface {
 	Invoke(method string, msg proto.Message) error
 	Query(method string, msg proto.Message) (chan QueryResp, error)
-	Result() chan TxCallResult
+	TxDone() chan struct{}
+	Result() TxCallResult
+}
+
+//mimic context's implement
+var closedChannel = make(chan struct{})
+
+func init() {
+	close(closedChannel)
 }
 
 type TxGenerator struct {
 	txbuilder     txutil.Builder
 	nonce         []byte
 	calledTxid    string
-	callRes       chan TxCallResult
+	calledError   error
+	callnotify    chan struct{}
 	call_method   int
 	Credgenerator TxCredHandler
 	Dispatcher    rpc.Caller
@@ -41,7 +60,7 @@ const (
 	call_query  = 2
 )
 
-func (t *TxGenerator) postHandling(method string, callwhich int) (*QueryResp, error) {
+func (t *TxGenerator) postHandling(method string) (*QueryResp, error) {
 
 	var args []string
 	var err error
@@ -61,14 +80,24 @@ func (t *TxGenerator) postHandling(method string, callwhich int) (*QueryResp, er
 		return nil, err
 	}
 
+	postinvoke := func() {
+		if t.callnotify != nil && t.callnotify != closedChannel {
+			close(t.callnotify)
+		}
+		t.callnotify = closedChannel
+	}
+
+	//TODO: curreltly we just use a sync calling ....
 	if t.Dispatcher != nil {
-		switch callwhich {
+		switch t.call_method {
 		case call_deploy:
-			t.calledTxid, err = t.Dispatcher.Deploy(method, args)
-			return nil, err
+			defer postinvoke()
+			t.calledTxid, t.calledError = t.Dispatcher.Deploy(method, args)
+			return nil, nil
 		case call_invoke:
-			t.calledTxid, err = t.Dispatcher.Invoke(method, args)
-			return nil, err
+			defer postinvoke()
+			t.calledTxid, t.calledError = t.Dispatcher.Invoke(method, args)
+			return nil, nil
 		case call_query:
 			var ret []byte
 			ret, err = t.Dispatcher.Query(method, args)
@@ -116,6 +145,8 @@ func (t *TxGenerator) SetDeploy() {
 func (t *TxGenerator) BeginTx(nonce []byte) {
 	t.nonce = nonce
 	t.txbuilder = nil
+	t.callnotify = nil
+	t.call_method = call_invoke
 }
 
 func (t *TxGenerator) GetBuilder() txutil.Builder {
@@ -128,23 +159,35 @@ func (t *TxGenerator) MapMethod(m map[string]string) {
 	}
 }
 
-func (t *TxGenerator) Result() chan TxCallResult {
-	if t.callRes == nil {
-		t.callRes = make(chan TxCallResult)
+func (t *TxGenerator) TxDone() chan struct{} {
+
+	if t.callnotify == nil {
+		t.callnotify = make(chan struct{})
 	}
+
+	return t.callnotify
+}
+
+func (t *TxGenerator) Result() TxCallResult {
+	return t
 }
 
 func (t *TxGenerator) Nonce() []byte { return t.txbuilder.GetNonce() }
 
-func (t *TxGenerator) TxID() string { return t.calledTxid }
+func (t *TxGenerator) TxID() (string, error) { return t.calledTxid, t.calledError }
 
 func (t *TxGenerator) Invoke(method string, msg proto.Message) error {
-	err := t.txcall(method, msg)
-	if err != nil {
-		return nil, err
+
+	if t.callnotify == closedChannel {
+		return errors.New("Must call beginTx before new invoking")
 	}
 
-	_, err = t.postHandling(method, call_invoke)
+	err := t.txcall(method, msg)
+	if err != nil {
+		return err
+	}
+
+	_, err = t.postHandling(method)
 	return err
 }
 
@@ -154,7 +197,7 @@ func (t *TxGenerator) Query(method string, msg proto.Message) (chan QueryResp, e
 	if err != nil {
 		return nil, err
 	}
-	ret, err := t.postHandling(method, call_query)
+	ret, err := t.postHandling(method)
 	if err != nil {
 		return nil, err
 	}
