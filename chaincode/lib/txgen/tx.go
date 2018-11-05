@@ -138,6 +138,11 @@ func (t *TxGenerator) methodName(method string) string {
 	return m
 }
 
+func (t *TxGenerator) BeginDeploy(nonce []byte) {
+	t.BeginTx(nonce)
+	t.SetDeploy()
+}
+
 func (t *TxGenerator) SetDeploy() {
 	t.call_method = call_deploy
 }

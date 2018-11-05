@@ -38,6 +38,11 @@ type queryPkHandler struct {
 	RegistrarConfig
 }
 
+type initHandler struct {
+	msg ccpb.Settings
+	RegistrarConfig
+}
+
 func RegistrarHandler(cfg RegistrarConfig) *registrarHandler {
 	return &registrarHandler{RegistrarConfig: cfg}
 }
@@ -57,11 +62,16 @@ func QueryPkHandler(cfg RegistrarConfig) *queryPkHandler {
 	return &queryPkHandler{RegistrarConfig: cfg}
 }
 
+func InitHandler(cfg RegistrarConfig) *initHandler {
+	return &initHandler{RegistrarConfig: cfg}
+}
+
 func (h *registrarHandler) Msg() proto.Message      { return &h.msg }
 func (h *adminRegistrarHandler) Msg() proto.Message { return &h.msg }
 func (h *revokePkHandler) Msg() proto.Message       { return &h.msg }
 func (h *activePkHandler) Msg() proto.Message       { return &h.msg }
 func (h *queryPkHandler) Msg() proto.Message        { return &h.msg }
+func (h *initHandler) Msg() proto.Message           { return &h.msg }
 
 func (h *registrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
@@ -125,4 +135,17 @@ func (h *queryPkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pa
 	}
 
 	return rpc.EncodeRPCResult(data)
+}
+
+func (h *initHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := &h.msg
+
+	reg := h.NewTx(stub)
+
+	err := reg.Init(!msg.DebugMode, msg.AdminPrivilege, msg.RegPrivilege)
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte("Ok"), nil
 }

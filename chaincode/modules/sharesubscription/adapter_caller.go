@@ -2,7 +2,6 @@ package subscription
 
 import (
 	"errors"
-	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
@@ -48,7 +47,7 @@ func (i *GeneralCall) New(contract map[string]uint32, pk *crypto.PublicKey) ([]b
 	}
 
 	msg := &pb.RegContract{addr.PBMessage(), contractTx}
-	_, err = i.Invoke(Method_NewContract, msg)
+	err = i.Invoke(Method_NewContract, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +58,7 @@ func (i *GeneralCall) New(contract map[string]uint32, pk *crypto.PublicKey) ([]b
 		return nil, err
 	}
 
-	conaddr, err := hashContract(data, i.GetBuilder().GetNonce())
+	conaddr, err := hashContract(data, i.Result().Nonce())
 	if err != nil {
 		return nil, err
 	}
@@ -83,12 +82,12 @@ func (i *GeneralCall) Redeem(conaddr []byte, addr []byte, amount *big.Int, redee
 		msg.To = txutil.NewAddressFromHash(redeemAddr).PBMessage()
 	}
 
-	_, err := i.Invoke(Method_Redeem, msg)
+	err := i.Invoke(Method_Redeem, msg)
 	if err != nil {
 		return nil, err
 	}
 
-	return nonce.GeneralTokenNonceKey(i.GetBuilder().GetNonce(), conaddr, addr, amount.Bytes()), nil
+	return nonce.GeneralTokenNonceKey(i.Result().Nonce(), conaddr, addr, amount.Bytes()), nil
 
 }
 
@@ -105,7 +104,7 @@ func (i *GeneralCall) Query(addr []byte) (error, *pb.Contract) {
 	}
 
 	d := &pb.Contract{}
-	err = rpc.DecodeRPCResult(d, data)
+	err = txgen.SyncQueryResult(d, data)
 	if err != nil {
 		return err, nil
 	}
@@ -125,7 +124,7 @@ func (i *GeneralCall) QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract
 	}
 
 	d := &pb.Contract{}
-	err = rpc.DecodeRPCResult(d, data)
+	err = txgen.SyncQueryResult(d, data)
 	if err != nil {
 		return err, nil
 	}

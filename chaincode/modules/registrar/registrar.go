@@ -8,6 +8,11 @@ import (
 	"hyperledger.abchain.org/core/utils"
 )
 
+const (
+	deployName    = ":deploy"
+	debugModeFlag = 'D'
+)
+
 func (db *registrarTx) registrar(pk *crypto.PublicKey, region string, enable bool) error {
 
 	if !pk.Index.IsUint64() || pk.Index.Uint64() != 0 {
@@ -85,6 +90,32 @@ func (db *registrarTx) ActivePk(key []byte) error {
 
 func (db *registrarTx) RevokePk(pk *crypto.PublicKey) error {
 	return errors.New("No implement")
+}
+
+func (db *registrarTx) Init(enablePrivilege bool, managePriv string, regPriv string) error {
+
+	deploy := &pb.RegGlobalData{}
+	err := db.Get(deployName, deploy)
+
+	if err != nil {
+		return err
+	}
+
+	if deploy.DeployFlag != nil {
+		return errors.New("Can not re-deploy existed data")
+	}
+
+	deploy.AdminPrivilege = managePriv
+	deploy.RegPrivilege = regPriv
+
+	if enablePrivilege {
+		deploy.DeployFlag = []byte{'O', 'K'}
+	} else {
+		deploy.DeployFlag = []byte{debugModeFlag}
+	}
+
+	return db.Set(deployName, deploy)
+
 }
 
 func (db *registrarTx) Pubkey(key []byte) (error, *pb.RegData) {

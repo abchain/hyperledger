@@ -55,7 +55,7 @@ func TestDeployCc(t *testing.T) {
 	}
 
 	//init bolt and do deploy tx
-	spoutcore.SetDeploy()
+	spoutcore.BeginDeploy(nil)
 	spoutcore.Dispatcher = bolt.GetCaller("deployment",
 		txhandle.BatchTxHandler(map[string]*txhandle.ChaincodeTx{
 			Method_Init: &txhandle.ChaincodeTx{test_ccname, InitHandler(tokencfg), nil, nil}}))
