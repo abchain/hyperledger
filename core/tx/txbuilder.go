@@ -102,14 +102,22 @@ const (
 	queryEffectInHour int = 1
 )
 
+func GenerateNonce() []byte {
+
+	nonce := make([]byte, 20)
+	_, err := rand.Read(nonce)
+	if err != nil {
+		//try different way to generate a nonce
+		return []byte(time.Now().String())
+	}
+
+	return nonce
+}
+
 func NewTxBuilder(ccname string, nonce []byte, method string, msg proto.Message) (Builder, error) {
 
 	if nonce == nil {
-		nonce = make([]byte, 20)
-		_, err := rand.Read(nonce)
-		if err != nil {
-			return nil, err
-		}
+		nonce = GenerateNonce()
 	}
 
 	expTime := &timestamp.Timestamp{

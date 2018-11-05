@@ -7,9 +7,28 @@ import (
 	txutil "hyperledger.abchain.org/core/tx"
 )
 
+type QueryResp struct {
+	SuccMsg []byte
+	ErrMsg  error
+}
+
+type TxCallResult interface {
+	Nonce() []byte
+	TxID() string
+}
+
+type TxCaller interface {
+	Invoke(method string, msg proto.Message) error
+	Query(method string, msg proto.Message) (chan QueryResp, error)
+	Result() chan TxCallResult
+}
+
 type TxGenerator struct {
 	txbuilder     txutil.Builder
 	nonce         []byte
+	calledTxid    string
+	callRes       chan TxCallResult
+	call_method   int
 	Credgenerator TxCredHandler
 	Dispatcher    rpc.Caller
 	MethodMapper  map[string]string
@@ -17,12 +36,12 @@ type TxGenerator struct {
 }
 
 const (
-	call_deploy = 0
-	call_invoke = 1
+	call_invoke = 0
+	call_deploy = 1
 	call_query  = 2
 )
 
-func (t *TxGenerator) postHandling(method string, callwhich int) ([]byte, error) {
+func (t *TxGenerator) postHandling(method string, callwhich int) (*QueryResp, error) {
 
 	var args []string
 	var err error
@@ -45,12 +64,15 @@ func (t *TxGenerator) postHandling(method string, callwhich int) ([]byte, error)
 	if t.Dispatcher != nil {
 		switch callwhich {
 		case call_deploy:
-			err = t.Dispatcher.Deploy(method, args)
+			t.calledTxid, err = t.Dispatcher.Deploy(method, args)
 			return nil, err
 		case call_invoke:
-			return t.Dispatcher.Invoke(method, args)
+			t.calledTxid, err = t.Dispatcher.Invoke(method, args)
+			return nil, err
 		case call_query:
-			return t.Dispatcher.Query(method, args)
+			var ret []byte
+			ret, err = t.Dispatcher.Query(method, args)
+			return &QueryResp{ret, err}, nil
 		default:
 			panic("Not a calling method")
 
@@ -58,11 +80,6 @@ func (t *TxGenerator) postHandling(method string, callwhich int) ([]byte, error)
 	}
 
 	return nil, nil
-}
-
-func (t *TxGenerator) BeginTx(nonce []byte) {
-	t.nonce = nonce
-	t.txbuilder = nil
 }
 
 func (t *TxGenerator) txcall(method string, msg proto.Message) error {
@@ -82,23 +99,6 @@ func (t *TxGenerator) txcall(method string, msg proto.Message) error {
 	return nil
 }
 
-func (t *TxGenerator) Invoke(method string, msg proto.Message) ([]byte, error) {
-	err := t.txcall(method, msg)
-	if err != nil {
-		return nil, err
-	}
-
-	return t.postHandling(method, call_invoke)
-}
-
-func (t *TxGenerator) Query(method string, msg proto.Message) ([]byte, error) {
-	err := t.txcall(method, msg)
-	if err != nil {
-		return nil, err
-	}
-	return t.postHandling(method, call_query)
-}
-
 func (t *TxGenerator) methodName(method string) string {
 	m, ok := t.MethodMapper[method]
 
@@ -109,6 +109,15 @@ func (t *TxGenerator) methodName(method string) string {
 	return m
 }
 
+func (t *TxGenerator) SetDeploy() {
+	t.call_method = call_deploy
+}
+
+func (t *TxGenerator) BeginTx(nonce []byte) {
+	t.nonce = nonce
+	t.txbuilder = nil
+}
+
 func (t *TxGenerator) GetBuilder() txutil.Builder {
 	return t.txbuilder
 }
@@ -117,4 +126,40 @@ func (t *TxGenerator) MapMethod(m map[string]string) {
 	for k, v := range m {
 		t.MethodMapper[k] = v
 	}
+}
+
+func (t *TxGenerator) Result() chan TxCallResult {
+	if t.callRes == nil {
+		t.callRes = make(chan TxCallResult)
+	}
+}
+
+func (t *TxGenerator) Nonce() []byte { return t.txbuilder.GetNonce() }
+
+func (t *TxGenerator) TxID() string { return t.calledTxid }
+
+func (t *TxGenerator) Invoke(method string, msg proto.Message) error {
+	err := t.txcall(method, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = t.postHandling(method, call_invoke)
+	return err
+}
+
+func (t *TxGenerator) Query(method string, msg proto.Message) (chan QueryResp, error) {
+	t.call_method = call_query
+	err := t.txcall(method, msg)
+	if err != nil {
+		return nil, err
+	}
+	ret, err := t.postHandling(method, call_query)
+	if err != nil {
+		return nil, err
+	}
+
+	retc := make(chan QueryResp, 1)
+	retc <- *ret
+	return retc, nil
 }

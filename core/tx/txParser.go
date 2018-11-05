@@ -12,7 +12,7 @@ type Parser interface {
 	GetCCname() string
 	GetNounce() []byte
 	GetTxTime() time.Time
-	GetMessage() proto.Message
+	GetOriginMessage() proto.Message
 	GetAddrCredential() AddrCredentials
 }
 
@@ -36,7 +36,7 @@ func (t *txParser) GetTxTime() time.Time {
 	return t.txts
 }
 
-func (t *txParser) GetMessage() proto.Message {
+func (t *txParser) GetOriginMessage() proto.Message {
 	return t.msg
 }
 

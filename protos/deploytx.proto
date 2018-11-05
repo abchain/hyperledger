@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package protos;
-
-message DeployTx {
-    map<string, bytes> initParams = 1;
-}

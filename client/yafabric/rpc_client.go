@@ -199,7 +199,6 @@ func (c *RpcClientConfig) Quit() {
 //adapter of the rpc caller
 type rPCClient struct {
 	*RpcBuilder
-	lastTxid string
 }
 
 //Assign each http request (run cocurrency) a client, which can be adapted to a caller
@@ -228,22 +227,19 @@ func (c *RpcClientConfig) GetCaller() (*rPCClient, error) {
 	return &rPCClient{builder, ""}, nil
 }
 
-func (r *rPCClient) LastInvokeTxId() []byte {
-	return []byte(r.lastTxid)
+func (r *rPCClient) Deploy(function string, args []string) (string, error) {
+	return "", nil
 }
 
-func (r *rPCClient) Invoke(function string, args []string) ([]byte, error) {
-
-	r.lastTxid = ""
+func (r *rPCClient) Invoke(function string, args []string) (string, error) {
 
 	r.Function = function
 	txid, err := r.Fire(args)
 	if err == nil {
-		r.lastTxid = txid
-		return []byte(r.lastTxid), nil
+		return txid, nil
 	}
 
-	return nil, err
+	return "", err
 }
 
 func (r *rPCClient) Query(function string, args []string) ([]byte, error) {

@@ -9,8 +9,7 @@ import (
 
 type ChaincodeAdapter struct {
 	*shim.MockStub
-	LastInvokeId []byte
-	TxIDGen      func() string
+	TxIDGen func() string
 }
 
 func NewLocalChaincode(cc shim.Chaincode) *ChaincodeAdapter {
@@ -20,21 +19,18 @@ func NewLocalChaincode(cc shim.Chaincode) *ChaincodeAdapter {
 	}
 }
 
-func (c *ChaincodeAdapter) Deploy(method string, arg []string) error {
-	_, err := c.MockInit(c.TxIDGen(), method, arg)
-	return err
+func (c *ChaincodeAdapter) Deploy(method string, arg []string) (string, error) {
+	txid := c.TxIDGen()
+	_, err := c.MockInit(txid, method, arg)
+	return txid, err
 }
 
-func (c *ChaincodeAdapter) Invoke(method string, arg []string) ([]byte, error) {
+func (c *ChaincodeAdapter) Invoke(method string, arg []string) (string, error) {
 	txid := c.TxIDGen()
-	c.LastInvokeId = []byte(txid)
-	return c.MockInvoke(txid, method, arg)
+	_, err := c.MockInvoke(txid, method, arg)
+	return txid, err
 }
 
 func (c *ChaincodeAdapter) Query(method string, arg []string) ([]byte, error) {
 	return c.MockQuery(method, arg)
-}
-
-func (c *ChaincodeAdapter) LastInvokeTxId() []byte {
-	return c.LastInvokeId
 }

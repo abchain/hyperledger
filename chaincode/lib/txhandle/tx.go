@@ -40,7 +40,34 @@ func (cci *ChaincodeTx) TxCall(stub shim.ChaincodeStubInterface,
 		return nil, errors.New("Unmatched chaincode name")
 	}
 
+	for _, h := range cci.PreHandlers {
+		err := h.PreHandling(stub, function, parser)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	ret, err := cci.Handler.Call(stub, parser)
+
 	if err != nil {
+		return nil, err
+	}
+
+	for _, h := range cci.PostHandlers {
+		ret, err = h.PostHandling(stub, function, parser, ret)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return ret, nil
+}
+
+func (cci *ChaincodeTx) txSubCall(stub shim.ChaincodeStubInterface,
+	function string, payload []byte, parser txutil.Parser) ([]byte, error) {
+
+	callmsg := cci.Handler.Msg()
+	if err := proto.Unmarshal(payload, callmsg); err != nil {
 		return nil, err
 	}
 

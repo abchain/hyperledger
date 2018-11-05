@@ -39,3 +39,16 @@ message TxCredential {
 
     repeated    AddrCredentials addrc  = 1;
 }
+
+message TxBatch {
+    message subTx{
+        string method = 1;
+        bytes payload = 2;
+    }
+
+    repeated subTx txs = 1;
+}
+
+message TxBatchResp {
+    repeated bytes response = 1;
+}
