@@ -16,8 +16,8 @@ type Builder interface {
 	GetCredBuilder() AddrCredentialBuilder
 	Sign(*crypto.PrivateKey) error
 
-	GenArguments() ([]string, error)
-	GenArgumentsWithoutCred() ([]string, error)
+	GenArguments() ([][]byte, error)
+	GenArgumentsWithoutCred() ([][]byte, error)
 }
 
 type baseBuilder struct {
@@ -57,7 +57,7 @@ func (b *baseBuilder) Sign(privk *crypto.PrivateKey) error {
 	return nil
 }
 
-func (b *baseBuilder) GenArguments() ([]string, error) {
+func (b *baseBuilder) GenArguments() ([][]byte, error) {
 	if b.credBuilder == nil {
 		return nil, errors.New("No cred yet")
 	}
@@ -79,10 +79,10 @@ func (b *baseBuilder) GenArguments() ([]string, error) {
 		return nil, err
 	}
 
-	return append(arg, toArgument(cr)), nil
+	return append(arg, cr), nil
 }
 
-func (b *baseBuilder) GenArgumentsWithoutCred() ([]string, error) {
+func (b *baseBuilder) GenArgumentsWithoutCred() ([][]byte, error) {
 
 	if b.msgObj == nil {
 		return nil, errors.New("No message binded")
@@ -95,7 +95,7 @@ func (b *baseBuilder) GenArgumentsWithoutCred() ([]string, error) {
 		return nil, errors.New("Invalid message data")
 	}
 
-	return []string{toArgument(hh), toArgument(hm)}, nil
+	return [][]byte{hh, hm}, nil
 }
 
 const (

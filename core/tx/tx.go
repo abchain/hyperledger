@@ -2,8 +2,6 @@ package abchainTx
 
 import (
 	"bytes"
-	"encoding/base64"
-	"errors"
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/core/utils"
 )
@@ -11,19 +9,6 @@ import (
 type tx struct {
 	header proto.Message
 	msgObj proto.Message
-}
-
-func toArgument(b []byte) string {
-	return base64.RawStdEncoding.EncodeToString(b)
-}
-
-func fromArgument(arg string) []byte {
-	b, err := base64.RawStdEncoding.DecodeString(arg)
-	if err != nil {
-		return nil
-	}
-
-	return b
 }
 
 func msgToByte(m proto.Message) []byte {
@@ -45,17 +30,12 @@ func genHash(header []byte, msg []byte, method string) []byte {
 	return r
 }
 
-func EncodeProto(m proto.Message) string {
-	return toArgument(msgToByte(m))
+func EncodeProto(m proto.Message) []byte {
+	return msgToByte(m)
 }
 
-func DecodeProto(arg string, m proto.Message) error {
-	b := fromArgument(arg)
-	if b == nil {
-		return errors.New("Invalid argument string")
-	}
-
-	return proto.Unmarshal(b, m)
+func DecodeProto(arg []byte, m proto.Message) error {
+	return proto.Unmarshal(arg, m)
 }
 
 func (hasher *tx) GenHash(method string) []byte {

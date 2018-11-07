@@ -58,7 +58,7 @@ func (i *GeneralCall) New(contract map[string]uint32, pk *crypto.PublicKey) ([]b
 		return nil, err
 	}
 
-	conaddr, err := hashContract(data, i.Result().Nonce())
+	conaddr, err := hashContract(data, i.GetNonce())
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (i *GeneralCall) Redeem(conaddr []byte, addr []byte, amount *big.Int, redee
 		return nil, err
 	}
 
-	return nonce.GeneralTokenNonceKey(i.Result().Nonce(), conaddr, addr, amount.Bytes()), nil
+	return nonce.GeneralTokenNonceKey(i.GetNonce(), conaddr, addr, amount.Bytes()), nil
 
 }
 

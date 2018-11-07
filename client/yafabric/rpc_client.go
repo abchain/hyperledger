@@ -227,11 +227,11 @@ func (c *RpcClientConfig) GetCaller() (*rPCClient, error) {
 	return &rPCClient{builder, ""}, nil
 }
 
-func (r *rPCClient) Deploy(function string, args []string) (string, error) {
+func (r *rPCClient) Deploy(function string, args [][]byte) (string, error) {
 	return "", nil
 }
 
-func (r *rPCClient) Invoke(function string, args []string) (string, error) {
+func (r *rPCClient) Invoke(function string, args [][]byte) (string, error) {
 
 	r.Function = function
 	txid, err := r.Fire(args)
@@ -242,7 +242,7 @@ func (r *rPCClient) Invoke(function string, args []string) (string, error) {
 	return "", err
 }
 
-func (r *rPCClient) Query(function string, args []string) ([]byte, error) {
+func (r *rPCClient) Query(function string, args [][]byte) ([]byte, error) {
 
 	r.Function = function
 

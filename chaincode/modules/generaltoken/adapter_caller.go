@@ -34,7 +34,7 @@ func (i *GeneralCall) Transfer(from []byte, to []byte, amount *big.Int) ([]byte,
 		return nil, err
 	}
 
-	return nonce.GeneralTokenNonceKey(i.Result().Nonce(), from, to, amount.Bytes()), nil
+	return nonce.GeneralTokenNonceKey(i.GetNonce(), from, to, amount.Bytes()), nil
 }
 
 func (i *GeneralCall) Assign(to []byte, amount *big.Int) ([]byte, error) {
@@ -50,7 +50,7 @@ func (i *GeneralCall) Assign(to []byte, amount *big.Int) ([]byte, error) {
 		return nil, err
 	}
 
-	return nonce.GeneralTokenNonceKey(i.Result().Nonce(), nil, to, amount.Bytes()), nil
+	return nonce.GeneralTokenNonceKey(i.GetNonce(), nil, to, amount.Bytes()), nil
 }
 
 func (i *GeneralCall) Init(amount *big.Int) error {

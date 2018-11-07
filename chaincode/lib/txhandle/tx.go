@@ -29,7 +29,7 @@ type ChaincodeTx struct {
 }
 
 func (cci *ChaincodeTx) TxCall(stub shim.ChaincodeStubInterface,
-	function string, args []string) ([]byte, error) {
+	function string, args [][]byte) ([]byte, error) {
 
 	parser, err := txutil.ParseTx(cci.Handler.Msg(), function, args)
 	if err != nil {
@@ -61,6 +61,11 @@ func (cci *ChaincodeTx) TxCall(stub shim.ChaincodeStubInterface,
 	}
 
 	return ret, nil
+}
+
+func (cci *ChaincodeTx) TxInnerCall(stub shim.ChaincodeStubInterface,
+	function string, args [][]byte) ([]byte, error) {
+
 }
 
 func (cci *ChaincodeTx) txSubCall(stub shim.ChaincodeStubInterface,

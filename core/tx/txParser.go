@@ -44,7 +44,7 @@ func (t *txParser) GetAddrCredential() AddrCredentials {
 	return t.cred
 }
 
-func parseBase(header proto.Message, msg proto.Message, method string, args []string) (e error,
+func parseBase(header proto.Message, msg proto.Message, method string, args [][]byte) (e error,
 	cred AddrCredentials) {
 
 	if len(args) < 2 {
@@ -52,7 +52,7 @@ func parseBase(header proto.Message, msg proto.Message, method string, args []st
 		return
 	}
 
-	hh := fromArgument(args[0])
+	hh := args[0]
 
 	if hh == nil {
 		e = errors.New("Invalid header")
@@ -64,7 +64,7 @@ func parseBase(header proto.Message, msg proto.Message, method string, args []st
 		return
 	}
 
-	hm := fromArgument(args[1])
+	hm := args[1]
 
 	if hm == nil {
 		e = errors.New("Invalid msg")
@@ -84,7 +84,7 @@ func parseBase(header proto.Message, msg proto.Message, method string, args []st
 
 	if len(args) >= 3 {
 
-		hc := fromArgument(args[2])
+		hc := args[2]
 		if hm == nil {
 			e = errors.New("Invalid credential")
 			return
@@ -106,7 +106,7 @@ func parseBase(header proto.Message, msg proto.Message, method string, args []st
 	return
 }
 
-func ParseTx(msg proto.Message, method string, args []string) (Parser, error) {
+func ParseTx(msg proto.Message, method string, args [][]byte) (Parser, error) {
 
 	header := &pb.TxHeader{}
 

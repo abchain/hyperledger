@@ -58,24 +58,22 @@ type SecurityPolicy struct {
 	CustomIDGenAlg string
 }
 
-func makeStringArgsToPb(funcname string, args []string) *pb.ChaincodeInput {
+func makeStringArgsToPb(funcname string, args [][]byte) *pb.ChaincodeInput {
 
 	input := &pb.ChaincodeInput{}
 	//please remember the trick fabric used:
 	//it push the "function name" as the first argument
 	//in a rpc call
+
 	var inarg [][]byte
-	if len(funcname) == 0 {
-		input.Args = make([][]byte, len(args))
-		inarg = input.Args[:]
-	} else {
-		input.Args = make([][]byte, len(args)+1)
-		input.Args[0] = []byte(funcname)
-		inarg = input.Args[1:]
+	if len(funcname) != 0 {
+		input.Args = append(input.Args, []byte(funcname))
 	}
 
+	//TODO: here we change the byte args into string so it can passed the old fabric 0.6 defination
+	//in chaincode, we will change the chaincode interface in YA-fabric later
 	for i, arg := range args {
-		inarg[i] = []byte(arg)
+		inarg[i] = []byte(toArgument(arg))
 	}
 
 	return input
@@ -95,7 +93,7 @@ func (b *RpcBuilder) VerifyConn() error {
 	return nil
 }
 
-func (b *RpcBuilder) prepare(args []string) *pb.ChaincodeSpec {
+func (b *RpcBuilder) prepare(args [][]byte) *pb.ChaincodeSpec {
 	spec := &pb.ChaincodeSpec{
 		Type:        pb.ChaincodeSpec_GOLANG, //always set it as golang
 		ChaincodeID: &pb.ChaincodeID{Name: b.ChaincodeName},
@@ -116,7 +114,7 @@ func (b *RpcBuilder) prepare(args []string) *pb.ChaincodeSpec {
 	return spec
 }
 
-func (b *RpcBuilder) prepareInvoke(args []string) *pb.ChaincodeInvocationSpec {
+func (b *RpcBuilder) prepareInvoke(args [][]byte) *pb.ChaincodeInvocationSpec {
 
 	spec := b.prepare(args)
 	invocation := &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec}
@@ -156,7 +154,7 @@ func (b *RpcBuilder) Deploy(args []string) (*pb.ChaincodeDeploymentSpec, error) 
 	return spec, nil
 }
 
-func (b *RpcBuilder) Fire(args []string) (string, error) {
+func (b *RpcBuilder) Fire(args [][]byte) (string, error) {
 
 	ctx, cancel := b.context()
 	defer cancel()
@@ -169,7 +167,7 @@ func (b *RpcBuilder) Fire(args []string) (string, error) {
 	return string(resp.Msg), nil
 }
 
-func (b *RpcBuilder) Query(args []string) ([]byte, error) {
+func (b *RpcBuilder) Query(args [][]byte) ([]byte, error) {
 
 	ctx, cancel := b.context()
 	defer cancel()

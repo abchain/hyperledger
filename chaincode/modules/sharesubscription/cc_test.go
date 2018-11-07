@@ -34,8 +34,7 @@ const (
 	addr4      = "BigBrother"
 )
 
-var spout *GeneralCall
-var tokenSpout *token.GeneralCall
+var spoutcore = txgen.SimpleTxGen(test_ccname)
 var bolt = &rpc.DummyCallerBuilder{CCName: test_ccname}
 var tokencfg = &token.StandardTokenConfig{nonce.StandardNonceConfig{test_tag, false}}
 var tokenQuerycfg = &token.StandardTokenConfig{nonce.StandardNonceConfig{test_tag, true}}
@@ -64,8 +63,9 @@ func initTest(t *testing.T) {
 	//we only use the db in stub and never do mocking from chaincode interface
 	bolt.Reset()
 
-	tokenSpout = &token.GeneralCall{txgen.SimpleTxGen(test_ccname)}
-	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname), false}
+	deployTx := &txgen.BatchTxCall{TxGenerator: spoutcore}
+	tokenSpout := &token.GeneralCall{deployTx}
+	deployTx.BeginDeploy(nil)
 
 	total, ok := big.NewInt(0).SetString(totalToken, 10)
 
@@ -73,33 +73,37 @@ func initTest(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	deployTx := &token.DeployCall{txgen.NewDeployTx()}
+	tokenSpout.Init(total)
 
-	tokenSpout.Dispatcher = bolt.GetCaller("deployment",
-		txhandle.DeployTxHandler(map[string]txhandle.TxHandler{
-			token.DeployMethod: token.CCDeployHandler(tokencfg),
+	spoutcore.Dispatcher = bolt.GetCaller("deployment",
+		txhandle.BatchTxHandler(map[string]*txhandle.ChaincodeTx{
+			token.Method_Init: &txhandle.ChaincodeTx{test_ccname, token.InitHandler(tokencfg), nil, nil},
 		}))
 
-	deployTx.TxGenerator = tokenSpout.TxGenerator
-	deployTx.Init(total)
-
-	err := deployTx.Deploy("init")
+	err := deployTx.CommitBatch("init")
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	_, err = deployTx.Result().TxID()
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestContract(t *testing.T) {
 	initTest(t)
 	initContract(t)
+	tokenSpout := &token.GeneralCall{spoutcore}
+	spout := &GeneralCall{spoutcore, false}
 
 	priv, err := crypto.NewPrivatekey(crypto.DefaultCurveType)
-	spout.Credgenerator = txgen.NewSingleKeyCred(priv)
+	spoutcore.Credgenerator = txgen.NewSingleKeyCred(priv)
 
 	contractH := NewContractHandler(cfg)
-	spout.Dispatcher = bolt.GetCaller("contract", contractH)
+	spoutcore.BeginTx(nil)
+	spoutcore.Dispatcher = bolt.GetCaller("contract", contractH)
 	bolt.AppendPreHandler(contractH)
 
 	if err != nil {
@@ -111,7 +115,12 @@ func TestContract(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spout.Dispatcher = bolt.GetQueryer(QueryHandler(querycfg))
+	_, err = spoutcore.Result().TxID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	spoutcore.Dispatcher = bolt.GetQueryer(QueryHandler(querycfg))
 
 	err, cont := spout.Query(addr)
 	if err != nil {
@@ -146,18 +155,31 @@ func TestContract(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	tokenSpout.Dispatcher = bolt.GetCaller("assign", token.AssignHandler(tokencfg))
+	spoutcore.BeginTx(nil)
+	spoutcore.Dispatcher = bolt.GetCaller("assign", token.AssignHandler(tokencfg))
 
 	_, err = tokenSpout.Assign(addr, assignt1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, err = spoutcore.Result().TxID()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	spout.Dispatcher = bolt.GetCaller("redeem1", RedeemHandler(cfg))
+	spoutcore.BeginTx(nil)
+	spoutcore.Dispatcher = bolt.GetCaller("redeem1", RedeemHandler(cfg))
 
 	_, err = spout.Redeem(addr, []byte(addr1), big.NewInt(0), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = spoutcore.Result().TxID()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	tokenSpout.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
 
 	err, data1 := tokenSpout.Account([]byte(addr1))
 	if err != nil {
@@ -180,13 +202,18 @@ func TestContract(t *testing.T) {
 		t.Fatalf("wrong redeem amount: %s", bal.String())
 	}
 
-	spout.Dispatcher = bolt.GetCaller("redeem2", RedeemHandler(cfg))
+	spoutcore.BeginTx(nil)
+	spoutcore.Dispatcher = bolt.GetCaller("redeem2", RedeemHandler(cfg))
 	_, err = spout.Redeem(addr, []byte(addr2), bal, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, err = spoutcore.Result().TxID()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	tokenSpout.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
 	err, data2 := tokenSpout.Account([]byte(addr2))
 	if err != nil {
 		t.Fatal(err)

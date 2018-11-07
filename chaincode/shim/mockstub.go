@@ -121,7 +121,7 @@ func (stub *MockStub) MockPeerChaincode(invokableChaincodeName string, otherStub
 }
 
 // Initialise this chaincode,  also starts and ends a transaction.
-func (stub *MockStub) MockInit(uuid string, function string, args []string) ([]byte, error) {
+func (stub *MockStub) MockInit(uuid string, function string, args [][]byte) ([]byte, error) {
 	stub.args = getBytes(function, args)
 	stub.MockTransactionStart(uuid)
 	bytes, err := stub.cc.Invoke(stub, function, args, true)
@@ -130,7 +130,7 @@ func (stub *MockStub) MockInit(uuid string, function string, args []string) ([]b
 }
 
 // Invoke this chaincode, also starts and ends a transaction.
-func (stub *MockStub) MockInvoke(uuid string, function string, args []string) ([]byte, error) {
+func (stub *MockStub) MockInvoke(uuid string, function string, args [][]byte) ([]byte, error) {
 	stub.args = getBytes(function, args)
 	stub.MockTransactionStart(uuid)
 	bytes, err := stub.cc.Invoke(stub, function, args, true)
@@ -139,7 +139,7 @@ func (stub *MockStub) MockInvoke(uuid string, function string, args []string) ([
 }
 
 // Query this chaincode
-func (stub *MockStub) MockQuery(function string, args []string) ([]byte, error) {
+func (stub *MockStub) MockQuery(function string, args [][]byte) ([]byte, error) {
 	stub.args = getBytes(function, args)
 	// no transaction needed for queries
 	bytes, err := stub.cc.Invoke(stub, function, args, false)
@@ -224,28 +224,28 @@ func (stub *MockStub) RangeQueryState(startKey, endKey string) (StateRangeQueryI
 // E.g. stub1.InvokeChaincode("stub2Hash", funcArgs)
 // Before calling this make sure to create another MockStub stub2, call stub2.MockInit(uuid, func, args)
 // and register it with stub1 by calling stub1.MockPeerChaincode("stub2Hash", stub2)
-func (stub *MockStub) InvokeChaincode(chaincodeName string, args [][]byte) ([]byte, error) {
-	// TODO "args" here should possibly be a serialized pb.ChaincodeInput
-	function, params := getFuncArgs(args)
+func (stub *MockStub) InvokeChaincode(chaincodeName string, function string, args [][]byte) ([]byte, error) {
+
 	otherStub := stub.Invokables[chaincodeName]
-	mockLogger.Debug("MockStub", stub.Name, "Invoking peer chaincode", otherStub.Name, args)
-	//	function, strings := getFuncArgs(args)
-	bytes, err := otherStub.MockInvoke(stub.TxID, function, params)
+	if otherStub == nil {
+		mockLogger.Error("Could not find peer chaincode to invoke", chaincodeName)
+		return nil, errors.New("Could not find peer chaincode to invoke")
+	}
+	mockLogger.Debug("MockStub", stub.Name, "Invoking peer chaincode", otherStub.Name, function, args)
+	bytes, err := otherStub.MockInvoke(stub.TxID, function, args)
 	mockLogger.Debug("MockStub", stub.Name, "Invoked peer chaincode", otherStub.Name, "got", bytes, err)
 	return bytes, err
 }
 
-func (stub *MockStub) QueryChaincode(chaincodeName string, args [][]byte) ([]byte, error) {
-	// TODO "args" here should possibly be a serialized pb.ChaincodeInput
-	mockLogger.Debug("MockStub", stub.Name, "Looking for peer chaincode", chaincodeName)
+func (stub *MockStub) QueryChaincode(chaincodeName string, function string, args [][]byte) ([]byte, error) {
+
 	otherStub := stub.Invokables[chaincodeName]
 	if otherStub == nil {
 		mockLogger.Error("Could not find peer chaincode to query", chaincodeName)
 		return nil, errors.New("Could not find peer chaincode to query")
 	}
-	mockLogger.Debug("MockStub", stub.Name, "Querying peer chaincode", otherStub.Name, args)
-	function, params := getFuncArgs(args)
-	bytes, err := otherStub.MockQuery(function, params)
+	mockLogger.Debug("MockStub", stub.Name, "Querying peer chaincode", otherStub.Name, function, args)
+	bytes, err := otherStub.MockQuery(function, args)
 	mockLogger.Debug("MockStub", stub.Name, "Queried peer chaincode", otherStub.Name, "got", bytes, err)
 	return bytes, err
 }
@@ -390,22 +390,7 @@ func NewMockStateRangeQueryIterator(stub *MockStub, startKey string, endKey stri
 	return iter
 }
 
-func getBytes(function string, args []string) [][]byte {
-	bytes := make([][]byte, 0, len(args)+1)
-	bytes = append(bytes, []byte(function))
-	for _, s := range args {
-		bytes = append(bytes, []byte(s))
-	}
-	return bytes
-}
+func getBytes(function string, args [][]byte) [][]byte {
+	return append([][]byte{[]byte(function)}, args...)
 
-func getFuncArgs(bytes [][]byte) (string, []string) {
-	mockLogger.Debugf("getFuncArgs(%x)", bytes)
-	function := string(bytes[0])
-	args := make([]string, len(bytes)-1)
-	for i := 1; i < len(bytes); i++ {
-		mockLogger.Debugf("getFuncArgs - i:%x, len(bytes):%x", i, len(bytes))
-		args[i-1] = string(bytes[i])
-	}
-	return function, args
 }

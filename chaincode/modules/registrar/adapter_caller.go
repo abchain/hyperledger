@@ -8,7 +8,7 @@ import (
 )
 
 type GeneralCall struct {
-	*txgen.TxGenerator
+	txgen.TxCaller
 }
 
 const (
@@ -64,6 +64,16 @@ func (i *GeneralCall) RevokePk(pk *crypto.PublicKey) error {
 
 	err := i.Invoke(Method_Revoke, msg)
 	return err
+}
+
+func (i *GeneralCall) InitDebugMode() error {
+
+	return i.Invoke(Method_Init, &pb.Settings{true, "", ""})
+}
+
+func (i *GeneralCall) Init(enablePrivilege bool, managePriv string, regPriv string) error {
+
+	return i.Invoke(Method_Init, &pb.Settings{enablePrivilege, managePriv, regPriv})
 }
 
 func (i *GeneralCall) Pubkey(key []byte) (error, *pb.RegData) {

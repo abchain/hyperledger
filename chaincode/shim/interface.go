@@ -14,7 +14,7 @@ import (
 // to provide a suitable interface in some tools)
 type Chaincode interface {
 	// Invoke is called for every transactions.
-	Invoke(stub ChaincodeStubInterface, function string, args []string, readonly bool) ([]byte, error)
+	Invoke(stub ChaincodeStubInterface, function string, args [][]byte, readonly bool) ([]byte, error)
 }
 
 type ChaincodeStubInterface interface {
@@ -32,16 +32,6 @@ type ChaincodeStubInterface interface {
 	// may not be the same with the other peers' time.
 	GetTxTime() (time.Time, error)
 
-	// InvokeChaincode locally calls the specified chaincode `Invoke` using the
-	// same transaction context; that is, chaincode calling chaincode doesn't
-	// create a new transaction message.
-	InvokeChaincode(chaincodeName string, args [][]byte) ([]byte, error)
-
-	// QueryChaincode locally calls the specified chaincode `Query` using the
-	// same transaction context; that is, chaincode calling chaincode doesn't
-	// create a new transaction message.
-	QueryChaincode(chaincodeName string, args [][]byte) ([]byte, error)
-
 	// GetState returns the byte array value specified by the `key`.
 	GetState(key string) ([]byte, error)
 
@@ -57,15 +47,6 @@ type ChaincodeStubInterface interface {
 	// between the startKey and endKey, inclusive. The order in which keys are
 	// returned by the iterator is random.
 	RangeQueryState(startKey, endKey string) (StateRangeQueryIteratorInterface, error)
-
-	// used to read an specific attribute from the transaction certificate,
-	// *attributeName* is passed as input parameter to this function.
-	// Example:
-	//  attrValue,error:=stub.ReadCertAttribute("position")
-	GetCallerAttribute(attributeName string) ([]byte, error)
-
-	// GetCallerCertificate returns caller certificate
-	GetCallerCertificate() ([]byte, error)
 
 	// GetBinding returns the transaction binding
 	GetBinding() ([]byte, error)

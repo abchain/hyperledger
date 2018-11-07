@@ -16,7 +16,7 @@ type CallerAttributes interface {
 	GetCallerCertificate() ([]byte, error)
 }
 
-var CallerAttrImpl = []func(stub interface{}) (bool, CallerAttributes){MockStubImpl}
+var CallerAttrImpl = []func(stub interface{}) (bool, CallerAttributes){MockStubAttrImpl}
 
 func GetCallerAttributes(stub shim.ChaincodeStubInterface) (CallerAttributes, error) {
 	for _, f := range CallerAttrImpl {
@@ -28,7 +28,7 @@ func GetCallerAttributes(stub shim.ChaincodeStubInterface) (CallerAttributes, er
 	return nil, NoImplError
 }
 
-func MockStubImpl(stub interface{}) (bool, CallerAttributes) {
+func MockStubAttrImpl(stub interface{}) (bool, CallerAttributes) {
 	if s, ok := stub.(*shim.MockStub); ok {
 		return true, s
 	} else {

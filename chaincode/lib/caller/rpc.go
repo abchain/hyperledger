@@ -14,7 +14,7 @@ func DecodeRPCResult(msg proto.Message, r []byte) error {
 }
 
 type Caller interface {
-	Deploy(method string, arg []string) (string, error)
-	Invoke(method string, arg []string) (string, error)
-	Query(method string, arg []string) ([]byte, error)
+	Deploy(method string, arg [][]byte) (string, error)
+	Invoke(method string, arg [][]byte) (string, error)
+	Query(method string, arg [][]byte) ([]byte, error)
 }

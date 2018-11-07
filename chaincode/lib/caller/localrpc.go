@@ -19,18 +19,18 @@ func NewLocalChaincode(cc shim.Chaincode) *ChaincodeAdapter {
 	}
 }
 
-func (c *ChaincodeAdapter) Deploy(method string, arg []string) (string, error) {
+func (c *ChaincodeAdapter) Deploy(method string, arg [][]byte) (string, error) {
 	txid := c.TxIDGen()
 	_, err := c.MockInit(txid, method, arg)
 	return txid, err
 }
 
-func (c *ChaincodeAdapter) Invoke(method string, arg []string) (string, error) {
+func (c *ChaincodeAdapter) Invoke(method string, arg [][]byte) (string, error) {
 	txid := c.TxIDGen()
 	_, err := c.MockInvoke(txid, method, arg)
 	return txid, err
 }
 
-func (c *ChaincodeAdapter) Query(method string, arg []string) ([]byte, error) {
+func (c *ChaincodeAdapter) Query(method string, arg [][]byte) ([]byte, error) {
 	return c.MockQuery(method, arg)
 }

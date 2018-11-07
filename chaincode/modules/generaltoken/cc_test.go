@@ -66,6 +66,11 @@ func TestDeployCc(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = deployer.Result().TxID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if len(bolt.Stub().State) != 1 {
 		t.Fatal("Invalid state count")
 	}
@@ -118,6 +123,7 @@ func TestAssignCc(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	<-spoutcore.TxDone()
 
 	spoutcore.Dispatcher = bolt.GetCaller("assigment2", AssignHandler(tokencfg))
 	spoutcore.BeginTx(nil)
@@ -126,6 +132,7 @@ func TestAssignCc(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	<-spoutcore.TxDone()
 
 	spoutcore.Dispatcher = bolt.GetCaller("assigment3", AssignHandler(tokencfg))
 	fixednc := "fixednc"
@@ -135,6 +142,7 @@ func TestAssignCc(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	<-spoutcore.TxDone()
 
 	spoutcore.Dispatcher = bolt.GetCaller("assigment3_fail", AssignHandler(tokencfg))
 	spoutcore.BeginTx([]byte(fixednc))
@@ -224,6 +232,7 @@ func TestTransferCc(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	<-spoutcore.TxDone()
 
 	spoutcore.Dispatcher = bolt.GetCaller("transfer2", TransferHandler(tokencfg))
 	spoutcore.BeginTx(nil)
@@ -231,6 +240,7 @@ func TestTransferCc(t *testing.T) {
 	nc2, err := spout.Transfer([]byte(addr2), []byte(addr4), transt2)
 	if err != nil {
 	}
+	<-spoutcore.TxDone()
 
 	spoutcore.Dispatcher = bolt.GetCaller("transfer3", TransferHandler(tokencfg))
 	fixednc := "fixednc"
@@ -240,6 +250,7 @@ func TestTransferCc(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	<-spoutcore.TxDone()
 
 	spoutcore.Dispatcher = bolt.GetCaller("transfer3_fail", TransferHandler(tokencfg))
 
@@ -262,6 +273,7 @@ func TestTransferCc(t *testing.T) {
 	if !ok {
 		t.Fatal("parse int fail")
 	}
+	<-spoutcore.TxDone()
 
 	spoutcore.BeginTx(nil)
 	_, err = spout.Transfer([]byte(addr1), []byte(addr1), transtf)

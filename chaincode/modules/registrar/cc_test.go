@@ -28,7 +28,7 @@ const (
 	result1    = "100000000000000000000000000"
 )
 
-var spout *GeneralCall
+var spoutcore = txgen.SimpleTxGen(test_ccname)
 var bolt = &rpc.DummyCallerBuilder{CCName: test_ccname}
 
 var cfg = &StandardRegistrarConfig{test_tag, false, managattrN, regionattrN}
@@ -42,31 +42,34 @@ var privkeyNotReg *crypto.PrivateKey
 func assign(t *testing.T) {
 	bolt.Reset()
 
-	spout = &GeneralCall{txgen.SimpleTxGen(test_ccname)}
-	tokenSpout := &token.GeneralCall{txgen.SimpleTxGen(test_ccname)}
-
 	total, ok := big.NewInt(0).SetString(totalToken, 10)
 
 	if !ok {
 		t.Fatal("parse int fail")
 	}
 
-	deployTx := txgen.NewDeployTx()
-	regD := &DeployCall{deployTx}
-	regD.InitDebugMode()
-	tokenD := token.DeployCall{deployTx}
-	tokenD.Init(total)
+	deployTx := &txgen.BatchTxCall{TxGenerator: spoutcore}
 
-	spout.Dispatcher = bolt.GetCaller("deployment",
-		txhandle.DeployTxHandler(map[string]txhandle.TxHandler{
-			DeployMethod:       CCDeployHandler(cfg),
-			token.DeployMethod: token.CCDeployHandler(tokencfg),
+	spout := &GeneralCall{deployTx}
+	tokenSpout := &token.GeneralCall{deployTx}
+	deployTx.BeginDeploy(nil)
+
+	spout.InitDebugMode()
+	tokenSpout.Init(total)
+
+	spoutcore.Dispatcher = bolt.GetCaller("deployment",
+		txhandle.BatchTxHandler(map[string]*txhandle.ChaincodeTx{
+			Method_Init:       &txhandle.ChaincodeTx{test_ccname, InitHandler(cfg), nil, nil},
+			token.Method_Init: &txhandle.ChaincodeTx{test_ccname, token.InitHandler(tokencfg), nil, nil},
 		}))
 
-	deployTx.TxGenerator = spout.TxGenerator
+	err := deployTx.CommitBatch("init")
 
-	err := deployTx.Deploy("init")
+	if err != nil {
+		t.Fatal(err)
+	}
 
+	_, err = deployTx.Result().TxID()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,8 +95,15 @@ func assign(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	tokenSpout.Dispatcher = bolt.GetCaller("assigment1", token.AssignHandler(tokencfg))
+	tokenSpout = &token.GeneralCall{spoutcore}
+	spoutcore.BeginTx(nil)
+	spoutcore.Dispatcher = bolt.GetCaller("assigment1", token.AssignHandler(tokencfg))
 	_, err = tokenSpout.Assign(addr.Hash, assignt1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = spoutcore.Result().TxID()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,8 +119,14 @@ func assign(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	tokenSpout.Dispatcher = bolt.GetCaller("assigment2", token.AssignHandler(tokencfg))
+	spoutcore.BeginTx(nil)
+	spoutcore.Dispatcher = bolt.GetCaller("assigment2", token.AssignHandler(tokencfg))
 	_, err = tokenSpout.Assign(addr.Hash, assignt2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = spoutcore.Result().TxID()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,25 +136,34 @@ func assign(t *testing.T) {
 
 func TestReg(t *testing.T) {
 	assign(t)
+	spout := &GeneralCall{spoutcore}
 
-	spout.Dispatcher = bolt.GetCaller("registrar1", RegistrarHandler(cfg))
+	spoutcore.BeginTx(nil)
+	spoutcore.Dispatcher = bolt.GetCaller("registrar1", RegistrarHandler(cfg))
 	qkey, err := spout.Registrar(privkey.Public(), "Yosemite")
 	if err != nil {
 		t.Fatal(err)
 	}
+	<-spoutcore.TxDone()
 
 	subk, err := privkey.ChildKey(big.NewInt(184467442737))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	spout.Dispatcher = bolt.GetCaller("registrar2", RegistrarHandler(cfg))
+	spoutcore.BeginTx(nil)
+	spoutcore.Dispatcher = bolt.GetCaller("registrar2", RegistrarHandler(cfg))
 	_, err = spout.Registrar(subk.Public(), "Yosemite")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = spoutcore.Result().TxID()
 	if err == nil {
 		t.Fatal("reg a childkey")
 	}
 
-	spout.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
 
 	err, data := spout.Pubkey(qkey)
 	if err != nil {
@@ -166,14 +191,16 @@ func TestReg(t *testing.T) {
 		t.Fatal("wrong pkey index")
 	}
 
-	spout.Dispatcher = bolt.GetCaller("active", ActivePkHandler(cfg))
+	spoutcore.BeginTx(nil)
+	spoutcore.Dispatcher = bolt.GetCaller("active", ActivePkHandler(cfg))
 
 	err = spout.ActivePk(qkey)
 	if err != nil {
 		t.Fatal(err)
 	}
+	<-spoutcore.TxDone()
 
-	spout.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
 
 	err, data = spout.Pubkey(qkey)
 	if err != nil {
@@ -188,14 +215,17 @@ func TestReg(t *testing.T) {
 
 func TestDirectReg(t *testing.T) {
 	assign(t)
+	spout := &GeneralCall{spoutcore}
 
-	spout.Dispatcher = bolt.GetCaller("adminreg1", AdminRegistrarHandler(cfg))
+	spoutcore.BeginTx(nil)
+	spoutcore.Dispatcher = bolt.GetCaller("adminreg1", AdminRegistrarHandler(cfg))
 	err := spout.AdminRegistrar(privkey.Public())
 	if err != nil {
 		t.Fatal(err)
 	}
+	<-spoutcore.TxDone()
 
-	spout.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
 
 	err, data := spout.Pubkey(privkey.Public().RootFingerPrint)
 	if err != nil {
@@ -223,11 +253,14 @@ func TestDirectReg(t *testing.T) {
 
 func TestFund(t *testing.T) {
 	TestDirectReg(t)
+	tokenSpout := &token.GeneralCall{spoutcore}
 
-	tokenSpout := &token.GeneralCall{txgen.DefaultTxGen(test_ccname, privkey)}
 	h := token.TransferHandler(tokencfg)
+
+	spoutcore.BeginTx(nil)
 	caller := bolt.GetCaller("transfer1", h)
-	tokenSpout.Dispatcher = caller
+	spoutcore.Dispatcher = caller
+	spoutcore.Credgenerator = txgen.NewSingleKeyCred(privkey)
 	err := bolt.AppendPreHandler(txhandle.AddrCredVerifier{h, nil})
 	if err != nil {
 		t.Fatal(err)
@@ -239,11 +272,6 @@ func TestFund(t *testing.T) {
 	}
 
 	transt1, ok := big.NewInt(0).SetString(trans1, 10)
-	if !ok {
-		t.Fatal("parse int fail")
-	}
-
-	transt2, ok := big.NewInt(0).SetString(trans1, 10)
 	if !ok {
 		t.Fatal("parse int fail")
 	}
@@ -262,16 +290,32 @@ func TestFund(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, err = spoutcore.Result().TxID()
+	if err != nil {
+		t.Fatal("transfer fail:", err)
+	}
 
 	bolt.NewTxID("transfer2")
-	tokenSpout.Credgenerator = txgen.NewSingleKeyCred(privkeyNotReg)
+	spoutcore.BeginTx(nil)
+	spoutcore.Credgenerator = txgen.NewSingleKeyCred(privkeyNotReg)
+
+	transt2, ok := big.NewInt(0).SetString(trans2, 10)
+	if !ok {
+		t.Fatal("parse int fail")
+	}
 
 	_, err = tokenSpout.Transfer(addr2.Hash, addr1.Hash, transt2)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = spoutcore.Result().TxID()
 	if err == nil {
 		t.Fatal("Do transfer without reg publickey")
 	}
 
-	tokenSpout.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
 
 	addr1bal, ok := big.NewInt(0).SetString(result1, 10)
 
@@ -285,7 +329,7 @@ func TestFund(t *testing.T) {
 	}
 
 	if addr1bal.Cmp(big.NewInt(0).SetBytes(addr1data.Balance)) != 0 {
-		t.Fatal("Wrong balance for addr1")
+		t.Fatal("Wrong balance for addr1", addr1bal.Text(10))
 	}
 
 }

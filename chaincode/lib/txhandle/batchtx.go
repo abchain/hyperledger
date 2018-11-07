@@ -8,7 +8,7 @@ import (
 	pb "hyperledger.abchain.org/protos"
 )
 
-//batchTx Handler integrating mutiple tx handlers
+//batchTx Handler integrating mutiple tx handlers and itself is another tx handlers
 
 type batchTx struct {
 	msg      pb.TxBatch

@@ -32,6 +32,15 @@ func (s stubAdapter) GetCallerAttribute(attributeName string) ([]byte, error) {
 	return s.ReadCertAttribute(attributeName)
 }
 
+//for inner invoking
+func (s stubAdapter) InvokeChaincode(chaincodeName string, method string, args [][]byte) ([]byte, error) {
+	return s.ChaincodeStubInterface.InvokeChaincode(chaincodeName, append([][]byte{[]byte(method)}, args...))
+}
+
+func (s stubAdapter) QueryChaincode(chaincodeName string, method string, args [][]byte) ([]byte, error) {
+	return s.ChaincodeStubInterface.QueryChaincode(chaincodeName, append([][]byte{[]byte(method)}, args...))
+}
+
 func CreateStub(stub shim.ChaincodeStubInterface) public_shim.ChaincodeStubInterface {
 	return stubAdapter{stub}
 }
