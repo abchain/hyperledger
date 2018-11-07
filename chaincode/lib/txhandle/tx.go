@@ -63,11 +63,6 @@ func (cci *ChaincodeTx) TxCall(stub shim.ChaincodeStubInterface,
 	return ret, nil
 }
 
-func (cci *ChaincodeTx) TxInnerCall(stub shim.ChaincodeStubInterface,
-	function string, args [][]byte) ([]byte, error) {
-
-}
-
 func (cci *ChaincodeTx) txSubCall(stub shim.ChaincodeStubInterface,
 	function string, payload []byte, parser txutil.Parser) ([]byte, error) {
 

@@ -2,15 +2,14 @@ package tx
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
+	protos "github.com/golang/protobuf/ptypes/empty"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
-	pb "hyperledger.abchain.org/protos"
 	"strings"
 )
 
 //innerTx handler is a manager which can handling any inner calling
-type InnerTxs map[string]*ChaincodeTx
+type InnerTxs CollectiveTxs
 
 func (itxh InnerTxs) TxCall(stub shim.ChaincodeStubInterface,
 	function string, args [][]byte) ([]byte, error) {
@@ -30,8 +29,15 @@ func (itxh InnerTxs) TxCall(stub shim.ChaincodeStubInterface,
 		by nonce tracking
 	*/
 
-	parser, err := txutil.ParseTx(cci.Handler.Msg(), function, args)
+	if len(args) < 1 {
+		return nil, fmt.Errorf("Calling arguments is malformed")
+	}
+
+	//we drop an empty message to pass the unmarshal an unknown original messages
+	parser, err := txutil.ParseTx(new(protos.Empty), function, args[1:])
 	if err != nil {
 		return nil, err
 	}
+
+	return h.txSubCall(stub, function, args[0], parser)
 }

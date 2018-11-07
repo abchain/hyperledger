@@ -12,12 +12,10 @@ type Parser interface {
 	GetCCname() string
 	GetNounce() []byte
 	GetTxTime() time.Time
-	GetOriginMessage() proto.Message
 	GetAddrCredential() AddrCredentials
 }
 
 type txParser struct {
-	msg    proto.Message
 	nonce  []byte
 	ccname string
 	txts   time.Time
@@ -34,10 +32,6 @@ func (t *txParser) GetNounce() []byte {
 
 func (t *txParser) GetTxTime() time.Time {
 	return t.txts
-}
-
-func (t *txParser) GetOriginMessage() proto.Message {
-	return t.msg
 }
 
 func (t *txParser) GetAddrCredential() AddrCredentials {
@@ -126,7 +120,6 @@ func ParseTx(msg proto.Message, method string, args [][]byte) (Parser, error) {
 	}
 
 	return &txParser{
-		msg,
 		header.Nonce,
 		header.Base.Ccname,
 		txTs,

@@ -65,15 +65,11 @@ func makeStringArgsToPb(funcname string, args [][]byte) *pb.ChaincodeInput {
 	//it push the "function name" as the first argument
 	//in a rpc call
 
-	var inarg [][]byte
-	if len(funcname) != 0 {
-		input.Args = append(input.Args, []byte(funcname))
-	}
-
+	input.Args = append(input.Args, []byte(funcname))
 	//TODO: here we change the byte args into string so it can passed the old fabric 0.6 defination
 	//in chaincode, we will change the chaincode interface in YA-fabric later
 	for i, arg := range args {
-		inarg[i] = []byte(toArgument(arg))
+		input.Args = []byte(toArgument(arg))
 	}
 
 	return input
