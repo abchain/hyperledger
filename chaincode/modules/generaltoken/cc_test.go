@@ -33,8 +33,9 @@ const (
 
 var spoutcore = txgen.SimpleTxGen(test_ccname)
 var bolt = &rpc.DummyCallerBuilder{CCName: test_ccname}
-var tokencfg = &StandardTokenConfig{nonce.StandardNonceConfig{test_tag, false}}
-var tokenQuerycfg = &StandardTokenConfig{nonce.StandardNonceConfig{test_tag, true}}
+var tokencfg = &StandardTokenConfig{test_tag, false, nil}
+var tokenQuerycfg = &StandardTokenConfig{test_tag, true, nil}
+var noncecfg = &nonce.StandardNonceConfig{test_tag, true}
 
 func TestDeployCc(t *testing.T) {
 
@@ -156,9 +157,10 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal("Execute duplicated assigment")
 	}
 
-	spoutcore.Dispatcher = bolt.GetQueryer(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
+	spoutcore.Dispatcher = bolt.GetQueryer(nonce.NonceQueryHandler(noncecfg))
+	spoutNonce := nonce.GeneralCall{spoutcore}
 
-	err, nc1data := spout.Nonce(nc1)
+	err, nc1data := spoutNonce.Nonce(nc1)
 	if nc1data == nil {
 		t.Fatal("Get nonce data fail", err)
 	}
@@ -167,7 +169,7 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal("Wrong nonce data")
 	}
 
-	err, nc2data := spout.Nonce(nc2)
+	err, nc2data := spoutNonce.Nonce(nc2)
 	if nc1data == nil {
 		t.Fatal("Get nonce data fail", err)
 	}
@@ -287,9 +289,10 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("Execute overflow transfer")
 	}
 
-	spoutcore.Dispatcher = bolt.GetQueryer(nonce.NonceQueryHandler(&tokenQuerycfg.StandardNonceConfig))
+	spoutcore.Dispatcher = bolt.GetQueryer(nonce.NonceQueryHandler(noncecfg))
+	spoutNonce := nonce.GeneralCall{spoutcore}
 
-	err, nc1data := spout.Nonce(nc1)
+	err, nc1data := spoutNonce.Nonce(nc1)
 	if nc1data == nil {
 		t.Fatal("Get nonce data fail", err)
 	}
@@ -298,7 +301,7 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("Wrong nonce data")
 	}
 
-	err, nc2data := spout.Nonce(nc2)
+	err, nc2data := spoutNonce.Nonce(nc2)
 	if nc1data == nil {
 		t.Fatal("Get nonce data fail", err)
 	}

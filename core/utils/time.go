@@ -32,3 +32,8 @@ func CreatePBTimestamp(t time.Time) *google_protobuf.Timestamp {
 
 	return ret
 }
+
+func ConvertPBTimestamp(t *google_protobuf.Timestamp) time.Time {
+
+	return time.Unix(t.GetSeconds(), int64(t.GetNanos()))
+}

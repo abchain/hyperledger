@@ -1,17 +1,22 @@
-package state
+package runtime
 
 import (
-	p "github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/shim"
 )
+
+type StorageObject interface {
+	GetObject() interface{}
+	Save() interface{}
+	Load(interface{}) error
+}
 
 type StateMap interface {
 	SubMap(string) StateMap
 	StoragePath() string
 	GetRaw(string) ([]byte, error)
 	SetRaw(string, []byte) error
-	Get(string, p.Message) error
-	Set(string, p.Message) error
+	Get(string, StorageObject) error
+	Set(string, StorageObject) error
 }
 
 //default

@@ -4,6 +4,7 @@ syntax = "proto3";
 package ccprotos;
 
 import "hyperledger.abchain.org/protos/txaddr.proto";
+import "google/protobuf/timestamp.proto";
 
 message SimpleFund {
 	bytes	amount  = 1;
@@ -36,4 +37,32 @@ message BaseToken{
 message Assign {
 	bytes	amount  = 1;
 	protos.TxAddr  to      = 2;
+}
+
+message FuncRecord{
+	bytes     noncekey = 1;
+	bool      isSend = 2;	
+}
+
+message AccountData {
+	bytes	  balance = 1; //the amount of user owned token
+	FuncRecord lastFund = 2;
+}
+
+message NonceData{
+	string txid = 1;
+	bytes  amount = 2;
+    FuncRecord  fromLast = 3;
+	FuncRecord  toLast = 4;
+	oneof other{
+		google.protobuf.Timestamp nonceTime = 6;
+		bytes noncekey = 7;
+	}
+	
+}
+
+message TokenGlobalData{
+	bytes totalTokens = 10;
+	bytes unassignedTokens = 11;
+	 
 }

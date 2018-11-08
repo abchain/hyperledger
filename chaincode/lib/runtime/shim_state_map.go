@@ -1,7 +1,7 @@
-package state
+package runtime
 
 import (
-	p "github.com/golang/protobuf/proto"
+	"encoding/asn1"
 	"hyperledger.abchain.org/chaincode/shim"
 )
 
@@ -41,8 +41,7 @@ func (w *shimStateMap) GetRaw(key string) ([]byte, error) {
 func (w *shimStateMap) SetRaw(key string, raw []byte) error {
 	return w.stub.PutState(w.path+key, raw)
 }
-
-func (w *shimStateMap) Get(key string, m p.Message) error {
+func (w *shimStateMap) Get(key string, m StorageObject) error {
 
 	raw, err := w.GetRaw(key)
 	if err != nil {
@@ -52,13 +51,16 @@ func (w *shimStateMap) Get(key string, m p.Message) error {
 	if raw == nil {
 		return nil
 	}
-
-	return p.Unmarshal(raw, m)
+	obj := m.GetObject()
+	_, err = asn1.Unmarshal(raw, obj)
+	if err != nil {
+		return err
+	}
+	return m.Load(obj)
 }
 
-func (w *shimStateMap) Set(key string, m p.Message) error {
-
-	raw, err := p.Marshal(m)
+func (w *shimStateMap) Set(key string, m StorageObject) error {
+	raw, err := asn1.Marshal(m.Save())
 	if err != nil {
 		return err
 	}
@@ -66,9 +68,37 @@ func (w *shimStateMap) Set(key string, m p.Message) error {
 	return w.SetRaw(key, raw)
 }
 
-func (w *shimStateMapRO) Set(string, p.Message) error {
+func (w *shimStateMapRO) Set(string, StorageObject) error {
 	return nil
 }
+
+// func (w *shimStateMap) Get(key string, m p.Message) error {
+
+// 	raw, err := w.GetRaw(key)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	if raw == nil {
+// 		return nil
+// 	}
+
+// 	return p.Unmarshal(raw, m)
+// }
+
+// func (w *shimStateMap) Set(key string, m p.Message) error {
+
+// 	raw, err := p.Marshal(m)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return w.SetRaw(key, raw)
+// }
+
+// func (w *shimStateMapRO) Set(string, p.Message) error {
+// 	return nil
+// }
 
 func (w *shimStateMapRO) SetRaw(string, []byte) error {
 	return nil

@@ -3,69 +3,56 @@ package generaltoken
 import (
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
-	"hyperledger.abchain.org/core/utils"
 	"math/big"
 )
 
 type tokenTxNonce struct {
 	Key     []byte
-	Data    *pb.NonceData
 	FromKey string
 	ToKey   string
-	From    *pb.AccountData
-	To      *pb.AccountData
+	From    *pb.AccountData_s
+	To      *pb.AccountData_s
 }
 
-func (db *baseTokenTx) txNonce(txnonce []byte, from []byte, to []byte, amount *big.Int) (e error, r *tokenTxNonce) {
-
-	abyte := amount.Bytes()
-	t, _ := db.stub.GetTxTime()
+func (token *baseTokenTx) txNonce(txnonce []byte, from []byte, to []byte, amount *big.Int) (e error, r *tokenTxNonce) {
 
 	r = &tokenTxNonce{
-		Key: nonce.GeneralTokenNonceKey(txnonce, from, to, abyte),
-		Data: &pb.NonceData{
-			db.stub.GetTxID(),
-			abyte,
-			nil, nil, utils.CreatePBTimestamp(t),
-		},
+		Key: nonce.GeneralTokenNonceKey(txnonce, from, to, amount.Bytes()),
 	}
 
 	if from != nil {
 		r.FromKey = addrToKey(from)
-		senderAcc := &pb.AccountData{}
-		e = db.Get(r.FromKey, senderAcc)
+		senderAcc := &pb.AccountData_s{}
+		e = token.Storage.Get(r.FromKey, senderAcc)
 		if e != nil {
 			return
 		}
 
 		if senderAcc.Balance != nil {
 			r.From = senderAcc
-			r.Data.FromLast = senderAcc.LastFund
 		}
 	}
 
 	if to != nil {
 		r.ToKey = addrToKey(to)
-		recvAcc := &pb.AccountData{}
-		e = db.Get(r.ToKey, recvAcc)
+		recvAcc := &pb.AccountData_s{}
+		e = token.Storage.Get(r.ToKey, recvAcc)
 		if e != nil {
 			return
 		}
 
 		if recvAcc.Balance != nil {
 			r.To = recvAcc
-			r.Data.ToLast = recvAcc.LastFund
 		}
 	}
-
 	return
 
 }
 
-func (db *baseTokenTx) Nonce(key []byte) (error, *pb.NonceData) {
-	return db.tokenNonce.Nonce(key)
+func (token *baseTokenTx) Nonce(key []byte) (error, *pb.NonceData) {
+	return token.tokenNonce.Nonce(key)
 }
 
-func (db *baseTokenTx) Add(r []byte, data *pb.NonceData) error {
-	return db.tokenNonce.Add(r, data)
+func (token *baseTokenTx) Add(key []byte, amount *big.Int, from *pb.FuncRecord, to *pb.FuncRecord) error {
+	return token.tokenNonce.Add(key, amount, from, to)
 }

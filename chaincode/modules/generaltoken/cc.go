@@ -2,12 +2,16 @@ package generaltoken
 
 import (
 	"encoding/base64"
-	"hyperledger.abchain.org/chaincode/lib/state"
+	"hyperledger.abchain.org/chaincode/lib/runtime"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/shim"
 	"math/big"
 )
+
+type nonceResolver interface {
+	Nonce(stub shim.ChaincodeStubInterface, nonce []byte) nonce.TokenNonceTx
+}
 
 type TokenTx interface {
 	nonce.TokenNonceTx
@@ -22,15 +26,23 @@ type TokenConfig interface {
 	NewTx(shim.ChaincodeStubInterface, []byte) TokenTx
 }
 
-//integrate both nonce and token
 type StandardTokenConfig struct {
-	nonce.StandardNonceConfig
+	Tag      string
+	Readonly bool
+	Nonce    nonceResolver
+}
+
+type InnerNonceResolver struct {
+	*nonce.StandardNonceConfig
+}
+
+func (i InnerNonceResolver) Nonce(stub shim.ChaincodeStubInterface, _ []byte) nonce.TokenNonceTx {
+	return i.NewTx(stub)
 }
 
 type baseTokenTx struct {
-	state.StateMap
+	*runtime.ChaincodeRuntime
 	nonce      []byte
-	stub       shim.ChaincodeStubInterface
 	tokenNonce nonce.TokenNonceTx
 }
 
@@ -38,11 +50,14 @@ const (
 	tx_tag_prefix = "GenToken_"
 )
 
-func (cfg *StandardTokenConfig) NewTx(stub shim.ChaincodeStubInterface, nonce []byte) TokenTx {
+func (cfg *StandardTokenConfig) NewTx(stub shim.ChaincodeStubInterface, nc []byte) TokenTx {
 	rootname := tx_tag_prefix + cfg.Tag
+	nresolver := cfg.Nonce
+	if nresolver == nil {
+		nresolver = InnerNonceResolver{&nonce.StandardNonceConfig{cfg.Tag, cfg.Readonly}}
+	}
 
-	return &baseTokenTx{state.NewShimMap(rootname, stub, cfg.Readonly), nonce, stub,
-		cfg.StandardNonceConfig.NewTx(stub)}
+	return &baseTokenTx{runtime.NewRuntime(rootname, stub, cfg.Readonly), nc, nresolver.Nonce(stub, nc)}
 }
 
 func toAmount(a []byte) *big.Int {

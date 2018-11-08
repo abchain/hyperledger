@@ -61,7 +61,6 @@ func (i *GeneralCall) Init(amount *big.Int) error {
 }
 
 func (i *GeneralCall) Account(addr []byte) (error, *pb.AccountData) {
-
 	a := txutil.NewAddressFromHash(addr)
 	ret, err := i.Query(Method_QueryToken, &pb.QueryToken{pb.QueryToken_ENCODED, a.PBMessage()})
 
@@ -70,24 +69,6 @@ func (i *GeneralCall) Account(addr []byte) (error, *pb.AccountData) {
 	}
 
 	d := &pb.AccountData{}
-
-	err = txgen.SyncQueryResult(d, ret)
-	if err != nil {
-		return err, nil
-	}
-
-	return nil, d
-}
-
-func (i *GeneralCall) Nonce(key []byte) (error, *pb.NonceData) {
-
-	ret, err := i.Query(Method_QueryTrans, &pb.QueryTransfer{key})
-
-	if err != nil {
-		return err, nil
-	}
-
-	d := &pb.NonceData{}
 
 	err = txgen.SyncQueryResult(d, ret)
 	if err != nil {

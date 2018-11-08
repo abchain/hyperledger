@@ -116,7 +116,6 @@ func (h *tokenQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil
 }
 
 func (h *globalQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-
 	err, data := h.NewTx(stub, parser.GetNounce()).Global()
 	if err != nil {
 		return nil, err

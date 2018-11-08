@@ -6,9 +6,9 @@ import (
 	"math/big"
 )
 
-func (db *baseTokenTx) Transfer(from []byte, to []byte, amount *big.Int) ([]byte, error) {
+func (token *baseTokenTx) Transfer(from []byte, to []byte, amount *big.Int) ([]byte, error) {
 
-	err, ret := db.txNonce(db.nonce, from, to, amount)
+	err, ret := token.txNonce(token.nonce, from, to, amount)
 
 	if err != nil {
 		return nil, err
@@ -18,43 +18,40 @@ func (db *baseTokenTx) Transfer(from []byte, to []byte, amount *big.Int) ([]byte
 		return nil, errors.New("Fund sender is not exist")
 	}
 
-	if db.tokenNonce != nil {
-		err = db.Add(ret.Key, ret.Data)
-		if err != nil {
-			return nil, err
-		}
+	var toLast *pb.FuncRecord
+	if ret.To != nil {
+		toLast = ret.To.LastFund.ToPB()
 	}
 
-	if ret.To == nil {
-		ret.To = &pb.AccountData{}
-	}
-
-	senderBalance := toAmount(ret.From.Balance)
-	recvBalance := toAmount(ret.To.Balance)
-
-	if senderBalance.Cmp(amount) < 0 {
-		return nil, errors.New("No enough balance")
-	}
-
-	senderBalance = senderBalance.Sub(senderBalance, amount)
-
-	if senderBalance.Sign() < 0 {
-		return nil, errors.New("Wrong balance!")
-	}
-	recvBalance = recvBalance.Add(recvBalance, amount)
-
-	err = db.Set(ret.FromKey, &pb.AccountData{
-		senderBalance.Bytes(),
-		&pb.FuncRecord{ret.Key, true},
-	})
+	err = token.tokenNonce.Add(ret.Key, amount, ret.From.LastFund.ToPB(), toLast)
 	if err != nil {
 		return nil, err
 	}
 
-	err = db.Set(ret.ToKey, &pb.AccountData{
-		recvBalance.Bytes(),
-		&pb.FuncRecord{ret.Key, false},
-	})
+	if ret.To == nil {
+		ret.To = &pb.AccountData_s{}
+		ret.To.Balance = big.NewInt(0)
+	}
+
+	if ret.From.Balance.Cmp(amount) < 0 {
+		return nil, errors.New("No enough balance")
+	}
+
+	ret.From.Balance = big.NewInt(0).Sub(ret.From.Balance, amount)
+	ret.From.LastFund = pb.FuncRecord_s{ret.Key, true}
+
+	if ret.From.Balance.Sign() < 0 {
+		return nil, errors.New("Wrong balance!")
+	}
+	ret.To.Balance = big.NewInt(0).Add(ret.To.Balance, amount)
+	ret.To.LastFund = pb.FuncRecord_s{ret.Key, false}
+
+	err = token.Storage.Set(ret.FromKey, ret.From)
+	if err != nil {
+		return nil, err
+	}
+
+	err = token.Storage.Set(ret.ToKey, ret.To)
 	if err != nil {
 		return nil, err
 	}
@@ -63,27 +60,29 @@ func (db *baseTokenTx) Transfer(from []byte, to []byte, amount *big.Int) ([]byte
 
 }
 
-func (db *baseTokenTx) Account(addr []byte) (error, *pb.AccountData) {
+func (token *baseTokenTx) Account(addr []byte) (error, *pb.AccountData) {
 
-	acc := &pb.AccountData{}
-	err := db.Get(addrToKey(addr), acc)
+	acc := &pb.AccountData_s{}
+	err := token.Storage.Get(addrToKey(addr), acc)
 	if err != nil {
 		return err, nil
 	}
 
-	return nil, acc
+	return nil, acc.ToPB()
 
 }
 
-func (db *baseTokenTx) Init(total *big.Int) error {
-	deploy := &pb.TokenGlobalData{}
-	err := db.Get(deployName, deploy)
+func (token *baseTokenTx) Init(total *big.Int) error {
+	deploy := &pb.TokenGlobalData_s{}
+	err := token.Storage.Get(deployName, deploy)
 
 	if deploy.TotalTokens != nil {
 		return errors.New("Can not re-deploy existed data")
 	}
 
-	err = db.Set(deployName, &pb.TokenGlobalData{total.Bytes(), total.Bytes()})
+	deploy.TotalTokens = total
+	deploy.UnassignedTokens = total
+	err = token.Storage.Set(deployName, deploy)
 	if err != nil {
 		return err
 	}
