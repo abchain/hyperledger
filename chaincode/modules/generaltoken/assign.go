@@ -73,7 +73,7 @@ func (token *baseTokenTx) Assign(to []byte, amount *big.Int) ([]byte, error) {
 	return ret.Key, nil
 }
 
-func (token *baseTokenTx) Global() (error, *pb.TokenGlobalData) {
+func (token *baseTokenTx) Global() (error, *pb.TokenGlobalData_s) {
 
 	global := &pb.TokenGlobalData_s{}
 
@@ -83,5 +83,5 @@ func (token *baseTokenTx) Global() (error, *pb.TokenGlobalData) {
 		return err, nil
 	}
 
-	return nil, global.ToPB()
+	return nil, global
 }

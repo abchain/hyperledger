@@ -66,7 +66,7 @@ func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 		return nil, errors.New("No publickey")
 	}
 
-	contract := make(map[string]uint32)
+	contract := make(map[string]int32)
 	for _, m := range h.msg.ContractBody {
 		addr, err := txutil.NewAddressFromPBMessage(m.Addr)
 		if err != nil {
@@ -118,7 +118,7 @@ func (h *queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pars
 		return nil, err
 	}
 
-	return rpc.EncodeRPCResult(data)
+	return rpc.EncodeRPCResult(data.ToPB())
 
 }
 
@@ -140,5 +140,5 @@ func (h *memberQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 		return nil, err
 	}
 
-	return rpc.EncodeRPCResult(data)
+	return rpc.EncodeRPCResult(data.ToPB())
 }

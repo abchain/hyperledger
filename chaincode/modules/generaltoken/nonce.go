@@ -49,7 +49,7 @@ func (token *baseTokenTx) txNonce(txnonce []byte, from []byte, to []byte, amount
 
 }
 
-func (token *baseTokenTx) Nonce(key []byte) (error, *pb.NonceData) {
+func (token *baseTokenTx) Nonce(key []byte) (error, *pb.NonceData_s) {
 	return token.tokenNonce.Nonce(key)
 }
 

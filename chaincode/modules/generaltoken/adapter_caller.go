@@ -60,7 +60,7 @@ func (i *GeneralCall) Init(amount *big.Int) error {
 	return i.Invoke(Method_Init, msg)
 }
 
-func (i *GeneralCall) Account(addr []byte) (error, *pb.AccountData) {
+func (i *GeneralCall) Account(addr []byte) (error, *pb.AccountData_s) {
 	a := txutil.NewAddressFromHash(addr)
 	ret, err := i.Query(Method_QueryToken, &pb.QueryToken{pb.QueryToken_ENCODED, a.PBMessage()})
 
@@ -75,10 +75,12 @@ func (i *GeneralCall) Account(addr []byte) (error, *pb.AccountData) {
 		return err, nil
 	}
 
-	return nil, d
+	out := &pb.AccountData_s{}
+	out.LoadFromPB(d)
+	return nil, out
 }
 
-func (i *GeneralCall) Global() (error, *pb.TokenGlobalData) {
+func (i *GeneralCall) Global() (error, *pb.TokenGlobalData_s) {
 
 	ret, err := i.Query(Method_QueryGlobal, &pb.QueryGlobal{})
 
@@ -93,6 +95,8 @@ func (i *GeneralCall) Global() (error, *pb.TokenGlobalData) {
 		return err, nil
 	}
 
-	return nil, d
+	out := &pb.TokenGlobalData_s{}
+	out.LoadFromPB(d)
+	return nil, out
 
 }

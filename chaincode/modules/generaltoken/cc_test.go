@@ -33,10 +33,13 @@ const (
 
 var spoutcore = txgen.SimpleTxGen(test_ccname)
 var bolt = &rpc.DummyCallerBuilder{CCName: test_ccname}
-var tokencfg = &StandardTokenConfig{test_tag, false, nil}
-var tokenQuerycfg = &StandardTokenConfig{test_tag, true, nil}
-var noncecfg = &nonce.StandardNonceConfig{test_tag, true}
+var tokencfg = NewConfig(test_tag)
+var tokenQuerycfg = NewConfig(test_tag)
+var noncecfg = tokenQuerycfg.NonceCfg
 
+func init() {
+	tokenQuerycfg.SetReadOnly(true)
+}
 func TestDeployCc(t *testing.T) {
 
 	bolt.Reset()
@@ -89,7 +92,7 @@ func TestDeployCc(t *testing.T) {
 		t.Fatal("Fail deploy data")
 	}
 
-	if total.Cmp(big.NewInt(0).SetBytes(data.TotalTokens)) != 0 {
+	if total.Cmp(data.TotalTokens) != 0 {
 		t.Fatal("Invalid amount")
 	}
 }
@@ -165,7 +168,7 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal("Get nonce data fail", err)
 	}
 
-	if assignt1.Cmp(big.NewInt(0).SetBytes(nc1data.Amount)) != 0 {
+	if assignt1.Cmp(nc1data.Amount) != 0 {
 		t.Fatal("Wrong nonce data")
 	}
 
@@ -174,7 +177,7 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal("Get nonce data fail", err)
 	}
 
-	if assignt2.Cmp(big.NewInt(0).SetBytes(nc2data.Amount)) != 0 {
+	if assignt2.Cmp(nc2data.Amount) != 0 {
 		t.Fatal("Wrong nonce data")
 	}
 
@@ -199,7 +202,7 @@ func TestAssignCc(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	if restt.Cmp(big.NewInt(0).SetBytes(gdata.UnassignedTokens)) != 0 {
+	if restt.Cmp(gdata.UnassignedTokens) != 0 {
 		t.Fatal("Invalid amount")
 	}
 }
@@ -297,7 +300,7 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("Get nonce data fail", err)
 	}
 
-	if transt1.Cmp(big.NewInt(0).SetBytes(nc1data.Amount)) != 0 {
+	if transt1.Cmp(nc1data.Amount) != 0 {
 		t.Fatal("Wrong nonce data")
 	}
 
@@ -306,7 +309,7 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("Get nonce data fail", err)
 	}
 
-	if transt2.Cmp(big.NewInt(0).SetBytes(nc2data.Amount)) != 0 {
+	if transt2.Cmp(nc2data.Amount) != 0 {
 		t.Fatal("Wrong nonce data")
 	}
 
@@ -334,7 +337,7 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("Get addr data fail", err)
 	}
 
-	if addr1bal.Cmp(big.NewInt(0).SetBytes(addr1data.Balance)) != 0 {
+	if addr1bal.Cmp(addr1data.Balance) != 0 {
 		t.Fatal("Wrong balance for addr1")
 	}
 
@@ -343,7 +346,7 @@ func TestTransferCc(t *testing.T) {
 		t.Fatal("Get addr data fail", err)
 	}
 
-	if addr4bal.Cmp(big.NewInt(0).SetBytes(addr4data.Balance)) != 0 {
+	if addr4bal.Cmp(addr4data.Balance) != 0 {
 		t.Fatal("Wrong balance for addr4")
 	}
 

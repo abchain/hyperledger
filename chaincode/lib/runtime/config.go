@@ -1,18 +1,13 @@
 package runtime
 
 import (
-	"hyperledger.abchain.org/chaincode/shim"
+	_ "hyperledger.abchain.org/chaincode/shim"
 )
 
-type DefaultConfig struct {
-	RootName string
+type Config struct {
 	ReadOnly bool
 }
 
-func (c *DefaultConfig) NewRuntime(stub shim.ChaincodeStubInterface) *ChaincodeRuntime {
-	return NewRuntime(c.RootName, stub, c.ReadOnly)
-}
+func NewConfig() *Config { return &Config{} }
 
-func (c *DefaultConfig) NewRuntime_ROflag(stub shim.ChaincodeStubInterface, ro bool) *ChaincodeRuntime {
-	return NewRuntime(c.RootName, stub, ro)
-}
+func (c *Config) SetReadOnly(flag bool) { c.ReadOnly = flag }

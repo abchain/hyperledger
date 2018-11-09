@@ -6,7 +6,6 @@ import (
 	ccpb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
-	"math/big"
 )
 
 type FundMsg struct {
@@ -107,11 +106,11 @@ func (h *tokenQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil
 
 	switch msg.Format {
 	case ccpb.QueryToken_NUMBER:
-		return []byte(big.NewInt(0).SetBytes(data.Balance).Text(10)), nil
+		return []byte(data.Balance.Text(0)), nil
 	case ccpb.QueryToken_ENCODED:
-		return rpc.EncodeRPCResult(data)
+		return rpc.EncodeRPCResult(data.ToPB())
 	default:
-		return rpc.EncodeRPCResult(data)
+		return rpc.EncodeRPCResult(data.ToPB())
 	}
 }
 
@@ -121,7 +120,7 @@ func (h *globalQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 		return nil, err
 	}
 
-	return rpc.EncodeRPCResult(data)
+	return rpc.EncodeRPCResult(data.ToPB())
 }
 
 func (h *initHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {

@@ -60,7 +60,7 @@ func (token *baseTokenTx) Transfer(from []byte, to []byte, amount *big.Int) ([]b
 
 }
 
-func (token *baseTokenTx) Account(addr []byte) (error, *pb.AccountData) {
+func (token *baseTokenTx) Account(addr []byte) (error, *pb.AccountData_s) {
 
 	acc := &pb.AccountData_s{}
 	err := token.Storage.Get(addrToKey(addr), acc)
@@ -68,7 +68,7 @@ func (token *baseTokenTx) Account(addr []byte) (error, *pb.AccountData) {
 		return err, nil
 	}
 
-	return nil, acc.ToPB()
+	return nil, acc
 
 }
 

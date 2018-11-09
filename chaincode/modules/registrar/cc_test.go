@@ -6,7 +6,6 @@ import (
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
-	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	"hyperledger.abchain.org/core/crypto"
 	tx "hyperledger.abchain.org/core/tx"
 	"math/big"
@@ -33,8 +32,12 @@ var bolt = &rpc.DummyCallerBuilder{CCName: test_ccname}
 
 var cfg = &StandardRegistrarConfig{test_tag, false, managattrN, regionattrN}
 var querycfg = &StandardRegistrarConfig{test_tag, true, managattrN, regionattrN}
-var tokencfg = &token.StandardTokenConfig{nonce.StandardNonceConfig{test_tag, false}}
-var tokenQuerycfg = &token.StandardTokenConfig{nonce.StandardNonceConfig{test_tag, false}}
+var tokencfg = token.NewConfig(test_tag)
+var tokenQuerycfg = token.NewConfig(test_tag)
+
+func init() {
+	tokenQuerycfg.SetReadOnly(true)
+}
 
 var privkey *crypto.PrivateKey
 var privkeyNotReg *crypto.PrivateKey
@@ -328,7 +331,7 @@ func TestFund(t *testing.T) {
 		t.Fatal("Get addr data fail", err)
 	}
 
-	if addr1bal.Cmp(big.NewInt(0).SetBytes(addr1data.Balance)) != 0 {
+	if addr1bal.Cmp(addr1data.Balance) != 0 {
 		t.Fatal("Wrong balance for addr1", addr1bal.Text(10))
 	}
 

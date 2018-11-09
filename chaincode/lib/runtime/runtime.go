@@ -24,8 +24,13 @@ type ChaincodeRuntime struct {
 	Core    CoreInterface
 }
 
-func NewRuntime(root string, stub shim.ChaincodeStubInterface, readOnly bool) *ChaincodeRuntime {
+func NewRuntime(root string, stub shim.ChaincodeStubInterface, cfg *Config) *ChaincodeRuntime {
 
-	return &ChaincodeRuntime{NewShimMap(root, stub, readOnly), stub, stub}
+	return &ChaincodeRuntime{NewShimMap(root, stub, cfg.ReadOnly), stub, stub}
+
+}
+
+func (r *ChaincodeRuntime) SubRuntime(node string) *ChaincodeRuntime {
+	return &ChaincodeRuntime{r.Storage.SubMap(node), r.Tx, r.Core}
 
 }

@@ -22,21 +22,34 @@ func toAmount(a []byte) *big.Int {
 }
 
 const (
-	WeightBase = 1000000
+	WeightBase    = 1000000
+	MaxContractor = 1024
 )
 
-func newContract(contract map[string]uint32, delePk *crypto.PublicKey) (*pb.Contract, error) {
+func newContract(contract map[string]int32, delePk *crypto.PublicKey) (*pb.Contract_s, error) {
 
-	pcon := &pb.Contract{
-		DelegatorPk: delePk.PBMessage(),
+	if len(contract) > MaxContractor {
+		return nil, errors.New("Too many contractors")
 	}
 
-	var totalweight uint64
-	var usedweight uint32
+	pcon := &pb.Contract_s{}
+	pcon.TotalRedeem = big.NewInt(0)
+
+	fgp, err := crypto.GetPublicKeyRootFingerprint(delePk.Key)
+	if err != nil {
+		return nil, err
+	}
+	pcon.DelegatorPkFingerPrint = fgp
+
+	var totalweight int64
+	var usedweight int32
 	var keys = make([]string, 0, len(contract))
 
 	for k, weight := range contract {
-		totalweight = totalweight + uint64(weight)
+		if weight < 0 {
+			return nil, errors.New("Minus weight is not allowed")
+		}
+		totalweight = totalweight + int64(weight)
 		keys = append(keys, k)
 	}
 
@@ -47,15 +60,15 @@ func newContract(contract map[string]uint32, delePk *crypto.PublicKey) (*pb.Cont
 
 		weight := contract[saddr]
 		//turn the weight into a base of weightBase
-		weight = uint32(uint64(weight) * uint64(WeightBase) / totalweight)
+		weight = int32(int64(weight) * int64(WeightBase) / totalweight)
 		usedweight = weight + usedweight
 
-		pcon.Status = append(pcon.Status, &pb.Contract_MemberStatus{weight, nil, saddr})
+		pcon.Status = append(pcon.Status, pb.Contract_MemberStatus_s{weight, big.NewInt(0), saddr})
 	}
 
-	if usedweight < uint32(WeightBase) {
+	if usedweight < int32(WeightBase) {
 
-		resident := uint32(WeightBase) - usedweight
+		resident := int32(WeightBase) - usedweight
 
 		for resident > 0 {
 			//simply add them into first N contractors ...
@@ -70,31 +83,22 @@ func newContract(contract map[string]uint32, delePk *crypto.PublicKey) (*pb.Cont
 			}
 		}
 
-	} else if usedweight > uint32(WeightBase) {
+	} else if usedweight > int32(WeightBase) {
 		panic("The arithmetic in golang may have ruined")
 	}
 
 	return pcon, nil
 }
 
-func hashContract(contract *pb.Contract, nonce []byte) (*tx.Address, error) {
-
-	pk, err := crypto.PublicKeyFromPBMessage(contract.DelegatorPk)
-	if err != nil {
-		return nil, err
-	}
-
-	pkAddr, err := tx.NewAddress(pk)
-	if err != nil {
-		return nil, err
-	}
+func hashContract(contract *pb.Contract_s, nonce []byte) (*tx.Address, error) {
 
 	var maphash []byte
 	for _, v := range contract.Status {
-		maphashItem, err := utils.DoubleSHA256(
+		maphashItem, err := utils.HMACSHA256(
 			bytes.Join([][]byte{
 				[]byte(v.MemberID),
-				[]byte(strconv.Itoa(int(v.Weight)))}, nil))
+				[]byte(strconv.Itoa(int(v.Weight)))}, nil),
+			contract.DelegatorPkFingerPrint)
 
 		if err != nil {
 			return nil, err
@@ -114,8 +118,7 @@ func hashContract(contract *pb.Contract, nonce []byte) (*tx.Address, error) {
 		}
 	}
 
-	hash, err := utils.DoubleSHA256(bytes.Join([][]byte{
-		pkAddr.Hash, maphash, nonce}, nil))
+	hash, err := utils.DoubleSHA256(bytes.Join([][]byte{maphash, nonce}, nil))
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +126,7 @@ func hashContract(contract *pb.Contract, nonce []byte) (*tx.Address, error) {
 	return tx.NewAddressFromHash(hash), nil
 }
 
-func (db *baseContractTx) New(contract map[string]uint32,
+func (cn *baseContractTx) New(contract map[string]int32,
 	delePk *crypto.PublicKey) ([]byte, error) {
 
 	pcon, err := newContract(contract, delePk)
@@ -131,16 +134,15 @@ func (db *baseContractTx) New(contract map[string]uint32,
 		return nil, err
 	}
 
-	conAddr, err := hashContract(pcon, db.nonce)
+	conAddr, err := hashContract(pcon, cn.nonce)
 	if err != nil {
 		return nil, err
 	}
 
-	//Ts is not the part of new contract!
-	t, _ := db.stub.GetTxTime()
-	pcon.ContractTs = utils.CreatePBTimestamp(t)
+	t, _ := cn.Tx.GetTxTime()
+	pcon.ContractTs = t
 
-	err = db.Set(conAddr.ToString(), pcon)
+	err = cn.Storage.Set(conAddr.ToString(), pcon)
 	if err != nil {
 		return nil, err
 	}
@@ -148,12 +150,12 @@ func (db *baseContractTx) New(contract map[string]uint32,
 	return conAddr.Hash, nil
 }
 
-func (db *baseContractTx) Query(addr []byte) (error, *pb.Contract) {
+func (cn *baseContractTx) Query(addr []byte) (error, *pb.Contract_s) {
 	conAddr := tx.NewAddressFromHash(addr)
 
-	con := &pb.Contract{}
+	con := &pb.Contract_s{}
 
-	err := db.Get(conAddr.ToString(), con)
+	err := cn.Storage.Get(conAddr.ToString(), con)
 	if err != nil {
 		return err, nil
 	}
@@ -161,71 +163,62 @@ func (db *baseContractTx) Query(addr []byte) (error, *pb.Contract) {
 	return nil, con
 }
 
-func (db *baseContractTx) QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract) {
+func (cn *baseContractTx) QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract_s) {
 
-	err, data := db.Query(conaddr)
+	err, data := cn.Query(conaddr)
 	if err != nil {
 		return err, nil
 	}
 
-	saddr := tx.NewAddressFromHash(addr).ToString()
-
-	for _, v := range data.Status {
-		if v.MemberID == saddr {
-			data.Status = []*pb.Contract_MemberStatus{v}
-			return nil, data
-		}
+	m, ok := data.Find(tx.NewAddressFromHash(addr).ToString())
+	if !ok {
+		return errors.New("Not a member"), nil
 	}
 
-	return errors.New("Not a member"), nil
-
+	data.Status = []pb.Contract_MemberStatus_s{m}
+	return nil, data
 }
 
-func (db *baseContractTx) Redeem(conaddr []byte, addr []byte, amount *big.Int, redeemAddr []byte) ([]byte, error) {
+func (cn *baseContractTx) Redeem(conaddr []byte, addr []byte, amount *big.Int, redeemAddr []byte) ([]byte, error) {
 
 	conAddrs := tx.NewAddressFromHash(conaddr).ToString()
 
-	contract := &pb.Contract{}
+	contract := &pb.Contract_s{}
 
-	err := db.Get(conAddrs, contract)
+	err := cn.Storage.Get(conAddrs, contract)
 	if err != nil {
 		return nil, err
 	}
 
-	err, acc := db.token.Account(conaddr)
+	err, acc := cn.token.Account(conaddr)
 	if err != nil {
 		return nil, err
 	}
 
-	member, ok := contract.Find(tx.NewAddressFromHash(addr).ToString())
-	if !ok {
+	member, mindex := contract.FindAndAccess(tx.NewAddressFromHash(addr).ToString())
+	if mindex < 0 {
 		return nil, errors.New("Not a member")
 	}
 
-	totalRedeem := toAmount(contract.TotalRedeem)
-	curBalance := toAmount(acc.Balance)
-
-	totalAsset := curBalance.Add(totalRedeem, curBalance)
+	totalAsset := big.NewInt(0).Add(contract.TotalRedeem, acc.Balance)
 
 	memberAsset := big.NewInt(int64(member.Weight))
 	memberAsset = memberAsset.Mul(memberAsset, totalAsset).
 		Div(memberAsset, big.NewInt(WeightBase))
 
-	haveRedeem := toAmount(member.TotalRedeem)
-
-	if memberAsset.Cmp(haveRedeem) <= 0 {
+	if memberAsset.Cmp(member.TotalRedeem) <= 0 {
 		return nil, errors.New("Could not redeem more")
 	}
 
-	canRedeem := memberAsset.Sub(memberAsset, haveRedeem)
-	if (amount.IsUint64() && amount.Uint64() == 0) || canRedeem.Cmp(amount) < 0 {
+	canRedeem := big.NewInt(0).Sub(memberAsset, member.TotalRedeem)
+	if (amount.Int64() == 0) || canRedeem.Cmp(amount) < 0 {
 		amount = canRedeem
 	}
 
-	member.TotalRedeem = haveRedeem.Add(haveRedeem, amount).Bytes()
-	contract.TotalRedeem = totalRedeem.Add(totalRedeem, amount).Bytes()
+	contract.TotalRedeem = big.NewInt(0).Add(contract.TotalRedeem, amount)
+	contract.Status[mindex].TotalRedeem = big.NewInt(0).Add(member.TotalRedeem, amount)
 
-	err = db.Set(conAddrs, contract)
+	err = cn.Storage.Set(conAddrs, contract)
 	if err != nil {
 		return nil, err
 	}
@@ -234,5 +227,5 @@ func (db *baseContractTx) Redeem(conaddr []byte, addr []byte, amount *big.Int, r
 		redeemAddr = addr
 	}
 
-	return db.token.Transfer(conaddr, redeemAddr, amount)
+	return cn.token.Transfer(conaddr, redeemAddr, amount)
 }

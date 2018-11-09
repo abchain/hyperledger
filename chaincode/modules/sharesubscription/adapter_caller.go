@@ -24,7 +24,7 @@ const (
 
 func (i *GeneralCall) CanOmitRedeemAddr() { i.omitRedeemAddr = true }
 
-func (i *GeneralCall) New(contract map[string]uint32, pk *crypto.PublicKey) ([]byte, error) {
+func (i *GeneralCall) New(contract map[string]int32, pk *crypto.PublicKey) ([]byte, error) {
 
 	if len(contract) == 0 {
 		return nil, errors.New("Empty contract")
@@ -91,7 +91,7 @@ func (i *GeneralCall) Redeem(conaddr []byte, addr []byte, amount *big.Int, redee
 
 }
 
-func (i *GeneralCall) Query(addr []byte) (error, *pb.Contract) {
+func (i *GeneralCall) Query(addr []byte) (error, *pb.Contract_s) {
 
 	msg := &pb.QueryContract{
 		txutil.NewAddressFromHash(addr).PBMessage(),
@@ -109,10 +109,12 @@ func (i *GeneralCall) Query(addr []byte) (error, *pb.Contract) {
 		return err, nil
 	}
 
-	return nil, d
+	ret := new(pb.Contract_s)
+	ret.LoadFromPB(d)
+	return nil, ret
 }
 
-func (i *GeneralCall) QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract) {
+func (i *GeneralCall) QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract_s) {
 	msg := &pb.QueryContract{
 		txutil.NewAddressFromHash(conaddr).PBMessage(),
 		txutil.NewAddressFromHash(addr).PBMessage(),
@@ -129,5 +131,7 @@ func (i *GeneralCall) QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract
 		return err, nil
 	}
 
-	return nil, d
+	ret := new(pb.Contract_s)
+	ret.LoadFromPB(d)
+	return nil, ret
 }

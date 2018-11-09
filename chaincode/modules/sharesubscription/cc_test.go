@@ -6,7 +6,6 @@ import (
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
-	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	"hyperledger.abchain.org/core/crypto"
 	tx "hyperledger.abchain.org/core/tx"
 	"math/big"
@@ -36,12 +35,17 @@ const (
 
 var spoutcore = txgen.SimpleTxGen(test_ccname)
 var bolt = &rpc.DummyCallerBuilder{CCName: test_ccname}
-var tokencfg = &token.StandardTokenConfig{nonce.StandardNonceConfig{test_tag, false}}
-var tokenQuerycfg = &token.StandardTokenConfig{nonce.StandardNonceConfig{test_tag, true}}
-var cfg = &StandardContractConfig{test_tag, false, tokencfg}
-var querycfg = &StandardContractConfig{test_tag, true, tokenQuerycfg}
+var tokencfg = token.NewConfig(test_tag)
+var tokenQuerycfg = token.NewConfig(test_tag)
+var cfg = NewConfig(test_tag)
+var querycfg = NewConfig(test_tag)
 
-var contract map[string]uint32
+func init() {
+	tokenQuerycfg.SetReadOnly(true)
+	querycfg.SetReadOnly(true)
+}
+
+var contract map[string]int32
 var addr1S, addr2S, addr3S, addr4S string
 
 func initContract(t *testing.T) {
@@ -50,7 +54,7 @@ func initContract(t *testing.T) {
 	addr3S = tx.NewAddressFromHash([]byte(addr3)).ToString()
 	addr4S = tx.NewAddressFromHash([]byte(addr4)).ToString()
 
-	contract = map[string]uint32{
+	contract = map[string]int32{
 		addr1S: 34,
 		addr2S: 35,
 		addr3S: 31,
@@ -196,7 +200,7 @@ func TestContract(t *testing.T) {
 		t.Fatal("parse int fail")
 	}
 
-	bal := big.NewInt(0).SetBytes(data1.Balance)
+	bal := data1.Balance
 
 	if bal.Cmp(dlim) < 0 || bal.Cmp(ulim) > 0 {
 		t.Fatalf("wrong redeem amount: %s", bal.String())
@@ -219,7 +223,7 @@ func TestContract(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if bal.Cmp(big.NewInt(0).SetBytes(data2.Balance)) != 0 {
+	if bal.Cmp(data2.Balance) != 0 {
 		t.Fatalf("wrong redeem amount for addr2")
 	}
 }

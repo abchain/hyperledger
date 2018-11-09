@@ -9,17 +9,13 @@ import (
 	"math/big"
 )
 
-type nonceResolver interface {
-	Nonce(stub shim.ChaincodeStubInterface, nonce []byte) nonce.TokenNonceTx
-}
-
 type TokenTx interface {
 	nonce.TokenNonceTx
 	Init(amount *big.Int) error
 	Transfer(from []byte, to []byte, amount *big.Int) ([]byte, error)
 	Assign(to []byte, amount *big.Int) ([]byte, error)
-	Account(addr []byte) (error, *pb.AccountData)
-	Global() (error, *pb.TokenGlobalData)
+	Account(addr []byte) (error, *pb.AccountData_s)
+	Global() (error, *pb.TokenGlobalData_s)
 }
 
 type TokenConfig interface {
@@ -27,17 +23,16 @@ type TokenConfig interface {
 }
 
 type StandardTokenConfig struct {
-	Tag      string
-	Readonly bool
-	Nonce    nonceResolver
+	Root string
+	*runtime.Config
+	NonceCfg nonce.NonceConfig
 }
 
-type InnerNonceResolver struct {
-	*nonce.StandardNonceConfig
-}
-
-func (i InnerNonceResolver) Nonce(stub shim.ChaincodeStubInterface, _ []byte) nonce.TokenNonceTx {
-	return i.NewTx(stub)
+func NewConfig(tag string) *StandardTokenConfig {
+	cfg := runtime.NewConfig()
+	nccfg := nonce.NewConfig(tag)
+	nccfg.Config = cfg
+	return &StandardTokenConfig{tx_tag_prefix + tag, cfg, nccfg}
 }
 
 type baseTokenTx struct {
@@ -51,13 +46,9 @@ const (
 )
 
 func (cfg *StandardTokenConfig) NewTx(stub shim.ChaincodeStubInterface, nc []byte) TokenTx {
-	rootname := tx_tag_prefix + cfg.Tag
-	nresolver := cfg.Nonce
-	if nresolver == nil {
-		nresolver = InnerNonceResolver{&nonce.StandardNonceConfig{cfg.Tag, cfg.Readonly}}
-	}
 
-	return &baseTokenTx{runtime.NewRuntime(rootname, stub, cfg.Readonly), nc, nresolver.Nonce(stub, nc)}
+	return &baseTokenTx{runtime.NewRuntime(cfg.Root, stub, cfg.Config), nc, cfg.NonceCfg.NewTx(stub, nc)}
+
 }
 
 func toAmount(a []byte) *big.Int {

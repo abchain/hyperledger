@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"crypto/hmac"
 	"crypto/sha256"
 	"errors"
 	"golang.org/x/crypto/ripemd160"
@@ -39,4 +40,15 @@ func DoubleSHA256(data []byte) ([]byte, error) {
 	}
 
 	return hash2pass[:], nil
+}
+
+func HMACSHA256(data []byte, seed []byte) ([]byte, error) {
+	hasher := hmac.New(sha256.New, seed)
+
+	_, err := hasher.Write(data)
+	if err != nil {
+		return nil, errors.New("Wrong hmac write")
+	}
+
+	return hasher.Sum(nil), nil
 }

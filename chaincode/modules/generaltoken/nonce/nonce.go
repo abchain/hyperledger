@@ -13,17 +13,21 @@ import (
 )
 
 type TokenNonceTx interface {
-	Nonce(key []byte) (error, *pb.NonceData)
+	Nonce(key []byte) (error, *pb.NonceData_s)
 	Add([]byte, *big.Int, *pb.FuncRecord, *pb.FuncRecord) error
 }
 
 type NonceConfig interface {
-	NewTx(shim.ChaincodeStubInterface) TokenNonceTx
+	NewTx(shim.ChaincodeStubInterface, []byte) TokenNonceTx
 }
 
 type StandardNonceConfig struct {
-	Tag      string
-	Readonly bool
+	Root string
+	*runtime.Config
+}
+
+func NewConfig(tag string) *StandardNonceConfig {
+	return &StandardNonceConfig{nonce_tag_prefix + tag, runtime.NewConfig()}
 }
 
 func GeneralTokenNonceKey(txnonce []byte, from []byte, to []byte, amount []byte) []byte {
@@ -47,13 +51,12 @@ const (
 	nonce_tag_prefix = "GenTokenNonce_"
 )
 
-func (cfg *StandardNonceConfig) NewTx(stub shim.ChaincodeStubInterface) TokenNonceTx {
-	rootname := nonce_tag_prefix + cfg.Tag
+func (cfg *StandardNonceConfig) NewTx(stub shim.ChaincodeStubInterface, _ []byte) TokenNonceTx {
 
-	return baseNonceTx{runtime.NewRuntime(rootname, stub, cfg.Readonly)}
+	return baseNonceTx{runtime.NewRuntime(cfg.Root, stub, cfg.Config)}
 }
 
-func (nc baseNonceTx) Nonce(key []byte) (error, *pb.NonceData) {
+func (nc baseNonceTx) Nonce(key []byte) (error, *pb.NonceData_s) {
 
 	if len(key) != sha256.Size {
 		return errors.New("Invalid nonce key length"), nil
@@ -69,7 +72,7 @@ func (nc baseNonceTx) Nonce(key []byte) (error, *pb.NonceData) {
 		return nil, nil
 	}
 
-	return nil, ret.ToPB()
+	return nil, ret
 }
 
 func (nc baseNonceTx) Add(key []byte, amount *big.Int, from *pb.FuncRecord, to *pb.FuncRecord) error {

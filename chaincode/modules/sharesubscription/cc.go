@@ -1,7 +1,7 @@
 package subscription
 
 import (
-	"hyperledger.abchain.org/chaincode/lib/state"
+	"hyperledger.abchain.org/chaincode/lib/runtime"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
 	"hyperledger.abchain.org/chaincode/shim"
@@ -10,10 +10,10 @@ import (
 )
 
 type ContractTx interface {
-	New(map[string]uint32, *crypto.PublicKey) ([]byte, error)                               //return contract address
+	New(map[string]int32, *crypto.PublicKey) ([]byte, error)                                //return contract address
 	Redeem(conaddr []byte, addr []byte, amount *big.Int, redeemAddr []byte) ([]byte, error) //return noncekey in token
-	Query(addr []byte) (error, *pb.Contract)
-	QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract)
+	Query(addr []byte) (error, *pb.Contract_s)
+	QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract_s)
 }
 
 type ContractConfig interface {
@@ -21,15 +21,21 @@ type ContractConfig interface {
 }
 
 type StandardContractConfig struct {
-	Tag      string
-	Readonly bool
+	Root string
+	*runtime.Config
 	TokenCfg token.TokenConfig
 }
 
+func NewConfig(tag string) *StandardContractConfig {
+	cfg := runtime.NewConfig()
+	tkcfg := token.NewConfig(tag)
+	tkcfg.Config = cfg
+	return &StandardContractConfig{contract_tag_prefix + tag, cfg, tkcfg}
+}
+
 type baseContractTx struct {
-	state.StateMap
+	*runtime.ChaincodeRuntime
 	nonce []byte
-	stub  shim.ChaincodeStubInterface
 	token token.TokenTx
 }
 
@@ -38,8 +44,5 @@ const (
 )
 
 func (cfg *StandardContractConfig) NewTx(stub shim.ChaincodeStubInterface, nonce []byte) ContractTx {
-	rootname := contract_tag_prefix + cfg.Tag
-
-	return &baseContractTx{state.NewShimMap(rootname, stub, cfg.Readonly), nonce,
-		stub, cfg.TokenCfg.NewTx(stub, nonce)}
+	return &baseContractTx{runtime.NewRuntime(cfg.Root, stub, cfg.Config), nonce, cfg.TokenCfg.NewTx(stub, nonce)}
 }

@@ -72,6 +72,13 @@ func (w *shimStateMapRO) Set(string, StorageObject) error {
 	return nil
 }
 
+func (w *shimStateMapRO) SubMap(node string) StateMap {
+
+	s := w.shimStateMap.SubMap(node).(*shimStateMap)
+	return &shimStateMapRO{*s}
+
+}
+
 // func (w *shimStateMap) Get(key string, m p.Message) error {
 
 // 	raw, err := w.GetRaw(key)

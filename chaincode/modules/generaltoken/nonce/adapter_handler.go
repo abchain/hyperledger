@@ -34,19 +34,19 @@ func (h *nonceQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil
 
 	msg := &h.msg
 
-	err, data := h.NewTx(stub).Nonce(msg.Nonce)
+	err, data := h.NewTx(stub, parser.GetNounce()).Nonce(msg.Nonce)
 	if err != nil {
 		return nil, err
 	}
 
-	return rpc.EncodeRPCResult(data)
+	return rpc.EncodeRPCResult(data.ToPB())
 }
 
 func (h *nonceAddHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 
 	msg := &h.msg
 
-	if err := h.NewTx(stub).Add(msg.GetNoncekey(), big.NewInt(0).SetBytes(msg.GetAmount()),
+	if err := h.NewTx(stub, parser.GetNounce()).Add(msg.GetNoncekey(), big.NewInt(0).SetBytes(msg.GetAmount()),
 		msg.GetFromLast(), msg.GetToLast()); err != nil {
 		return nil, err
 	}

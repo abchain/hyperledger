@@ -2,7 +2,7 @@ package registrar
 
 import (
 	"encoding/base64"
-	"hyperledger.abchain.org/chaincode/lib/state"
+	"hyperledger.abchain.org/chaincode/lib/runtime"
 	pb "hyperledger.abchain.org/chaincode/modules/registrar/protos"
 	"hyperledger.abchain.org/chaincode/shim"
 	"hyperledger.abchain.org/core/crypto"
@@ -34,7 +34,7 @@ const (
 )
 
 type registrarTx struct {
-	state.StateMap
+	runtime.StateMap_Legacy
 	stub shim.ChaincodeStubInterface
 	*StandardRegistrarConfig
 }
@@ -42,7 +42,7 @@ type registrarTx struct {
 func (cfg *StandardRegistrarConfig) NewTx(stub shim.ChaincodeStubInterface) RegistrarTx {
 	rootname := reg_tag_prefix + cfg.Tag
 
-	return &registrarTx{state.NewShimMap(rootname, stub, cfg.Readonly), stub, cfg}
+	return &registrarTx{runtime.NewShimMapLegacy(rootname, stub, cfg.Readonly), stub, cfg}
 }
 
 func registrarQueryKey(key []byte) string {
