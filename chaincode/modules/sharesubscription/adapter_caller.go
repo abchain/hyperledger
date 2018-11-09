@@ -7,6 +7,7 @@ import (
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
 	"hyperledger.abchain.org/core/crypto"
 	txutil "hyperledger.abchain.org/core/tx"
+	txpb "hyperledger.abchain.org/protos"
 	"math/big"
 )
 
@@ -24,15 +25,10 @@ const (
 
 func (i *GeneralCall) CanOmitRedeemAddr() { i.omitRedeemAddr = true }
 
-func (i *GeneralCall) New(contract map[string]int32, pk *crypto.PublicKey) ([]byte, error) {
+func (i *GeneralCall) New(contract map[string]int32, addr []byte) ([]byte, error) {
 
 	if len(contract) == 0 {
 		return nil, errors.New("Empty contract")
-	}
-
-	addr, err := txutil.NewAddress(pk)
-	if err != nil {
-		return nil, err
 	}
 
 	contractTx := make([]*pb.RegContract_Member, 0, len(contract))
@@ -46,14 +42,14 @@ func (i *GeneralCall) New(contract map[string]int32, pk *crypto.PublicKey) ([]by
 		contractTx = append(contractTx, &pb.RegContract_Member{addr.PBMessage(), weight})
 	}
 
-	msg := &pb.RegContract{addr.PBMessage(), contractTx}
+	msg := &pb.RegContract{&txpb.TxAddr{Hash: addr}, contractTx}
 	err = i.Invoke(Method_NewContract, msg)
 	if err != nil {
 		return nil, err
 	}
 
 	//gen the contract addr
-	data, err := newContract(contract, pk)
+	data, err := newContract(contract, addr)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +62,7 @@ func (i *GeneralCall) New(contract map[string]int32, pk *crypto.PublicKey) ([]by
 	return conaddr.Hash, err
 }
 
-func (i *GeneralCall) Redeem(conaddr []byte, addr []byte, amount *big.Int, redeemAddr []byte) ([]byte, error) {
+func (i *GeneralCall) Redeem(conaddr []byte, addr []byte, amount *big.Int, redeemAddrs [][]byte) ([]byte, error) {
 
 	msg := &pb.RedeemContract{
 		txutil.NewAddressFromHash(conaddr).PBMessage(),

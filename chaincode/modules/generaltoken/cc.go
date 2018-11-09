@@ -3,6 +3,7 @@ package generaltoken
 import (
 	"encoding/base64"
 	"hyperledger.abchain.org/chaincode/lib/runtime"
+	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/shim"
@@ -20,6 +21,13 @@ type TokenTx interface {
 
 type TokenConfig interface {
 	NewTx(shim.ChaincodeStubInterface, []byte) TokenTx
+}
+
+//the local config must provide both a executable interface and the sub-config (corresponding its sub interface)
+//for local handler building
+type LocalConfig interface {
+	TokenConfig
+	Nonce() nonce.NonceConfig
 }
 
 type StandardTokenConfig struct {
@@ -49,6 +57,16 @@ func (cfg *StandardTokenConfig) NewTx(stub shim.ChaincodeStubInterface, nc []byt
 
 	return &baseTokenTx{runtime.NewRuntime(cfg.Root, stub, cfg.Config), nc, cfg.NonceCfg.NewTx(stub, nc)}
 
+}
+
+func (cfg *StandardTokenConfig) Nonce() nonce.NonceConfig { return cfg.NonceCfg }
+
+type InnerInvokeConfig struct {
+	txgen.InnerChaincode
+}
+
+func (c InnerInvokeConfig) NewTx(stub shim.ChaincodeStubInterface, nc []byte) TokenTx {
+	return NewFullGeneralCall(c.NewInnerTxInterface(stub, nc))
 }
 
 func toAmount(a []byte) *big.Int {

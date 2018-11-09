@@ -48,6 +48,10 @@ func init() {
 var contract map[string]int32
 var addr1S, addr2S, addr3S, addr4S string
 
+func initCond() {
+	bolt.Reset()
+}
+
 func initContract(t *testing.T) {
 	addr1S = tx.NewAddressFromHash([]byte(addr1)).ToString()
 	addr2S = tx.NewAddressFromHash([]byte(addr2)).ToString()
@@ -62,10 +66,19 @@ func initContract(t *testing.T) {
 	}
 }
 
-func initTest(t *testing.T) {
+func initTokenCC() {
 
-	//we only use the db in stub and never do mocking from chaincode interface
-	bolt.Reset()
+	ccname := "tokencc"
+
+	cc := rpc.NewLocalChaincode(txhandle.InnerTxs(nonce.GeneralTemplate(test_ccname, token.NewConfig(test_tag))))
+
+	bolt.Stub().Invokables[ccname] = cc.MockStub
+
+	tokenCfg = token.InnerInvokeConfig{txgen.InnerChaincode(ccname)}
+
+}
+
+func initTest(t *testing.T) {
 
 	deployTx := &txgen.BatchTxCall{TxGenerator: spoutcore}
 	tokenSpout := &token.GeneralCall{deployTx}
@@ -81,7 +94,7 @@ func initTest(t *testing.T) {
 
 	spoutcore.Dispatcher = bolt.GetCaller("deployment",
 		txhandle.BatchTxHandler(map[string]*txhandle.ChaincodeTx{
-			token.Method_Init: &txhandle.ChaincodeTx{test_ccname, token.InitHandler(tokencfg), nil, nil},
+			token.Method_Init: &txhandle.ChaincodeTx{test_ccname, token.InitHandler(cfg.TokenCfg), nil, nil},
 		}))
 
 	err := deployTx.CommitBatch("init")
@@ -96,9 +109,12 @@ func initTest(t *testing.T) {
 	}
 }
 
-func TestContract(t *testing.T) {
-	initTest(t)
-	initContract(t)
+func initMutliCCTest(t *testing.T) {
+
+}
+
+func testContractBase(t *testing.T) {
+
 	tokenSpout := &token.GeneralCall{spoutcore}
 	spout := &GeneralCall{spoutcore, false}
 
@@ -160,7 +176,7 @@ func TestContract(t *testing.T) {
 	}
 
 	spoutcore.BeginTx(nil)
-	spoutcore.Dispatcher = bolt.GetCaller("assign", token.AssignHandler(tokencfg))
+	spoutcore.Dispatcher = bolt.GetCaller("assign", token.AssignHandler(cfg.TokenCfg))
 
 	_, err = tokenSpout.Assign(addr, assignt1)
 	if err != nil {
@@ -183,7 +199,7 @@ func TestContract(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spoutcore.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(querycfg.TokenCfg))
 
 	err, data1 := tokenSpout.Account([]byte(addr1))
 	if err != nil {
@@ -217,7 +233,7 @@ func TestContract(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spoutcore.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(tokenQuerycfg))
+	spoutcore.Dispatcher = bolt.GetQueryer(token.TokenQueryHandler(querycfg.TokenCfg))
 	err, data2 := tokenSpout.Account([]byte(addr2))
 	if err != nil {
 		t.Fatal(err)
@@ -226,4 +242,10 @@ func TestContract(t *testing.T) {
 	if bal.Cmp(data2.Balance) != 0 {
 		t.Fatalf("wrong redeem amount for addr2")
 	}
+}
+
+func TestContract(t *testing.T) {
+	initTest(t)
+	initContract(t)
+	testContractBase(t)
 }

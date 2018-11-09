@@ -10,8 +10,8 @@ import (
 )
 
 type ContractTx interface {
-	New(map[string]int32, *crypto.PublicKey) ([]byte, error)                                //return contract address
-	Redeem(conaddr []byte, addr []byte, amount *big.Int, redeemAddr []byte) ([]byte, error) //return noncekey in token
+	New(map[string]int32, []byte) ([]byte, error) //return contract address
+	Redeem(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) (*pb.RedeemResponse, error)
 	Query(addr []byte) (error, *pb.Contract_s)
 	QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract_s)
 }

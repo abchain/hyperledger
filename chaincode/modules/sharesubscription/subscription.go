@@ -26,20 +26,20 @@ const (
 	MaxContractor = 1024
 )
 
-func newContract(contract map[string]int32, delePk *crypto.PublicKey) (*pb.Contract_s, error) {
+func newContract(contract map[string]int32, addr []byte) (*pb.Contract_s, error) {
 
 	if len(contract) > MaxContractor {
 		return nil, errors.New("Too many contractors")
 	}
 
+	if len(addr) < tx.ADDRESS_HASH_LEN {
+		return nil, errors.New("Invalid addr hash")
+	}
+
 	pcon := &pb.Contract_s{}
 	pcon.TotalRedeem = big.NewInt(0)
 
-	fgp, err := crypto.GetPublicKeyRootFingerprint(delePk.Key)
-	if err != nil {
-		return nil, err
-	}
-	pcon.DelegatorPkFingerPrint = fgp
+	pcon.DelegatorPkFingerPrint = addr
 
 	var totalweight int64
 	var usedweight int32
@@ -126,10 +126,9 @@ func hashContract(contract *pb.Contract_s, nonce []byte) (*tx.Address, error) {
 	return tx.NewAddressFromHash(hash), nil
 }
 
-func (cn *baseContractTx) New(contract map[string]int32,
-	delePk *crypto.PublicKey) ([]byte, error) {
+func (cn *baseContractTx) New(contract map[string]int32, addr []byte) ([]byte, error) {
 
-	pcon, err := newContract(contract, delePk)
+	pcon, err := newContract(contract, addr)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +178,38 @@ func (cn *baseContractTx) QueryOne(conaddr []byte, addr []byte) (error, *pb.Cont
 	return nil, data
 }
 
-func (cn *baseContractTx) Redeem(conaddr []byte, addr []byte, amount *big.Int, redeemAddr []byte) ([]byte, error) {
+func (cn *baseContractTx) redeemOne(contract *pb.Contract_s, amount *big.Int, member *pb.Contract_MemberStatus_s, mindex int) ([]byte, error) {
+	totalAsset := big.NewInt(0).Add(contract.TotalRedeem, acc.Balance)
+
+	memberAsset := big.NewInt(int64(member.Weight))
+	memberAsset = memberAsset.Mul(memberAsset, totalAsset).
+		Div(memberAsset, big.NewInt(WeightBase))
+
+	if memberAsset.Cmp(member.TotalRedeem) <= 0 {
+		return nil, errors.New("Could not redeem more")
+	}
+
+	canRedeem := big.NewInt(0).Sub(memberAsset, member.TotalRedeem)
+	if (amount.Int64() == 0) || canRedeem.Cmp(amount) < 0 {
+		amount = canRedeem
+	}
+
+	contract.TotalRedeem = big.NewInt(0).Add(contract.TotalRedeem, amount)
+	contract.Status[mindex].TotalRedeem = big.NewInt(0).Add(member.TotalRedeem, amount)
+
+	err = cn.Storage.Set(conAddrs, contract)
+	if err != nil {
+		return nil, err
+	}
+
+	if redeemAddr == nil {
+		redeemAddr = addr
+	}
+
+	return cn.token.Transfer(conaddr, redeemAddr, amount)
+}
+
+func (cn *baseContractTx) Redeem(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) ([]byte, error) {
 
 	conAddrs := tx.NewAddressFromHash(conaddr).ToString()
 

@@ -21,7 +21,9 @@ type DummyCallerBuilder struct {
 	caller *ChaincodeAdapter
 }
 
-func (d *DummyCallerBuilder) Reset() { d.caller = nil }
+func (d *DummyCallerBuilder) Reset() {
+	d.caller = NewLocalChaincode(d)
+}
 
 func (d *DummyCallerBuilder) NewTxID(txid string) {
 
@@ -34,20 +36,14 @@ func (d *DummyCallerBuilder) NewTxID(txid string) {
 func (d *DummyCallerBuilder) GetCaller(txid string, h tx.TxHandler) Caller {
 
 	d.dummyCC.ChaincodeTx = &tx.ChaincodeTx{d.CCName, h, nil, nil}
-	if d.caller == nil {
-		d.caller = NewLocalChaincode(d)
-	}
 	d.caller.TxIDGen = func() string { return txid }
-
 	return d.caller
 }
 
 func (d *DummyCallerBuilder) GetQueryer(h tx.TxHandler) Caller {
 
 	d.dummyCC.ChaincodeTx = &tx.ChaincodeTx{d.CCName, h, nil, nil}
-	if d.caller == nil {
-		d.caller = NewLocalChaincode(d)
-	}
+	d.caller.TxIDGen = nil
 
 	return d.caller
 }
@@ -64,7 +60,7 @@ func (d *DummyCallerBuilder) AppendPreHandler(h tx.TxPreHandler) error {
 
 func (d *DummyCallerBuilder) Stub() *shim.MockStub {
 	if d.caller == nil {
-		return nil
+		panic("Builder is not init")
 	}
 
 	return d.caller.MockStub

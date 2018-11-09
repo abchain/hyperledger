@@ -2,6 +2,7 @@ package tx
 
 import (
 	"fmt"
+	"hyperledger.abchain.org/chaincode/shim"
 )
 
 type CollectiveTxs map[string]*ChaincodeTx
@@ -32,4 +33,15 @@ func (s CollectiveTxs) Merge(ins ...CollectiveTxs) (CollectiveTxs, error) {
 
 	return s, nil
 
+}
+
+//provide a simple chaincode interface ...
+func (s CollectiveTxs) Invoke(stub shim.ChaincodeStubInterface, function string, args [][]byte, _ bool) ([]byte, error) {
+
+	h, ok := s[function]
+	if !ok {
+		return nil, fmt.Errorf("Method %s is not found", function)
+	}
+
+	return h.TxCall(stub, function, args)
 }

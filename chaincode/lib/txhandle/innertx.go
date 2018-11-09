@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-//innerTx handler is a manager which can handling any inner calling
 type InnerTxs CollectiveTxs
 
 func (itxh InnerTxs) TxCall(stub shim.ChaincodeStubInterface,
@@ -29,15 +28,22 @@ func (itxh InnerTxs) TxCall(stub shim.ChaincodeStubInterface,
 		by nonce tracking
 	*/
 
-	if len(args) < 1 {
+	if len(args) < 2 {
 		return nil, fmt.Errorf("Calling arguments is malformed")
 	}
 
+	originalFunc := string(args[1])
+
 	//we drop an empty message to pass the unmarshal an unknown original messages
-	parser, err := txutil.ParseTx(new(protos.Empty), function, args[1:])
+	parser, err := txutil.ParseTx(new(protos.Empty), originalFunc, args[2:])
 	if err != nil {
 		return nil, err
 	}
 
 	return h.txSubCall(stub, function, args[0], parser)
+}
+
+//innerTx handler also provide a chaincode interface to handling inner calling
+func (itxh InnerTxs) Invoke(stub shim.ChaincodeStubInterface, function string, args [][]byte, _ bool) ([]byte, error) {
+	return itxh.TxCall(stub, function, args)
 }

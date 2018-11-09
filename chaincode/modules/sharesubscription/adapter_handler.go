@@ -14,15 +14,9 @@ type RedeemMsg struct {
 	msg        pb.RedeemContract
 	redeemAddr *txutil.Address
 }
-
-type RegContractMsg struct {
-	msg pb.RegContract
-}
-
 type newContractHandler struct {
-	RegContractMsg
+	msg pb.RegContract
 	ContractConfig
-	pk *crypto.PublicKey
 }
 
 type redeemHandler struct {
@@ -62,10 +56,6 @@ func (h *memberQueryHandler) Msg() proto.Message { return &h.msg }
 
 func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 
-	if h.pk == nil {
-		return nil, errors.New("No publickey")
-	}
-
 	contract := make(map[string]int32)
 	for _, m := range h.msg.ContractBody {
 		addr, err := txutil.NewAddressFromPBMessage(m.Addr)
@@ -76,7 +66,7 @@ func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 		contract[addr.ToString()] = m.Weight
 	}
 
-	return h.NewTx(stub, parser.GetNounce()).New(contract, h.pk)
+	return h.NewTx(stub, parser.GetNounce()).New(contract, h.msg.DelegatorAddr.GetHash()
 }
 
 func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {

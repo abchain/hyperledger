@@ -12,13 +12,22 @@ type GeneralCall struct {
 	txgen.TxCaller
 }
 
+type FullGeneralCall struct {
+	*GeneralCall
+	nonce.TokenNonceTx
+}
+
+func NewFullGeneralCall(core txgen.TxCaller) *FullGeneralCall {
+
+	return &FullGeneralCall{&GeneralCall{core}, &nonce.GeneralCall{core}}
+}
+
 const (
 	Method_Init        = "TOKEN.INIT"
 	Method_Transfer    = "TOKEN.TRANSFER"
 	Method_Assign      = "TOKEN.ASSIGN"
 	Method_QueryToken  = "TOKEN.BALANCEQUERY"
 	Method_QueryGlobal = "TOKEN.GLOBALQUERY"
-	Method_QueryTrans  = "TOKEN.TRANSFERQUERY"
 )
 
 func (i *GeneralCall) Transfer(from []byte, to []byte, amount *big.Int) ([]byte, error) {

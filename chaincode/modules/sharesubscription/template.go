@@ -1,23 +1,17 @@
-package generaltoken
+package subscription
 
 import (
 	"hyperledger.abchain.org/chaincode/lib/txhandle"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 )
 
-//admintemplate has no verifier
-func GeneralAdminTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveTxs) {
-	ret = tx.NewCollectiveTxs()
-
-	ret[Method_Init] = &tx.ChaincodeTx{ccname, InitHandler(cfg), nil, nil}
-	ret[Method_Assign] = &tx.ChaincodeTx{ccname, AssignHandler(cfg), nil, nil}
-
-	return
-}
-
-func GeneralInvokingTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveTxs) {
+func GeneralInvokingTemplate(ccname string, cfg ContractConfig) (ret tx.CollectiveTxs) {
 
 	ret = tx.NewCollectiveTxs()
+
+	newContractH := share.NewContractHandler(cfg)
+	newContractTx := &tx.ChaincodeTx{CC_NAME, newContractH, nil, nil}
+	newContractTx.PreHandlers = append(newContractTx.PreHandlers, newContractH)
 
 	fundH := TransferHandler(cfg)
 	fundTx := &tx.ChaincodeTx{ccname, fundH, nil, nil}

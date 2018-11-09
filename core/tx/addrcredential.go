@@ -29,9 +29,66 @@ func (c *noAddrCred) ListCredPubkeys() []*crypto.PublicKey {
 	return nil
 }
 
+type addrCred struct {
+	c            *pb.TxCredential_AddrCredentials
+	verified     bool
+	verifiedAddr Address
+}
+
+func (addrc *addrCred) GetCredPubkey(addr Address) *crypto.PublicKey {
+
+	fp, err := addrFingerPrintFromCred(addrc.c)
+	if err != nil {
+		return nil
+	}
+
+	if len(fp) < fingerprintIndexLength {
+		return nil
+	}
+
+	if bytes.Compare(addr.Hash[:len(fp)], fp) != 0 {
+		return nil
+	}
+
+	pk, err := pubkeyFromCred(addrc.c)
+	return pk
+
+}
+
+func (addrc *addrCred) Verify(addr Address, hash []byte) error {
+
+	switch v := addrc.c.Cred.(type) {
+	case *pb.TxCredential_AddrCredentials_User:
+		if addrc.verified {
+			if addrc.verifiedAddr.IsEqual(&addr) {
+				return nil
+			} else {
+				return errors.New("address is not matched with verified one")
+			}
+		}
+
+		pk := addrc.GetCredPubkey(addr)
+		if pk == nil {
+			return errors.New("address is not matched with cred")
+		}
+
+		if err := verifyPk(pk, hash, v.User); err != nil {
+			return err
+		}
+
+		addrc.verified = true
+		addrc.verifiedAddr = addr
+		return nil
+	case *pb.TxCredential_AddrCredentials_Cc:
+		return errors.New("cc calling has been deprecated")
+	default:
+		return errors.New("Cred type not recongnized")
+	}
+}
+
 type soleAddrCred struct {
 	hash []byte
-	c    *pb.TxCredential_AddrCredentials
+	*addrCred
 }
 
 func addrFingerPrintFromCred(c *pb.TxCredential_AddrCredentials) ([]byte, error) {
@@ -94,44 +151,11 @@ const (
 )
 
 func (addrc *soleAddrCred) Verify(addr Address) error {
-
-	pk := addrc.GetCredPubkey(addr)
-	if pk == nil {
-		return errors.New("address is not matched with cred")
-	}
-
-	switch v := addrc.c.Cred.(type) {
-	case *pb.TxCredential_AddrCredentials_User:
-		return verifyPk(pk, addrc.hash, v.User)
-	case *pb.TxCredential_AddrCredentials_Cc:
-		return errors.New("cc calling has been deprecated")
-	}
-
-	return errors.New("Cred type not recongnized")
+	return addrc.addrCred.Verify(addr, addrc.hash)
 }
 
 func (addrc *soleAddrCred) CredCount() int {
 	return 1
-}
-
-func (addrc *soleAddrCred) GetCredPubkey(addr Address) *crypto.PublicKey {
-
-	fp, err := addrFingerPrintFromCred(addrc.c)
-	if err != nil {
-		return nil
-	}
-
-	if len(fp) < fingerprintIndexLength {
-		return nil
-	}
-
-	if bytes.Compare(addr.Hash[:len(fp)], fp) != 0 {
-		return nil
-	}
-
-	pk, err := pubkeyFromCred(addrc.c)
-	return pk
-
 }
 
 func (addrc *soleAddrCred) ListCredPubkeys() []*crypto.PublicKey {
@@ -146,7 +170,7 @@ func (addrc *soleAddrCred) ListCredPubkeys() []*crypto.PublicKey {
 
 type mutipleAddrCred struct {
 	hash  []byte
-	creds map[uint32]*pb.TxCredential_AddrCredentials
+	creds map[uint32]*addrCred
 }
 
 func toFingerPrint(b []byte) (ret uint32) {
@@ -173,12 +197,7 @@ func (maddrc *mutipleAddrCred) Verify(addr Address) error {
 		return errors.New("no cred for pk addr")
 	}
 
-	tc := &soleAddrCred{
-		maddrc.hash,
-		cred,
-	}
-
-	return tc.Verify(addr)
+	return cred.Verify(addr, maddrc.hash)
 }
 
 func (maddrc *mutipleAddrCred) CredCount() int {
@@ -193,7 +212,7 @@ func (maddrc *mutipleAddrCred) GetCredPubkey(addr Address) *crypto.PublicKey {
 		return nil
 	}
 
-	pk, err := pubkeyFromCred(c)
+	pk, err := pubkeyFromCred(c.c)
 	if err != nil {
 		return nil
 	}
@@ -206,7 +225,7 @@ func (maddrc *mutipleAddrCred) ListCredPubkeys() []*crypto.PublicKey {
 	ret := make([]*crypto.PublicKey, 0, maddrc.CredCount())
 
 	for _, c := range maddrc.creds {
-		pk, _ := pubkeyFromCred(c)
+		pk, _ := pubkeyFromCred(c.c)
 		if pk != nil {
 			ret = append(ret, pk)
 		}
@@ -221,10 +240,10 @@ func NewAddrCredential(hash []byte, addrc []*pb.TxCredential_AddrCredentials) (r
 	case 0:
 		ret = &noAddrCred{}
 	case 1:
-		ret = &soleAddrCred{hash, addrc[0]}
+		ret = &soleAddrCred{hash, &addrCred{c: addrc[0]}}
 	default:
 
-		rret := &mutipleAddrCred{hash, make(map[uint32]*pb.TxCredential_AddrCredentials)}
+		rret := &mutipleAddrCred{hash, make(map[uint32]*addrCred)}
 		ret = rret
 		for _, c := range addrc {
 
@@ -239,7 +258,7 @@ func NewAddrCredential(hash []byte, addrc []*pb.TxCredential_AddrCredentials) (r
 				return
 			}
 
-			rret.creds[toFingerPrint(fp)] = c
+			rret.creds[toFingerPrint(fp)] = &addrCred{c: c}
 		}
 	}
 

@@ -20,7 +20,7 @@ type InnerChaincode string
 func (s InnerChaincode) NewInnerTxInterface(stub shim.ChaincodeStubInterface, nonce []byte) *InnerTxGenerator {
 
 	v, err := impl.GetInnerInvoke(stub)
-	return &InnerTxGenerator{InnerInvoke: v, nonce: nonce, callError: err, chaincodeName: string(s)}
+	return &InnerTxGenerator{InnerInvoke: v, txstub: stub, nonce: nonce, callError: err, chaincodeName: string(s)}
 }
 
 func (t *InnerTxGenerator) TxDone() chan struct{} {

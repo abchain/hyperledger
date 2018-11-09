@@ -26,10 +26,12 @@ message QueryContract {
 message RedeemContract {
 	protos.TxAddr  contract = 1;
 	bytes	amount  = 2;
-	protos.TxAddr  to      = 3;
-	protos.TxAddr  redeem  = 4;
+	repeated protos.TxAddr  redeems  = 5;
 }
 
+message RedeemResponse {
+	repeated bytes nonces = 1;
+}
 
 message Contract {
 	bytes delegatorPkFingerPrint = 1; 

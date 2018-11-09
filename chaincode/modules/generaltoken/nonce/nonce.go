@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"hyperledger.abchain.org/chaincode/lib/runtime"
+	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
@@ -54,6 +55,14 @@ const (
 func (cfg *StandardNonceConfig) NewTx(stub shim.ChaincodeStubInterface, _ []byte) TokenNonceTx {
 
 	return baseNonceTx{runtime.NewRuntime(cfg.Root, stub, cfg.Config)}
+}
+
+type InnerConfig struct {
+	txgen.InnerChaincode
+}
+
+func (c InnerConfig) NewTx(stub shim.ChaincodeStubInterface, nc []byte) TokenNonceTx {
+	return &GeneralCall{c.NewInnerTxInterface(stub, nc)}
 }
 
 func (nc baseNonceTx) Nonce(key []byte) (error, *pb.NonceData_s) {
