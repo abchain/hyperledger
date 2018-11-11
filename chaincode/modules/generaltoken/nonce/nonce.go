@@ -31,12 +31,12 @@ func NewConfig(tag string) *StandardNonceConfig {
 	return &StandardNonceConfig{nonce_tag_prefix + tag, runtime.NewConfig()}
 }
 
-func GeneralTokenNonceKey(txnonce []byte, from []byte, to []byte, amount []byte) []byte {
+func GeneralTokenNonceKey(txnonce []byte, from []byte, to []byte) []byte {
 
 	shabyte := sha256.Sum256(bytes.Join([][]byte{txnonce,
 		txutil.NewAddressFromHash(from).Hash,
 		txutil.NewAddressFromHash(to).Hash,
-		amount}, nil))
+	}, nil))
 	return shabyte[:]
 }
 

@@ -201,8 +201,7 @@ func testAssignCc(t *testing.T) {
 		t.Fatal("Wrong nonce data")
 	}
 
-	if bytes.Compare(nonce.GeneralTokenNonceKey([]byte(fixednc), nil,
-		[]byte(addr3), assignt3.Bytes()), nc3) != 0 {
+	if bytes.Compare(nonce.GeneralTokenNonceKey([]byte(fixednc), nil, []byte(addr3)), nc3) != 0 {
 		t.Fatal("Get nonce key fail")
 	}
 
@@ -344,8 +343,7 @@ func testTransferCc(t *testing.T) {
 		t.Fatal("Wrong nonce data")
 	}
 
-	if bytes.Compare(nonce.GeneralTokenNonceKey([]byte(fixednc), []byte(addr3),
-		[]byte(addr1), transt3.Bytes()), nc3) != 0 {
+	if bytes.Compare(nonce.GeneralTokenNonceKey([]byte(fixednc), []byte(addr3), []byte(addr1)), nc3) != 0 {
 		t.Fatal("Get nonce key fail")
 	}
 

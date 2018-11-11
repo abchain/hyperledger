@@ -5,7 +5,6 @@ import (
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
-	"hyperledger.abchain.org/core/crypto"
 	txutil "hyperledger.abchain.org/core/tx"
 	txpb "hyperledger.abchain.org/protos"
 	"math/big"
@@ -13,7 +12,6 @@ import (
 
 type GeneralCall struct {
 	*txgen.TxGenerator
-	omitRedeemAddr bool
 }
 
 const (
@@ -22,8 +20,6 @@ const (
 	Method_Query       = "CONTRACT.SUBSCRIPTION.QUERY"
 	Method_MemberQuery = "CONTRACT.SUBSCRIPTION.QUERYONE"
 )
-
-func (i *GeneralCall) CanOmitRedeemAddr() { i.omitRedeemAddr = true }
 
 func (i *GeneralCall) New(contract map[string]int32, addr []byte) ([]byte, error) {
 
@@ -43,7 +39,7 @@ func (i *GeneralCall) New(contract map[string]int32, addr []byte) ([]byte, error
 	}
 
 	msg := &pb.RegContract{&txpb.TxAddr{Hash: addr}, contractTx}
-	err = i.Invoke(Method_NewContract, msg)
+	err := i.Invoke(Method_NewContract, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -62,20 +58,18 @@ func (i *GeneralCall) New(contract map[string]int32, addr []byte) ([]byte, error
 	return conaddr.Hash, err
 }
 
-func (i *GeneralCall) Redeem(conaddr []byte, addr []byte, amount *big.Int, redeemAddrs [][]byte) ([]byte, error) {
+func (i *GeneralCall) Redeem(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) (*pb.RedeemResponse, error) {
 
 	msg := &pb.RedeemContract{
 		txutil.NewAddressFromHash(conaddr).PBMessage(),
 		amount.Bytes(),
-		nil, nil,
+		nil,
 	}
 
-	if !i.omitRedeemAddr {
-		msg.Redeem = txutil.NewAddressFromHash(addr).PBMessage()
-	}
-
-	if redeemAddr != nil {
-		msg.To = txutil.NewAddressFromHash(redeemAddr).PBMessage()
+	ret := &pb.RedeemResponse{}
+	for _, addr := range redeemAddrs {
+		msg.Redeems = append(msg.Redeems, txutil.NewAddressFromHash(addr).PBMessage())
+		ret.Nonces = append(ret.Nonces, nonce.GeneralTokenNonceKey(i.GetNonce(), conaddr, addr))
 	}
 
 	err := i.Invoke(Method_Redeem, msg)
@@ -83,7 +77,7 @@ func (i *GeneralCall) Redeem(conaddr []byte, addr []byte, amount *big.Int, redee
 		return nil, err
 	}
 
-	return nonce.GeneralTokenNonceKey(i.GetNonce(), conaddr, addr, amount.Bytes()), nil
+	return ret, nil
 
 }
 

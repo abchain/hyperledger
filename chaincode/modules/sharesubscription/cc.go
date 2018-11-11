@@ -5,7 +5,6 @@ import (
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
 	"hyperledger.abchain.org/chaincode/shim"
-	"hyperledger.abchain.org/core/crypto"
 	"math/big"
 )
 

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
-	"hyperledger.abchain.org/core/crypto"
 	tx "hyperledger.abchain.org/core/tx"
 	"hyperledger.abchain.org/core/utils"
 	"math/big"
@@ -178,38 +177,11 @@ func (cn *baseContractTx) QueryOne(conaddr []byte, addr []byte) (error, *pb.Cont
 	return nil, data
 }
 
-func (cn *baseContractTx) redeemOne(contract *pb.Contract_s, amount *big.Int, member *pb.Contract_MemberStatus_s, mindex int) ([]byte, error) {
-	totalAsset := big.NewInt(0).Add(contract.TotalRedeem, acc.Balance)
+func (cn *baseContractTx) Redeem(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) (*pb.RedeemResponse, error) {
 
-	memberAsset := big.NewInt(int64(member.Weight))
-	memberAsset = memberAsset.Mul(memberAsset, totalAsset).
-		Div(memberAsset, big.NewInt(WeightBase))
-
-	if memberAsset.Cmp(member.TotalRedeem) <= 0 {
-		return nil, errors.New("Could not redeem more")
+	if len(redeemAddrs) == 0 {
+		return nil, errors.New("No redeem addrs")
 	}
-
-	canRedeem := big.NewInt(0).Sub(memberAsset, member.TotalRedeem)
-	if (amount.Int64() == 0) || canRedeem.Cmp(amount) < 0 {
-		amount = canRedeem
-	}
-
-	contract.TotalRedeem = big.NewInt(0).Add(contract.TotalRedeem, amount)
-	contract.Status[mindex].TotalRedeem = big.NewInt(0).Add(member.TotalRedeem, amount)
-
-	err = cn.Storage.Set(conAddrs, contract)
-	if err != nil {
-		return nil, err
-	}
-
-	if redeemAddr == nil {
-		redeemAddr = addr
-	}
-
-	return cn.token.Transfer(conaddr, redeemAddr, amount)
-}
-
-func (cn *baseContractTx) Redeem(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) ([]byte, error) {
 
 	conAddrs := tx.NewAddressFromHash(conaddr).ToString()
 
@@ -225,37 +197,38 @@ func (cn *baseContractTx) Redeem(conaddr []byte, amount *big.Int, redeemAddrs []
 		return nil, err
 	}
 
-	member, mindex := contract.FindAndAccess(tx.NewAddressFromHash(addr).ToString())
-	if mindex < 0 {
-		return nil, errors.New("Not a member")
-	}
-
 	totalAsset := big.NewInt(0).Add(contract.TotalRedeem, acc.Balance)
 
-	memberAsset := big.NewInt(int64(member.Weight))
-	memberAsset = memberAsset.Mul(memberAsset, totalAsset).
-		Div(memberAsset, big.NewInt(WeightBase))
+	ret := &pb.RedeemResponse{}
+	for _, addr := range redeemAddrs {
+		member, mindex := contract.FindAndAccess(tx.NewAddressFromHash(addr).ToString())
+		if mindex < 0 {
+			continue
+		}
 
-	if memberAsset.Cmp(member.TotalRedeem) <= 0 {
-		return nil, errors.New("Could not redeem more")
+		memberAsset := big.NewInt(int64(member.Weight))
+		memberAsset = memberAsset.Mul(memberAsset, totalAsset).Div(memberAsset, big.NewInt(WeightBase))
+
+		if memberAsset.Cmp(member.TotalRedeem) <= 0 {
+			continue
+		}
+
+		canRedeem := big.NewInt(0).Sub(memberAsset, member.TotalRedeem)
+		if (amount.Int64() != 0) && canRedeem.Cmp(amount) > 0 {
+			canRedeem = amount
+		}
+
+		if nc, err := cn.token.Transfer(conaddr, addr, canRedeem); err == nil {
+			ret.Nonces = append(ret.Nonces, nc)
+			contract.TotalRedeem = big.NewInt(0).Add(contract.TotalRedeem, canRedeem)
+			contract.Status[mindex].TotalRedeem = big.NewInt(0).Add(member.TotalRedeem, canRedeem)
+		}
 	}
-
-	canRedeem := big.NewInt(0).Sub(memberAsset, member.TotalRedeem)
-	if (amount.Int64() == 0) || canRedeem.Cmp(amount) < 0 {
-		amount = canRedeem
-	}
-
-	contract.TotalRedeem = big.NewInt(0).Add(contract.TotalRedeem, amount)
-	contract.Status[mindex].TotalRedeem = big.NewInt(0).Add(member.TotalRedeem, amount)
 
 	err = cn.Storage.Set(conAddrs, contract)
 	if err != nil {
 		return nil, err
 	}
 
-	if redeemAddr == nil {
-		redeemAddr = addr
-	}
-
-	return cn.token.Transfer(conaddr, redeemAddr, amount)
+	return ret, nil
 }

@@ -1,26 +1,20 @@
 package subscription
 
 import (
-	"errors"
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
 	"hyperledger.abchain.org/chaincode/shim"
-	"hyperledger.abchain.org/core/crypto"
 	txutil "hyperledger.abchain.org/core/tx"
 )
 
-type RedeemMsg struct {
-	msg        pb.RedeemContract
-	redeemAddr *txutil.Address
-}
 type newContractHandler struct {
 	msg pb.RegContract
 	ContractConfig
 }
 
 type redeemHandler struct {
-	RedeemMsg
+	msg pb.RedeemContract
 	ContractConfig
 }
 
@@ -66,7 +60,7 @@ func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 		contract[addr.ToString()] = m.Weight
 	}
 
-	return h.NewTx(stub, parser.GetNounce()).New(contract, h.msg.DelegatorAddr.GetHash()
+	return h.NewTx(stub, parser.GetNounce()).New(contract, h.msg.DelegatorAddr.GetHash())
 }
 
 func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
@@ -77,21 +71,18 @@ func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Par
 		return nil, err
 	}
 
-	redeemAddr := h.redeemAddr
-	if redeemAddr == nil {
-		redeemAddr, err = txutil.NewAddressFromPBMessage(msg.Redeem)
-		if err != nil {
-			return nil, err
-		}
+	var redeemTo [][]byte
+
+	for _, addr := range msg.Redeems {
+		redeemTo = append(redeemTo, addr.GetHash())
 	}
 
-	var redeemTo []byte
-
-	if to, err := txutil.NewAddressFromPBMessage(msg.To); err == nil {
-		redeemTo = to.Hash
+	resp, err := h.NewTx(stub, parser.GetNounce()).Redeem(contract.Hash, toAmount(msg.Amount), redeemTo)
+	if err != nil {
+		return nil, err
 	}
 
-	return h.NewTx(stub, parser.GetNounce()).Redeem(contract.Hash, redeemAddr.Hash, toAmount(msg.Amount), redeemTo)
+	return rpc.EncodeRPCResult(resp)
 }
 
 func (h *queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {

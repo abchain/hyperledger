@@ -69,7 +69,8 @@ type ParseAddress interface {
 //side-effect is allowed for "anchored" the matched/unmatched result for the following process
 type MatchAddress interface {
 	Match(*txutil.Address) bool
-	Next(bool) bool
+	Next() bool
+	Final() error
 }
 
 //Verify only one address and its corresponding cred
@@ -123,14 +124,18 @@ func tryAddrParser(v ParseAddress, cred txutil.AddrCredentials) error {
 	return cred.Verify(*addr)
 }
 
-func tryAddrMatcher(v MatchAddress, cred txutil.AddrCredentials) error {
+func tryAddrMatcher(v MatchAddress, cred txutil.AddrCredentials) (err error) {
 
 	allpks := cred.ListCredPubkeys()
 
+	defer func() {
+		err = v.Final()
+	}()
+
 	for i, pk := range allpks {
 
-		if i > 0 && !v.Next(true) {
-			return nil
+		if i > 0 && !v.Next() {
+			return
 		}
 
 		addr, err := txutil.NewAddress(pk)
@@ -145,9 +150,5 @@ func tryAddrMatcher(v MatchAddress, cred txutil.AddrCredentials) error {
 		}
 	}
 
-	if !v.Next(false) {
-		return nil
-	}
-
-	return fmt.Errorf("No valid creds found")
+	return nil
 }

@@ -17,7 +17,7 @@ type tokenTxNonce struct {
 func (token *baseTokenTx) txNonce(txnonce []byte, from []byte, to []byte, amount *big.Int) (e error, r *tokenTxNonce) {
 
 	r = &tokenTxNonce{
-		Key: nonce.GeneralTokenNonceKey(txnonce, from, to, amount.Bytes()),
+		Key: nonce.GeneralTokenNonceKey(txnonce, from, to),
 	}
 
 	if from != nil {
