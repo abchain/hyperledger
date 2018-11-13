@@ -8,9 +8,9 @@ import (
 	"strings"
 )
 
-type InnerTxs CollectiveTxs
+type CollectiveTxs_InnerSupport CollectiveTxs
 
-func (itxh InnerTxs) TxCall(stub shim.ChaincodeStubInterface,
+func (itxh CollectiveTxs_InnerSupport) TxCall(stub shim.ChaincodeStubInterface,
 	function string, args [][]byte) ([]byte, error) {
 
 	function = strings.TrimPrefix(function, ".")
@@ -44,6 +44,11 @@ func (itxh InnerTxs) TxCall(stub shim.ChaincodeStubInterface,
 }
 
 //innerTx handler also provide a chaincode interface to handling inner calling
-func (itxh InnerTxs) Invoke(stub shim.ChaincodeStubInterface, function string, args [][]byte, _ bool) ([]byte, error) {
-	return itxh.TxCall(stub, function, args)
+func (itxh CollectiveTxs_InnerSupport) Invoke(stub shim.ChaincodeStubInterface, function string, args [][]byte, ro bool) ([]byte, error) {
+	if strings.HasPrefix(function, ".") {
+		return itxh.TxCall(stub, function, args)
+	} else {
+		return CollectiveTxs(itxh).Invoke(stub, function, args, ro)
+	}
+
 }

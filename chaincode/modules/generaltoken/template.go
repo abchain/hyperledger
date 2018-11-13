@@ -19,20 +19,25 @@ func GeneralInvokingTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveT
 
 	ret = tx.NewCollectiveTxs()
 
-	fundH := TransferHandler(cfg)
-	fundTx := &tx.ChaincodeTx{ccname, fundH, nil, nil}
+	fundTx := &tx.ChaincodeTx{ccname, TransferHandler(cfg), nil, nil}
 	//only append address credverify (tx must signed by the to address)
-	fundTx.PreHandlers = append(fundTx.PreHandlers, tx.AddrCredVerifier{fundH, nil})
+	fundTx.PreHandlers = append(fundTx.PreHandlers, tx.AddrCredVerifier{FundAddrCred(fundTx.Handler.Msg()), nil})
 	ret[Method_Transfer] = fundTx
 	return
 }
 
-func GeneralQueryTemplate(ccname string, cfg LocalConfig) (ret tx.CollectiveTxs) {
+func LimitedQueryTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveTxs) {
 
 	ret = tx.NewCollectiveTxs()
 
 	ret[Method_QueryToken] = &tx.ChaincodeTx{ccname, TokenQueryHandler(cfg), nil, nil}
 	ret[Method_QueryGlobal] = &tx.ChaincodeTx{ccname, GlobalQueryHandler(cfg), nil, nil}
+	return
+}
+
+func GeneralQueryTemplate(ccname string, cfg LocalConfig) (ret tx.CollectiveTxs) {
+
+	ret = LimitedQueryTemplate(ccname, cfg)
 	ret[nonce.Method_Query] = &tx.ChaincodeTx{ccname, nonce.NonceQueryHandler(cfg.Nonce()), nil, nil}
 
 	return

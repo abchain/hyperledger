@@ -8,21 +8,13 @@ import (
 	txutil "hyperledger.abchain.org/core/tx"
 )
 
-type FundMsg struct {
-	msg ccpb.SimpleFund
-}
-
-func (m *FundMsg) Msg() *ccpb.SimpleFund {
-	return &m.msg
-}
-
 type transferHandler struct {
-	FundMsg
+	msg ccpb.SimpleFund
 	TokenConfig
 }
 
 type assignHandler struct {
-	FundMsg
+	msg ccpb.SimpleFund
 	TokenConfig
 }
 type tokenQueryHandler struct {
@@ -31,7 +23,7 @@ type tokenQueryHandler struct {
 }
 
 type globalQueryHandler struct {
-	FundMsg
+	msg ccpb.SimpleFund
 	TokenConfig
 }
 

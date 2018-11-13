@@ -23,7 +23,13 @@ func (s CollectiveTxs) mergeone(in CollectiveTxs) error {
 
 }
 
-func (s CollectiveTxs) Merge(ins ...CollectiveTxs) (CollectiveTxs, error) {
+func (s CollectiveTxs) Map() map[string]*ChaincodeTx { return map[string]*ChaincodeTx(s) }
+
+func (s CollectiveTxs) Merge(in CollectiveTxs, ins ...CollectiveTxs) (CollectiveTxs, error) {
+
+	if err := s.mergeone(in); err != nil {
+		return s, err
+	}
 
 	for _, in := range ins {
 		if err := s.mergeone(in); err != nil {
@@ -32,6 +38,16 @@ func (s CollectiveTxs) Merge(ins ...CollectiveTxs) (CollectiveTxs, error) {
 	}
 
 	return s, nil
+
+}
+
+func (s CollectiveTxs) MustMerge(in CollectiveTxs, ins ...CollectiveTxs) CollectiveTxs {
+
+	ret, err := s.Merge(in, ins...)
+	if err != nil {
+		panic(fmt.Sprintf("Must Merge fail: %s", err))
+	}
+	return ret
 
 }
 

@@ -50,7 +50,7 @@ func initNonceCC() {
 
 	ccname := "noncecc"
 
-	cc := rpc.NewLocalChaincode(txhandle.InnerTxs(nonce.GeneralTemplate("notmatter", nonce.NewConfig(test_tag))))
+	cc := rpc.NewLocalChaincode(txhandle.CollectiveTxs_InnerSupport(nonce.GeneralTemplate("notmatter", nonce.NewConfig(test_tag))))
 	bolt.Stub().Invokables[ccname] = cc.MockStub
 
 	nonceCfg = nonce.InnerConfig{txgen.InnerChaincode(ccname)}
