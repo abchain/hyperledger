@@ -120,10 +120,6 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	toAddr, err := tx.NewAddressFromString(req.PostFormValue("to"))
-	if err != nil {
-		toAddr = &tx.Address{}
-	}
 	// redeemAddr, err := tx.NewAddress(s.ActivePrivk.Public())
 	// if err != nil {
 	// 	s.NormalError(rw, err)
@@ -131,9 +127,20 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 	// }
 
 	s.share.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	var toAddr *tx.Address
+	if tos := req.PostFormValue("to"); tos != "" {
+		toAddr, err = tx.NewAddressFromString(tos)
+	} else {
+		toAddr, err = tx.NewAddressFromPrivateKey(s.ActivePrivk)
+	}
+
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
 
 	//we can omit redeem addr in calling message
-	nonceid, err := s.share.Redeem(conaddr.Hash, nil, amount, toAddr.Hash)
+	nonceid, err := s.share.Redeem(conaddr.Hash, amount, [][]byte{toAddr.Hash})
 
 	if err != nil {
 		s.NormalError(rw, err)
