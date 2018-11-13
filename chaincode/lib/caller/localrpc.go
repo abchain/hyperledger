@@ -12,11 +12,21 @@ type ChaincodeAdapter struct {
 	TxIDGen func() string
 }
 
+func defTxidGen() string { return time.Now().String() }
+
 func NewLocalChaincode(cc shim.Chaincode) *ChaincodeAdapter {
 	return &ChaincodeAdapter{
 		MockStub: shim.NewMockStub("LocalCC", cc),
-		TxIDGen:  func() string { return time.Now().String() },
+		TxIDGen:  defTxidGen,
 	}
+}
+
+func (c *ChaincodeAdapter) SpecifyTxID(txid string) {
+	c.TxIDGen = func() string { return txid }
+}
+
+func (c *ChaincodeAdapter) DefaultTxID() {
+	c.TxIDGen = defTxidGen
 }
 
 func (c *ChaincodeAdapter) Deploy(method string, arg [][]byte) (string, error) {

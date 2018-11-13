@@ -15,6 +15,11 @@ type InnerInvoke interface {
 	// same transaction context; that is, chaincode calling chaincode doesn't
 	// create a new transaction message.
 	QueryChaincode(chaincodeName string, method string, args [][]byte) ([]byte, error)
+
+	// acquire the (direct) chaincode name in a inner invoking
+	GetCallingChaincodeName() string
+
+	GetOriginalChaincodeName() string
 }
 
 var InnerInvokeImpl = []func(stub interface{}) (bool, InnerInvoke){MockStubInvokeImpl}

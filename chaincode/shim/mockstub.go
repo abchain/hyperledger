@@ -55,6 +55,9 @@ type MockStub struct {
 	// stores a transaction uuid while being Invoked / Deployed
 	// TODO if a chaincode uses recursion this may need to be a stack of TxIDs or possibly a reference counting map
 	TxID string
+
+	// store when is called from another chaincode
+	InvokedCCName string
 }
 
 func (stub *MockStub) GetRawStub() interface{} {
@@ -231,6 +234,10 @@ func (stub *MockStub) InvokeChaincode(chaincodeName string, function string, arg
 		mockLogger.Error("Could not find peer chaincode to invoke", chaincodeName)
 		return nil, errors.New("Could not find peer chaincode to invoke")
 	}
+	otherStub.InvokedCCName = stub.Name
+	defer func() {
+		otherStub.InvokedCCName = ""
+	}()
 	mockLogger.Debug("MockStub", stub.Name, "Invoking peer chaincode", otherStub.Name, function, args)
 	bytes, err := otherStub.MockInvoke(stub.TxID, function, args)
 	mockLogger.Debug("MockStub", stub.Name, "Invoked peer chaincode", otherStub.Name, "got", bytes, err)
@@ -244,10 +251,22 @@ func (stub *MockStub) QueryChaincode(chaincodeName string, function string, args
 		mockLogger.Error("Could not find peer chaincode to query", chaincodeName)
 		return nil, errors.New("Could not find peer chaincode to query")
 	}
+	otherStub.InvokedCCName = stub.Name
+	defer func() {
+		otherStub.InvokedCCName = ""
+	}()
 	mockLogger.Debug("MockStub", stub.Name, "Querying peer chaincode", otherStub.Name, function, args)
 	bytes, err := otherStub.MockQuery(function, args)
 	mockLogger.Debug("MockStub", stub.Name, "Queried peer chaincode", otherStub.Name, "got", bytes, err)
 	return bytes, err
+}
+
+func (stub *MockStub) GetCallingChaincodeName() string {
+	return stub.InvokedCCName
+}
+
+func (stub *MockStub) GetOriginalChaincodeName() string {
+	return stub.Name
 }
 
 // Not implemented

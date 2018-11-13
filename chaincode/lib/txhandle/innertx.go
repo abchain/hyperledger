@@ -3,6 +3,8 @@ package tx
 import (
 	"fmt"
 	protos "github.com/golang/protobuf/ptypes/empty"
+	"hyperledger.abchain.org/chaincode/impl"
+	"hyperledger.abchain.org/chaincode/lib/runtime"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
 	"strings"
@@ -13,9 +15,7 @@ type CollectiveTxs_InnerSupport CollectiveTxs
 func (itxh CollectiveTxs_InnerSupport) TxCall(stub shim.ChaincodeStubInterface,
 	function string, args [][]byte) ([]byte, error) {
 
-	function = strings.TrimPrefix(function, ".")
-
-	h, ok := itxh[function]
+	h, ok := itxh[strings.TrimPrefix(function, ".")]
 
 	if !ok {
 		return nil, fmt.Errorf("Chaincode never accept this function [%s]", function)
@@ -51,4 +51,71 @@ func (itxh CollectiveTxs_InnerSupport) Invoke(stub shim.ChaincodeStubInterface, 
 		return CollectiveTxs(itxh).Invoke(stub, function, args, ro)
 	}
 
+}
+
+type InnerAddrBase struct {
+	Root string
+	*runtime.Config
+}
+
+func (i *InnerAddrBase) rt(stub shim.ChaincodeStubInterface) *runtime.ChaincodeRuntime {
+	rrt := runtime.NewRuntime(i.Root, stub, i.Config)
+	return rrt.SubRuntime("inneraddr")
+}
+
+type InnerAddrRegister struct {
+	*InnerAddrBase
+	ParseAddress
+}
+
+func (v InnerAddrRegister) PreHandling(stub shim.ChaincodeStubInterface, function string, p txutil.Parser) error {
+	if !strings.HasPrefix(function, ".") {
+		return nil
+	}
+
+	ivf, err := impl.GetInnerInvoke(stub)
+	if err != nil {
+		return err
+	}
+
+	rt := v.rt(stub)
+	addrs := v.GetAddress().ToString()
+
+	ret, err := rt.Storage.GetRaw(addrs)
+	if err != nil {
+		return err
+	} else if len(ret) > 0 {
+		return fmt.Errorf("Registry duplicated address")
+	}
+
+	return rt.Storage.SetRaw(addrs, []byte(ivf.GetCallingChaincodeName()))
+}
+
+type InnerAddrVerifier struct {
+	*InnerAddrBase
+	ParseAddress
+}
+
+func (v InnerAddrVerifier) PreHandling(stub shim.ChaincodeStubInterface, function string, p txutil.Parser) error {
+	if !strings.HasPrefix(function, ".") {
+		return nil
+	}
+
+	ivf, err := impl.GetInnerInvoke(stub)
+	if err != nil {
+		return err
+	}
+
+	rt := v.rt(stub)
+
+	cc, err := rt.Storage.GetRaw(v.GetAddress().ToString())
+	if err != nil {
+		return err
+	}
+
+	if strings.Compare(string(cc), ivf.GetCallingChaincodeName()) != 0 {
+		return fmt.Errorf("Addr is not from registered cc")
+	}
+
+	return nil
 }

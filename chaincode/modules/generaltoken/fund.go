@@ -66,10 +66,27 @@ func (token *baseTokenTx) Account(addr []byte) (error, *pb.AccountData_s) {
 	err := token.Storage.Get(addrToKey(addr), acc)
 	if err != nil {
 		return err, nil
+	} else if acc.Balance == nil {
+		acc.Balance = big.NewInt(0)
 	}
 
 	return nil, acc
 
+}
+
+func (token *baseTokenTx) TouchAddr(addr []byte) error {
+
+	key := addrToKey(addr)
+	acc := &pb.AccountData_s{}
+	err := token.Storage.Get(key, acc)
+	if err != nil {
+		return err
+	} else if acc.Balance == nil {
+		acc.Balance = big.NewInt(0)
+		return token.Storage.Set(key, acc)
+	}
+
+	return nil
 }
 
 func (token *baseTokenTx) Init(total *big.Int) error {

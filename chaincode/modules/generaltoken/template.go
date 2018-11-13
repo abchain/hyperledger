@@ -15,14 +15,29 @@ func GeneralAdminTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveTxs)
 	return
 }
 
+func InnerInvokingTemplate(ccname string, cfg *StandardTokenConfig) (ret tx.CollectiveTxs) {
+	ret = tx.NewCollectiveTxs()
+	ib := &tx.InnerAddrBase{cfg.Root, cfg.Config}
+
+	fundH := &tx.ChaincodeTx{ccname, TransferHandler(cfg), nil, nil}
+	fundH.PreHandlers = append(fundH.PreHandlers, tx.InnerAddrVerifier{ib, FundAddrCred(fundH.Handler.Msg())})
+	ret[Method_Transfer] = fundH
+
+	touchH := &tx.ChaincodeTx{ccname, TouchHandler(), nil, nil}
+	touchH.PreHandlers = append(touchH.PreHandlers, tx.InnerAddrRegister{ib, FundAddrCred(touchH.Handler.Msg())})
+	ret[Method_TouchAddr] = touchH
+
+	return
+}
+
 func GeneralInvokingTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveTxs) {
 
 	ret = tx.NewCollectiveTxs()
 
-	fundTx := &tx.ChaincodeTx{ccname, TransferHandler(cfg), nil, nil}
-	//only append address credverify (tx must signed by the to address)
-	fundTx.PreHandlers = append(fundTx.PreHandlers, tx.AddrCredVerifier{FundAddrCred(fundTx.Handler.Msg()), nil})
-	ret[Method_Transfer] = fundTx
+	h := TransferHandler(cfg)
+	txh := &tx.ChaincodeTx{ccname, h, nil, nil}
+	txh.PreHandlers = append(txh.PreHandlers, tx.AddrCredVerifier{FundAddrCred(h.Msg()), nil})
+	ret[Method_Transfer] = txh
 	return
 }
 

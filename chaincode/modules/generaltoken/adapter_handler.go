@@ -22,6 +22,10 @@ type tokenQueryHandler struct {
 	TokenConfig
 }
 
+type touchHandler struct {
+	msg ccpb.QueryToken
+}
+
 type globalQueryHandler struct {
 	msg ccpb.SimpleFund
 	TokenConfig
@@ -40,6 +44,10 @@ func AssignHandler(cfg TokenConfig) *assignHandler {
 	return &assignHandler{TokenConfig: cfg}
 }
 
+func TouchHandler() *touchHandler {
+	return &touchHandler{}
+}
+
 func TokenQueryHandler(cfg TokenConfig) *tokenQueryHandler {
 	return &tokenQueryHandler{TokenConfig: cfg}
 }
@@ -53,6 +61,7 @@ func InitHandler(cfg TokenConfig) *initHandler {
 
 func (h *transferHandler) Msg() proto.Message    { return &h.msg }
 func (h *assignHandler) Msg() proto.Message      { return &h.msg }
+func (h *touchHandler) Msg() proto.Message       { return &h.msg }
 func (h *tokenQueryHandler) Msg() proto.Message  { return &h.msg }
 func (h *globalQueryHandler) Msg() proto.Message { return &h.msg }
 func (h *initHandler) Msg() proto.Message        { return &h.msg }
@@ -81,6 +90,10 @@ func (h *assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Par
 	}
 
 	return h.NewTx(stub, parser.GetNounce()).Assign(addrTo.Hash, toAmount(msg.Amount))
+}
+
+func (h *touchHandler) Call(shim.ChaincodeStubInterface, txutil.Parser) ([]byte, error) {
+	return []byte("Done"), nil
 }
 
 func (h *tokenQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {

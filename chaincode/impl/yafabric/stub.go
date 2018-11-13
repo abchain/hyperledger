@@ -41,6 +41,16 @@ func (s stubAdapter) QueryChaincode(chaincodeName string, method string, args []
 	return s.ChaincodeStubInterface.QueryChaincode(chaincodeName, append([][]byte{[]byte(method)}, args...))
 }
 
+const notInnerInvoking = "NotInnerInvoking"
+
+func (s stubAdapter) GetCallingChaincodeName() string {
+	return notInnerInvoking
+}
+
+func (s stubAdapter) GetOriginalChaincodeName() string {
+	return notInnerInvoking
+}
+
 func CreateStub(stub shim.ChaincodeStubInterface) public_shim.ChaincodeStubInterface {
 	return stubAdapter{stub}
 }

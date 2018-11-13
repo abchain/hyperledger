@@ -30,13 +30,13 @@ func (d *DummyCallerBuilder) NewTxID(txid string) {
 	if d.caller == nil {
 		panic("Not init yet")
 	}
-	d.caller.TxIDGen = func() string { return txid }
+	d.caller.SpecifyTxID(txid)
 }
 
 func (d *DummyCallerBuilder) GetCaller(txid string, h tx.TxHandler) Caller {
 
 	d.dummyCC.ChaincodeTx = &tx.ChaincodeTx{d.CCName, h, nil, nil}
-	d.caller.TxIDGen = func() string { return txid }
+	d.caller.SpecifyTxID(txid)
 	return d.caller
 }
 

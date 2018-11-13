@@ -140,6 +140,11 @@ func (cn *baseContractTx) New(contract map[string]int32, addr []byte) ([]byte, e
 	t, _ := cn.Tx.GetTxTime()
 	pcon.ContractTs = t
 
+	err = cn.token.TouchAddr(conAddr.Hash)
+	if err != nil {
+		return nil, err
+	}
+
 	err = cn.Storage.Set(conAddr.ToString(), pcon)
 	if err != nil {
 		return nil, err

@@ -26,6 +26,7 @@ const (
 	Method_Init        = "TOKEN.INIT"
 	Method_Transfer    = "TOKEN.TRANSFER"
 	Method_Assign      = "TOKEN.ASSIGN"
+	Method_TouchAddr   = "TOKEN.TOUCHADDR"
 	Method_QueryToken  = "TOKEN.BALANCEQUERY"
 	Method_QueryGlobal = "TOKEN.GLOBALQUERY"
 )
@@ -60,6 +61,11 @@ func (i *GeneralCall) Assign(to []byte, amount *big.Int) ([]byte, error) {
 	}
 
 	return nonce.GeneralTokenNonceKey(i.GetNonce(), nil, to), nil
+}
+
+func (i *GeneralCall) TouchAddr(to []byte) error {
+	return i.Invoke(Method_TouchAddr,
+		&pb.QueryToken{Addr: txutil.NewAddressFromHash(to).PBMessage()})
 }
 
 func (i *GeneralCall) Init(amount *big.Int) error {

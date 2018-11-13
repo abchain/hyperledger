@@ -17,6 +17,9 @@ type TokenTx interface {
 	Assign(to []byte, amount *big.Int) ([]byte, error)
 	Account(addr []byte) (error, *pb.AccountData_s)
 	Global() (error, *pb.TokenGlobalData_s)
+	//this is only used for inner call to register their address, have
+	//no effect on the status of module
+	TouchAddr([]byte) error
 }
 
 type TokenConfig interface {
