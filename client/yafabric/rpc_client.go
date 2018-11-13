@@ -224,7 +224,7 @@ func (c *RpcClientConfig) GetCaller() (*rPCClient, error) {
 		return nil, err
 	}
 
-	return &rPCClient{builder, ""}, nil
+	return &rPCClient{builder}, nil
 }
 
 func (r *rPCClient) Deploy(function string, args [][]byte) (string, error) {
