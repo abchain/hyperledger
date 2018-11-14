@@ -26,6 +26,7 @@ service:
     port: 7080
 
 grpc:
+    # fabric: "abchain"
     # gRPC Server 地址
     server: "localhost:8000"
     # Fabric user name
@@ -41,5 +42,4 @@ rest:
     # REST Server 地址
     server: "localhost:8080" # vp0
 
-setting:
-    offline: true
+offline: true

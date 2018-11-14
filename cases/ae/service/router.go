@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 	"github.com/gocraft/web"
-	mainsrv "hyperledger.abchain.org/asset/service"
+	mainsrv "hyperledger.abchain.org/applications/asset/service"
+	regsrv "hyperledger.abchain.org/applications/supervise/service"
 	"hyperledger.abchain.org/client"
-	regsrv "hyperledger.abchain.org/supervise/service"
 	"net/http"
 )
 
@@ -29,9 +29,6 @@ func buildRouter() *web.Router {
 
 	rpcrouter := client.CreateRPCRouter(root, "")
 	rpcrouter.Init(defaultRpcConfig)
-
-	// Deploy
-	rpcrouter.Subrouter(deploy{}, "deploy").Post("/", (*deploy).Deploy)
 
 	apirouter := mainsrv.CreateRPCAccountRouter(rpcrouter, "")
 	apirouter.Init(defaultWallet)

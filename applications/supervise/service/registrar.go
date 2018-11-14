@@ -34,6 +34,7 @@ func (r RegistrarRouter) Init() RegistrarRouter {
 func (r RegistrarRouter) BuildRoutes() {
 
 	r.Post("/", (*Registrar).Reg)
+	r.Post("/init", (*Registrar).InitReg)
 	r.Get("/:"+RegPkID, (*Registrar).Query)
 	// regRouter.Post("/audit", (*RegistrarREST).Audit)
 }
@@ -43,6 +44,36 @@ func (s *Registrar) InitCaller(rw web.ResponseWriter,
 
 	s.reg = reg.GeneralCall{s.TxGenerator}
 	next(rw, req)
+}
+
+func (s *Registrar) InitReg(rw web.ResponseWriter, req *web.Request) {
+
+	manager := req.FormValue("Admin")
+	if manager == "" {
+		manager = "Admin"
+	}
+	regmanager := req.FormValue("RegManager")
+	if regmanager == "" {
+		regmanager = manager
+	}
+
+	err := s.reg.Init(true, manager, regmanager)
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	txid, err := s.TxGenerator.Result().TxID()
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	s.Normal(rw, &accsrv.FundEntry{
+		txid,
+		"",
+		s.TxGenerator.GetBuilder().GetNonce(),
+	})
 }
 
 func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
@@ -60,8 +91,14 @@ func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	txid, err := s.TxGenerator.Result().TxID()
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
 	s.Normal(rw, &accsrv.FundEntry{
-		string(s.reg.Dispatcher.LastInvokeTxId()),
+		string(txid),
 		s.EncodeEntry(s.ActivePrivk.Public().RootFingerPrint),
 		s.TxGenerator.GetBuilder().GetNonce(),
 	})

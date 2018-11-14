@@ -15,7 +15,6 @@ const (
 
 type Fund struct {
 	*RPCCoreWithAccount
-	token token.GeneralCall
 }
 
 type FundRouter struct {
@@ -48,6 +47,7 @@ func (r FundRouter) BuildAddressRoutes() {
 
 func (r FundRouter) BuildGlobalRoutes() {
 
+	r.Post("/init", (*Fund).InitGlobal)
 	r.Post("/", (*Fund).Assign)
 	r.Get("/", (*Fund).QueryGlobal)
 }
@@ -55,7 +55,6 @@ func (r FundRouter) BuildGlobalRoutes() {
 func (s *Fund) InitCaller(rw web.ResponseWriter,
 	req *web.Request, next web.NextMiddlewareFunc) {
 
-	s.token = token.GeneralCall{s.TxGenerator}
 	next(rw, req)
 }
 
@@ -68,6 +67,7 @@ type FundEntry struct {
 func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 
 	logger.Debug("Received create fund request")
+	token := token.GeneralCall{s.TxGenerator}
 
 	amount, ok := big.NewInt(0).SetString(req.PostFormValue("amount"), 0)
 
@@ -93,22 +93,60 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	s.token.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 
-	nonceid, err := s.token.Transfer(fromAddr.Hash, toAddr.Hash, amount)
+	nonceid, err := token.Transfer(fromAddr.Hash, toAddr.Hash, amount)
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	txid, err := token.Result().TxID()
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
 	s.Normal(rw, &FundEntry{
-		string(s.token.Dispatcher.LastInvokeTxId()),
+		string(txid),
 		s.EncodeEntry(nonceid),
 		s.TxGenerator.GetBuilder().GetNonce(),
 	})
 }
 
+func (s *Fund) InitGlobal(rw web.ResponseWriter, req *web.Request) {
+
+	token := token.GeneralCall{s.TxGenerator}
+
+	//token deployment
+	total, ok := big.NewInt(0).SetString(req.PostFormValue("total"), 0)
+	if !ok || total.Int64() == 0 {
+		s.NormalErrorF(rw, 0, "Invalid amount")
+		return
+	}
+
+	err := token.Init(total)
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	txid, err := token.Result().TxID()
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	s.Normal(rw, &FundEntry{
+		txid,
+		"",
+		s.TxGenerator.GetBuilder().GetNonce(),
+	})
+}
+
 func (s *Fund) Assign(rw web.ResponseWriter, req *web.Request) {
+
+	token := token.GeneralCall{s.TxGenerator}
 
 	amount, ok := big.NewInt(0).SetString(req.PostFormValue("amount"), 0)
 
@@ -123,14 +161,20 @@ func (s *Fund) Assign(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	nonceid, err := s.token.Assign(toAddr.Hash, amount)
+	nonceid, err := token.Assign(toAddr.Hash, amount)
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	txid, err := token.Result().TxID()
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
 	s.Normal(rw, &FundEntry{
-		string(s.token.Dispatcher.LastInvokeTxId()),
+		string(txid),
 		s.EncodeEntry(nonceid),
 		s.TxGenerator.GetBuilder().GetNonce(),
 	})
@@ -144,15 +188,17 @@ type globalEntry struct {
 
 func (s *Fund) QueryGlobal(rw web.ResponseWriter, req *web.Request) {
 
-	err, data := s.token.Global()
+	token := token.GeneralCall{s.TxGenerator}
+
+	err, data := token.Global()
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
 	s.Normal(rw, &globalEntry{
-		big.NewInt(0).SetBytes(data.TotalTokens).String(),
-		big.NewInt(0).SetBytes(data.UnassignedTokens).String(),
+		data.TotalTokens.String(),
+		data.UnassignedTokens.String(),
 	})
 
 }
@@ -163,6 +209,8 @@ type balanceEntry struct {
 }
 
 func (s *Fund) Query(rw web.ResponseWriter, req *web.Request) {
+
+	token := token.GeneralCall{s.TxGenerator}
 
 	privk, err := s.wallet.LoadPrivKey(req.PathParams[AccountID])
 	if err != nil {
@@ -185,19 +233,21 @@ func (s *Fund) Query(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	err, data := s.token.Account(addr.Hash)
+	err, data := token.Account(addr.Hash)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
 	s.Normal(rw, &balanceEntry{
-		big.NewInt(0).SetBytes(data.Balance).String(),
+		data.Balance.String(),
 		s.EncodeEntry(data.LastFund.Noncekey),
 	})
 }
 
 func (s *Fund) QueryAddress(rw web.ResponseWriter, req *web.Request) {
+
+	token := token.GeneralCall{s.TxGenerator}
 
 	addr, err := tx.NewAddressFromString(req.PathParams[AddressFlag])
 	if err != nil {
@@ -205,20 +255,15 @@ func (s *Fund) QueryAddress(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	err, data := s.token.Account(addr.Hash)
+	err, data := token.Account(addr.Hash)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	var noncekey []byte
-	if data.LastFund != nil {
-		noncekey = data.LastFund.Noncekey
-	}
-
 	s.Normal(rw, &balanceEntry{
-		big.NewInt(0).SetBytes(data.Balance).String(),
-		s.EncodeEntry(noncekey),
+		data.Balance.String(),
+		s.EncodeEntry(data.LastFund.Noncekey),
 	})
 }
 
@@ -229,13 +274,15 @@ type fundRecordEntry struct {
 
 func (s *Fund) QueryTransfer(rw web.ResponseWriter, req *web.Request) {
 
+	token := token.NewFullGeneralCall(s.TxGenerator)
+
 	nonce, err := s.DecodeEntry(req.PathParams[FundID])
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	err, data := s.token.Nonce([]byte(nonce))
+	err, data := token.Nonce([]byte(nonce))
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -243,6 +290,6 @@ func (s *Fund) QueryTransfer(rw web.ResponseWriter, req *web.Request) {
 
 	s.Normal(rw, &fundRecordEntry{
 		data.Txid,
-		big.NewInt(0).SetBytes(data.Amount).String(),
+		data.Amount.String(),
 	})
 }

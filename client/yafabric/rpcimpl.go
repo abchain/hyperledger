@@ -137,7 +137,7 @@ func (b *RpcBuilder) context() (context.Context, context.CancelFunc) {
 	}
 }
 
-func (b *RpcBuilder) Deploy(args []string) (*pb.ChaincodeDeploymentSpec, error) {
+func (b *RpcBuilder) Deploy(args [][]byte) (*pb.ChaincodeDeploymentSpec, error) {
 
 	ctx, cancel := b.context()
 	defer cancel()

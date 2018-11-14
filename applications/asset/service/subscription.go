@@ -48,10 +48,6 @@ func (r SubscriptionRouter) BuildRoutes() {
 func (s *Subscription) InitCaller(rw web.ResponseWriter,
 	req *web.Request, next web.NextMiddlewareFunc) {
 
-	s.token = token.GeneralCall{s.TxGenerator}
-	s.share = share.GeneralCall{TxGenerator: s.TxGenerator}
-	s.share.CanOmitRedeemAddr()
-
 	next(rw, req)
 }
 
@@ -68,7 +64,7 @@ func (s *Subscription) NewContract(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	contractStrs := req.PostForm["contract"]
-	contract := make(map[string]uint32)
+	contract := make(map[string]int32)
 
 	for _, str := range contractStrs {
 		ret := strings.Split(str, ":")
@@ -83,19 +79,32 @@ func (s *Subscription) NewContract(rw web.ResponseWriter, req *web.Request) {
 			return
 		}
 
-		contract[ret[0]] = uint32(w)
+		contract[ret[0]] = int32(w)
 	}
 
-	s.share.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	share := share.GeneralCall{s.TxGenerator}
 
-	conaddr, err := s.share.New(contract, s.ActivePrivk.Public())
+	addr, err := tx.NewAddressFromPrivateKey(s.ActivePrivk)
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	conaddr, err := share.New(contract, addr.Hash)
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	txid, err := s.TxGenerator.Result().TxID()
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
 	s.Normal(rw, &contractEntry{
-		string(s.share.Dispatcher.LastInvokeTxId()),
+		txid,
 		tx.NewAddressFromHash(conaddr).ToString(),
 	})
 }
@@ -113,6 +122,7 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	share := share.GeneralCall{s.TxGenerator}
 	amount, ok := big.NewInt(0).SetString(req.PostFormValue("amount"), 0)
 
 	if !ok && (!amount.IsUint64() || amount.Uint64() != 0) {
@@ -126,7 +136,7 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 	// 	return
 	// }
 
-	s.share.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 	var toAddr *tx.Address
 	if tos := req.PostFormValue("to"); tos != "" {
 		toAddr, err = tx.NewAddressFromString(tos)
@@ -140,16 +150,27 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	//we can omit redeem addr in calling message
-	nonceid, err := s.share.Redeem(conaddr.Hash, amount, [][]byte{toAddr.Hash})
+	nonceid, err := share.Redeem(conaddr.Hash, amount, [][]byte{toAddr.Hash})
 
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
+	txid, err := s.TxGenerator.Result().TxID()
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	var nonce []byte
+	if len(nonceid.Nonces) > 0 {
+		nonce = nonceid.Nonces[0]
+	}
+
 	s.Normal(rw, &FundEntry{
-		string(s.share.Dispatcher.LastInvokeTxId()),
-		s.EncodeEntry(nonceid),
+		txid,
+		s.EncodeEntry(nonce),
 		s.TxGenerator.GetBuilder().GetNonce(),
 	})
 
@@ -167,13 +188,10 @@ type contractQueryEntry struct {
 	Members    map[string]*contractMemberEntry `json:"contract"`
 }
 
-func toContractEntry(contract *pb.Contract, balance []byte) (*contractQueryEntry, error) {
+func toContractEntry(contract *pb.Contract_s, balance *big.Int) (*contractQueryEntry, error) {
 
 	out := &contractQueryEntry{}
-
-	addBal := big.NewInt(0).SetBytes(balance)
-	totalShare := big.NewInt(0).SetBytes(contract.TotalRedeem)
-	totalShare = totalShare.Add(totalShare, addBal)
+	totalShare := big.NewInt(0).Add(contract.TotalRedeem, balance)
 
 	status := make(map[string]*contractMemberEntry)
 
@@ -182,19 +200,18 @@ func toContractEntry(contract *pb.Contract, balance []byte) (*contractQueryEntry
 
 		ret := &contractMemberEntry{}
 
-		haveRedeem := big.NewInt(0).SetBytes(s.TotalRedeem)
 		canRedeem := big.NewInt(int64(s.Weight))
-		canRedeem = canRedeem.Mul(totalShare, canRedeem).Div(canRedeem, wb)
+		canRedeem = canRedeem.Mul(canRedeem, totalShare).Div(canRedeem, wb)
 
 		ret.Weight = float64(s.Weight) / float64(share.WeightBase)
 		ret.TotalAsset = canRedeem.String()
-		ret.Rest = haveRedeem.Sub(canRedeem, haveRedeem).String()
+		ret.Rest = big.NewInt(0).Sub(canRedeem, s.TotalRedeem).String()
 
 		status[s.MemberID] = ret
 	}
 
 	out.Members = status
-	out.Balance = addBal.String()
+	out.Balance = balance.String()
 	out.TotalAsset = totalShare.String()
 
 	return out, nil
@@ -208,13 +225,15 @@ func (s *Subscription) QueryContract(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	err, tokenacc := s.token.Account(addr.Hash)
+	tk := token.GeneralCall{s.TxGenerator}
+	err, tokenacc := tk.Account(addr.Hash)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	err, contract := s.share.Query(addr.Hash)
+	share := share.GeneralCall{s.TxGenerator}
+	err, contract := share.Query(addr.Hash)
 	if err != nil {
 		s.NormalError(rw, err)
 		return

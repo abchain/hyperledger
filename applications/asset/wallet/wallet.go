@@ -10,6 +10,7 @@ import (
 	abcrypto "hyperledger.abchain.org/core/crypto"
 	"io"
 	"io/ioutil"
+	"path/filepath"
 	"sync"
 )
 
@@ -39,7 +40,14 @@ func NewWallet(fpath string) *simpleWallet {
 //read path setting from viper with var "filePath"
 func LoadWallet(vp *viper.Viper) *simpleWallet {
 
-	return NewWallet(config.CanonicalizePath(vp.GetString("filePath")))
+	ph := config.CanonicalizePath(vp.GetString("path"))
+
+	fname := vp.GetString("filename")
+	if fname == "" {
+		fname = defaultWalletFileName
+	}
+
+	return NewWallet(filepath.Join(ph, fname))
 }
 
 func (w *simpleWallet) NewPrivKey(accountID string) (*abcrypto.PrivateKey, error) {

@@ -3,6 +3,7 @@ package chaincode
 import (
 	"fmt"
 
+	"hyperledger.abchain.org/chaincode/lib/runtime"
 	"hyperledger.abchain.org/chaincode/lib/txhandle"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
@@ -15,6 +16,8 @@ type AECC struct {
 	DebugMode                     bool
 	updated                       bool
 	assignPrivilege, regPrivilege string
+	tx.CollectiveTxs
+	runtimeCfg *runtime.Config
 }
 
 const (
@@ -35,6 +38,36 @@ var registrarcfg = &reg.StandardRegistrarConfig{CC_TAG, false, PrivilegeAttr, Re
 var registrarQuerycfg = &reg.StandardRegistrarConfig{CC_TAG, true, PrivilegeAttr, RegionAttr}
 var sharecfg = &share.StandardContractConfig{CC_TAG, false, tokencfg}
 var shareQuerycfg = &share.StandardContractConfig{CC_TAG, true, tokenQuerycfg}
+
+func NewChaincode(debugMode bool) *AECC {
+
+	ret := &AECC{runtimeCfg: runtime.NewConfig()}
+
+	tokencfg := token.NewConfig(CC_TAG)
+	tokencfg.Config = ret.runtimeCfg
+
+	handlers := token.GeneralAdminTemplate(CC_NAME, tokencfg)
+	handlers = handlers.MustMerge(
+		token.GeneralInvokingTemplate(CC_NAME, tokencfg),
+		token.GeneralQueryTemplate(CC_NAME, tokencfg),
+	)
+
+	sharecfg := share.NewConfig(CC_TAG)
+	sharecfg.Config = ret.runtimeCfg
+
+	handlers = handlers.MustMerge(
+		share.GeneralInvokingTemplate(CC_NAME, sharecfg),
+		share.GeneralQueryTemplate(CC_NAME, sharecfg),
+	)
+
+	if !debugMode {
+		//build init batch function ...
+
+		//TODO: add verifier for assign ...
+	}
+
+	ret.CollectiveTxs = handlers
+}
 
 func init() {
 
