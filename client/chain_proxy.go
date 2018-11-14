@@ -5,11 +5,59 @@ import (
 	"fmt"
 	protos "github.com/abchain/fabric/protos"
 	"github.com/gocraft/web"
+	"github.com/golang/protobuf/proto"
 	_ "github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"math/big"
 	"net/http"
 )
+
+type ChainTransaction struct {
+	Height                         int64 `json:",string"`
+	TxID, Chaincode, Method, Nonce string
+	CreatedFlag                    bool
+	//Data for the original protobuf input (Message part) and Detail left for parser
+	Detail, Data interface{} `json:",omitempty"`
+}
+
+const (
+	TxStatus_Success = 0
+	TxStatus_Fail    = 1
+)
+
+type ChainTxEvents struct {
+	TxID   string
+	Status int
+	Detail interface{} `json:",omitempty"`
+}
+
+type ChainBlock struct {
+	Height       int64 `json:",string"`
+	Hash         string
+	TimeStamp    string
+	Transactions []*ChainTransaction
+	TxEvents     []*ChainTxEvents
+}
+
+//a parser which can handle the arguments of a transaction with purposed format in hyperledger project
+type TxArgParser interface {
+	Msg() proto.Message
+	Detail(proto.Message) interface{}
+}
+
+type ChainClient interface {
+	GetBlock(int64) *ChainBlock
+	GetTransaction(string) *ChainTransaction
+	GetTxEvent(string) *ChainTxEvents
+	//TODO, add more methods like get range tx and filter ...
+
+	//Registry parser
+	RegParser(string, string, TxArgParser)
+}
+
+var ChainProxyViaRPC_Impls map[string]func(rpc.Caller) ChainClient
+var ChainProxy_Impls map[string]func(*viper.Viper) ChainClient
 
 //need to return JSON-tagged struct
 type BlockChainParser interface {
@@ -19,7 +67,7 @@ type BlockChainParser interface {
 }
 
 type FabricProxy struct {
-	*FabricClientBase
+	//*FabricClientBase
 	BlockChainParser
 	server string
 }

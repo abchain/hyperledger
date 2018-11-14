@@ -1,4 +1,4 @@
-package client
+package util
 
 import (
 	"encoding/base64"
@@ -15,6 +15,7 @@ type FabricClientBase struct {
 	debugData interface{}
 }
 
+//so we can support both config in client and local adapter
 type FabricRPCCfg interface {
 	GetCaller() (rpc.Caller, error)
 	GetCCName() string

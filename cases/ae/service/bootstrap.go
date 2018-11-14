@@ -34,7 +34,7 @@ func (rpcCfg) GetCaller() (rpc.Caller, error) {
 
 var (
 	defaultWallet    wallet.Wallet
-	defaultRpcConfig client.FabricRPCCfg
+	defaultRpcConfig apputil.FabricRPCCfg
 	defaultFabricEP  string
 
 	offlineMode bool
@@ -62,7 +62,7 @@ func StartService() {
 		return
 	}
 
-	offlineMode = viper.GetBool("setting.offline")
+	offlineMode = viper.GetBool("offline")
 
 	if offlineMode {
 		logger.Warning("Running offline mode")

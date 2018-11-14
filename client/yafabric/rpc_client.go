@@ -3,6 +3,8 @@ package client
 import (
 	"context"
 	"github.com/spf13/viper"
+	"hyperledger.abchain.org/chaincode/lib/caller"
+	"hyperledger.abchain.org/client"
 	"sync"
 	"time"
 )
@@ -108,11 +110,15 @@ type RpcClientConfig struct {
 	TxTimeout     time.Duration
 }
 
-func NewRPCConfig() *RpcClientConfig {
+func NewRPCConfig() client.RpcClient {
 
 	return &RpcClientConfig{
 		connManager: NewRpcManager(),
 	}
+}
+
+func init() {
+	client.Client_Impls["yafabric"] = NewRPCConfig
 }
 
 /*
@@ -128,7 +134,7 @@ func NewRPCConfig() *RpcClientConfig {
 		- hostname (override the hostname in certfile)
 
 */
-func (c *RpcClientConfig) Load(vp *viper.Viper) {
+func (c *RpcClientConfig) Load(vp *viper.Viper) error {
 	if s := vp.GetString("chaincode"); s != "" {
 		c.SetChaincode(s)
 	}
@@ -150,6 +156,8 @@ func (c *RpcClientConfig) Load(vp *viper.Viper) {
 			"certfile":   vp.GetString("certfile"),
 		}
 	}
+
+	return nil
 }
 
 func (c *RpcClientConfig) SetChaincode(ccName string) {
@@ -204,7 +212,7 @@ type rPCClient struct {
 //Assign each http request (run cocurrency) a client, which can be adapted to a caller
 //the client is "lazy" connect: it just do connect when required (a request has come)
 //and wait for connect finish
-func (c *RpcClientConfig) GetCaller() (*rPCClient, error) {
+func (c *RpcClientConfig) Caller() (rpc.Caller, error) {
 
 	conn, err := c.conn.obtainConn(c.connManager.Context())
 	if conn == nil {

@@ -1,4 +1,4 @@
-# Local build binaries
+
 vendor/
 *.test
 !vendor/github.com/abchain/fabric

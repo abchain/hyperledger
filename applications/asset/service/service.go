@@ -4,7 +4,7 @@ import (
 	"github.com/gocraft/web"
 	log "github.com/op/go-logging"
 	"hyperledger.abchain.org/applications/asset/wallet"
-	"hyperledger.abchain.org/client"
+	"hyperledger.abchain.org/applications/util"
 	"hyperledger.abchain.org/core/crypto"
 	"math/big"
 )
@@ -12,7 +12,7 @@ import (
 var logger = log.MustGetLogger("server/asset")
 
 type RPCCoreWithAccount struct {
-	*client.FabricRPCCore
+	*util.FabricRPCCore
 	wallet      wallet.Wallet
 	ActivePrivk *crypto.PrivateKey
 }
@@ -21,7 +21,7 @@ type RPCAccountRouter struct {
 	*web.Router
 }
 
-func CreateRPCAccountRouter(root client.RPCRouter, path string) RPCAccountRouter {
+func CreateRPCAccountRouter(root util.RPCRouter, path string) RPCAccountRouter {
 	return RPCAccountRouter{
 		root.Subrouter(RPCCoreWithAccount{}, path),
 	}

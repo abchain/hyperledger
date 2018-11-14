@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/gocraft/web"
 	"hyperledger.abchain.org/applications/asset/wallet"
-	"hyperledger.abchain.org/client"
+	"hyperledger.abchain.org/applications/util"
 	"hyperledger.abchain.org/core/crypto"
 	"hyperledger.abchain.org/core/tx"
 	"math/big"
@@ -18,7 +18,7 @@ const (
 )
 
 type Account struct {
-	*client.FabricClientBase
+	*util.FabricClientBase
 	accountID     string
 	wallet        wallet.Wallet
 	shouldPersist bool

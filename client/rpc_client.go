@@ -4,33 +4,38 @@ import (
 	"errors"
 	"github.com/spf13/viper"
 	"hyperledger.abchain.org/chaincode/lib/caller"
-	yafabric_cli "hyperledger.abchain.org/client/yafabric"
 )
+
+type RpcClient interface {
+	Caller() (rpc.Caller, error)
+	Load(*viper.Viper) error
+	Quit()
+}
+
+var Client_Impls map[string]func() RpcClient
 
 type fabricRPCCfg struct {
 	ccName string
-	caller func() (rpc.Caller, error)
-	yacli  *yafabric_cli.RpcClientConfig
-	//TODO: add more implement of clients
+	cli    RpcClient
 }
 
 func NewFabricRPCConfig(ccN string) *fabricRPCCfg {
 	return &fabricRPCCfg{ccName: ccN}
 }
 
-func (c *fabricRPCCfg) UseYAFabricCli(vp *viper.Viper) *yafabric_cli.RpcClientConfig {
-
-	c.yacli = yafabric_cli.NewRPCConfig()
-	c.yacli.Load(vp)
-	c.caller = func() (rpc.Caller, error) {
-		return c.yacli.GetCaller()
+func (c *fabricRPCCfg) UseCli(name string, vp *viper.Viper) error {
+	cfg, ok := Client_Impls[name]
+	if !ok {
+		return errors.New("No implement")
 	}
 
-	return c.yacli
+	c.cli = cfg()
+	return c.cli.Load(vp)
 }
 
-func (c *fabricRPCCfg) YAFabricCli() *yafabric_cli.RpcClientConfig {
-	return c.yacli
+func (c *fabricRPCCfg) UseYAFabricCli(vp *viper.Viper) error {
+
+	return c.UseCli("yafabric", vp)
 }
 
 func (c *fabricRPCCfg) GetCCName() string {
@@ -38,13 +43,16 @@ func (c *fabricRPCCfg) GetCCName() string {
 }
 
 func (c *fabricRPCCfg) GetCaller() (rpc.Caller, error) {
-	if c.caller == nil {
+	if c.cli == nil {
 		return nil, errors.New("Not use any client implement")
 	}
 
-	return c.caller()
+	return c.cli.Caller()
 }
 
 func (c *fabricRPCCfg) Quit() {
-	c.yacli.Quit()
+	if c.cli != nil {
+		c.cli.Quit()
+	}
+	c.cli = nil
 }
