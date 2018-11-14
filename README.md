@@ -32,5 +32,23 @@ Currently this project include:
 
     一些用于部署YA-fabric的脚本集
 
+
+项目依赖
+
+Dependencies:
+
+* [gocraft/web](github.com/gocraft/web)
+* [go-logging](github.com/op/go-logging)
+* [viper](github.com/spf13/viper)
+* [protobuf](github.com/golang/protobuf)
+* [x/net](golang.org/x/net)
+* [x/crypto](golang.org/x/crypto)
+* [x/sys](golang.org/x/sys)
+
+同时还需要安装对应的fabric项目以实现chaincode和client的支持
+
+You also need corresponding fabric codebase and [grpc](google.golang.org/grpc) to build the corresponding chaincode and client
+
+
 ## License <a name="license"></a>
 This project uses the [Apache License Version 2.0](LICENSE) software license.
