@@ -161,6 +161,8 @@ func (cn *baseContractTx) Query(addr []byte) (error, *pb.Contract_s) {
 	err := cn.Storage.Get(conAddr.ToString(), con)
 	if err != nil {
 		return err, nil
+	} else if con.TotalRedeem == nil {
+		return errors.New("Contract is not exist"), nil
 	}
 
 	return nil, con

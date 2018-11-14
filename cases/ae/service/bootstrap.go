@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"hyperledger.abchain.org/applications/asset/wallet"
 	apputil "hyperledger.abchain.org/applications/util"
@@ -9,12 +10,13 @@ import (
 	"hyperledger.abchain.org/client"
 	"hyperledger.abchain.org/core/config"
 	"os"
-	"path/filepath"
 )
 
 const (
 	defaultCCDeployName = "aecc"
 )
+
+var logger = logging.MustGetLogger("server")
 
 type rpcCfg string
 

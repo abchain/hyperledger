@@ -69,6 +69,8 @@ func (s *FabricRPCCore) PrehandlePost(rw web.ResponseWriter,
 		nonce := req.PostFormValue("nonce")
 		if nonce != "" {
 			s.TxGenerator.BeginTx([]byte(nonce))
+		} else {
+			s.TxGenerator.BeginTx(nil)
 		}
 	}
 

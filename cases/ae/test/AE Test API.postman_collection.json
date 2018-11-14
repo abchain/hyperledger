@@ -20,11 +20,13 @@
 			"id": "741e6fa1-eccb-6e78-9435-dedb85723484"
 		},
 		{
-			"name": "Verify",
+			"name": "VerifyGlobal",
 			"description": "",
 			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
 			"order": [
 				"fc963c29-7ed6-c62f-95cf-6b027b402abf",
+				"ed159673-dcb2-783b-ed21-b41bfd690446",
+				"9d5dbc41-a0a0-5289-4935-04658000f240",
 				"dc8d0f9d-c9ed-117e-2869-c3bb03fd4ba6",
 				"047dc5ab-2366-9316-8ee1-74cefb2177a9",
 				"9a75ca70-b5e6-d626-ee53-82e9fe9a88f9"
@@ -112,13 +114,13 @@
 					"enabled": true
 				}
 			],
-			"url": "http://{{url}}/api/v1/deploy",
+			"url": "http://{{url}}/api/v1/assign/init",
+			"folder": "741e6fa1-eccb-6e78-9435-dedb85723484",
 			"queryParams": [],
+			"preRequestScript": null,
 			"pathVariables": {},
 			"pathVariableData": [],
-			"preRequestScript": null,
 			"method": "POST",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
 			"data": [
 				{
 					"key": "total",
@@ -129,16 +131,15 @@
 				}
 			],
 			"dataMode": "urlencoded",
-			"name": "Deploy",
-			"description": "",
-			"descriptionFormat": "html",
-			"time": 1521626240107,
 			"version": 2,
-			"responses": [],
 			"tests": null,
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"folder": "741e6fa1-eccb-6e78-9435-dedb85723484"
+			"time": 1542179646188,
+			"name": "Deploy",
+			"description": "",
+			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
+			"responses": []
 		},
 		{
 			"id": "5a3f2800-4618-ba6f-f71b-79fd056e2068",
@@ -399,6 +400,65 @@
 			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef"
 		},
 		{
+			"id": "9d5dbc41-a0a0-5289-4935-04658000f240",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/assign",
+			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "GET",
+			"data": [
+				{
+					"key": "accountID",
+					"value": "aaaa",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "AfRGinm5Wzqisnl7HBeGmAs8vZ0NGp5uMQ:40",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:30",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "nonce",
+					"value": "1111",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1542179640564,
+			"name": "VerifyGlobal",
+			"description": "",
+			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
+			"responses": []
+		},
+		{
 			"id": "dc8d0f9d-c9ed-117e-2869-c3bb03fd4ba6",
 			"headers": "Content-Type: application/x-www-form-urlencoded\n",
 			"headerData": [
@@ -458,7 +518,7 @@
 			"responses": []
 		},
 		{
-			"id": "fc963c29-7ed6-c62f-95cf-6b027b402abf",
+			"id": "ed159673-dcb2-783b-ed21-b41bfd690446",
 			"headers": "Content-Type: application/x-www-form-urlencoded\n",
 			"headerData": [
 				{
@@ -506,7 +566,7 @@
 				}
 			],
 			"dataMode": "urlencoded",
-			"name": "VerifySubscription",
+			"name": "VerifySubscription_Notexist",
 			"description": "",
 			"descriptionFormat": "html",
 			"time": 1521626768062,
@@ -515,7 +575,68 @@
 			"tests": null,
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef"
+			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef",
+			"isFromCollection": true,
+			"collectionRequestId": "fc963c29-7ed6-c62f-95cf-6b027b402abf"
+		},
+		{
+			"id": "fc963c29-7ed6-c62f-95cf-6b027b402abf",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/subscription/AV8HfofDPsGPyEwcbTb6DM4l8bV_DP8lMQ",
+			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "GET",
+			"data": [
+				{
+					"key": "accountID",
+					"value": "aaaa",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "AfRGinm5Wzqisnl7HBeGmAs8vZ0NGp5uMQ:40",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:30",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "nonce",
+					"value": "1111",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1542179638543,
+			"name": "VerifySubscription",
+			"description": "",
+			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
+			"responses": []
 		}
 	]
 }

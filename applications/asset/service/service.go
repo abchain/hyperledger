@@ -9,7 +9,7 @@ import (
 	"math/big"
 )
 
-var logger = log.MustGetLogger("server")
+var logger = log.MustGetLogger("server/asset")
 
 type RPCCoreWithAccount struct {
 	*client.FabricRPCCore

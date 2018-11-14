@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-var logger = log.MustGetLogger("server")
+var logger = log.MustGetLogger("server/http")
 
 var srv *http.Server
 

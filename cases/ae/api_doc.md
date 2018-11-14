@@ -319,11 +319,11 @@ FORMAT:1A
 
 
 
-# Group Deployment
+# Group Assign
 
-## chaincode部署相关 [/api/v1/deploy]
+## token分配量初始化 [/api/v1/assign/init]
 
-### 初始化 [POST]
+### 执行初始化 [POST]
 
 - 说明
     - 此事务只执行一次，初始化chaincode中记录的token信息
@@ -352,11 +352,9 @@ FORMAT:1A
                 "result": "ok"
             }
 
-# Group Assign
+## token分配 [/api/v1/assign]
 
-## 管理相关 [/api/v1/assign]
-
-### 分配 [POST]
+### 执行分配 [POST]
 
 - 说明
     - 将当前未分配的币余额分配到特定的账号
