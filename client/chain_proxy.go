@@ -1,16 +1,15 @@
 package client
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/spf13/viper"
+	"hyperledger.abchain.org/chaincode/lib/caller"
 )
 
 type ChainTransaction struct {
-	Height                         int64 `json:",string"`
-	TxID, Chaincode, Method, Nonce string
-	CreatedFlag                    bool
-	//Data for the original protobuf input (Message part) and Detail left for parser
-	Detail, Data interface{} `json:",omitempty"`
+	Height                  int64 `json:",string"`
+	TxID, Chaincode, Method string
+	CreatedFlag             bool
+	TxArgs                  [][]byte `json:"-"`
 }
 
 const (
@@ -21,7 +20,7 @@ const (
 type ChainTxEvents struct {
 	TxID, Chaincode, Name string
 	Status                int
-	Detail                interface{} `json:",omitempty"`
+	Payload               []byte `json:"-"`
 }
 
 type ChainBlock struct {
@@ -32,21 +31,15 @@ type ChainBlock struct {
 	TxEvents     []*ChainTxEvents
 }
 
-//a parser which can handle the arguments of a transaction with purposed format in hyperledger project
-type TxArgParser interface {
-	Msg() proto.Message
-	Detail(proto.Message) interface{}
-}
-
-type ChainClient interface {
+type ChainInfo interface {
 	GetBlock(int64) *ChainBlock
 	GetTransaction(string) *ChainTransaction
 	GetTxEvent(string) *ChainTxEvents
-	//TODO, add more methods like get range tx and filter ...
-
-	//Registry parser
-	RegParser(string, string, TxArgParser)
 }
 
-var ChainProxyViaRPC_Impls map[string]func(RpcClient) ChainClient
-var ChainProxy_Impls map[string]func(*viper.Viper) ChainClient
+type ChainClient interface {
+	Load(*viper.Viper) (ChainInfo, error)
+	ViaRpc(rpc.Caller) (ChainInfo, error)
+}
+
+var ChainProxy_Impls map[string]func() ChainClient

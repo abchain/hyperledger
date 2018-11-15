@@ -4,10 +4,7 @@ import (
 	"fmt"
 	protos "github.com/abchain/fabric/protos"
 	"github.com/golang/protobuf/proto"
-	pbempty "github.com/golang/protobuf/ptypes/empty"
 	"hyperledger.abchain.org/client"
-	"hyperledger.abchain.org/core/tx"
-	"strings"
 )
 
 type chainAcquire interface {
@@ -18,11 +15,7 @@ type chainAcquire interface {
 
 type blockchainInterpreter struct {
 	chainAcquire
-	regParser map[string]client.TxArgParser
 }
-
-var notHyperledgerTx = `Not a hyperledger project compatible transaction`
-var noParser = `No parser can be found for this transaction/event`
 
 func decodeTransactionToInvoke(payload []byte) (*protos.ChaincodeInvocationSpec, error) {
 
@@ -44,19 +37,7 @@ func (i *blockchainInterpreter) resolveTxEvent(txe *protos.ChaincodeEvent) *clie
 	ret.TxID = txe.GetTxID()
 	ret.Chaincode = txe.GetChaincodeID()
 	ret.Name = txe.GetEventName()
-
-	if addParser, ok := i.regParser[strings.Join([]string{ret.Name, ret.Chaincode}, "@")]; ok {
-		//a hack: the message is always in args[2]
-		msg := addParser.Msg()
-		err := proto.Unmarshal(txe.GetPayload(), msg)
-		if err != nil {
-			ret.Detail = fmt.Sprintf("Invalid event payload (%s)", err)
-			return ret
-		}
-		ret.Detail = addParser.Detail(msg)
-	} else {
-		ret.Detail = noParser
-	}
+	ret.Payload = txe.GetPayload()
 
 	return ret
 }
@@ -75,26 +56,8 @@ func (i *blockchainInterpreter) resolveTx(tx *protos.Transaction) *client.ChainT
 
 	args := inv.ChaincodeSpec.CtorMsg.Args
 	ret.Method = string(args[0])
-	parser, err := abchainTx.ParseTx(new(pbempty.Empty), ret.Method, args[1:])
-	if err != nil {
-		ret.Detail = notHyperledgerTx
-		return ret
-	}
-	ret.Nonce = fmt.Sprintf("%X", parser.GetNounce())
+	ret.Args = args[1:]
 
-	if addParser, ok := i.regParser[strings.Join([]string{ret.Method, ret.Chaincode}, "@")]; ok {
-		//a hack: the message is always in args[2]
-		msg := addParser.Msg()
-		err = proto.Unmarshal(args[2], msg)
-		if err != nil {
-			ret.Detail = fmt.Sprintf("Invalid message arguments (%s)", err)
-			return ret
-		}
-		ret.Data = msg
-		ret.Detail = addParser.Detail(msg)
-	} else {
-		ret.Detail = noParser
-	}
 	return ret
 }
 
@@ -133,8 +96,4 @@ func (i *blockchainInterpreter) GetTransaction(txid string) *client.ChainTransac
 func (i *blockchainInterpreter) GetTxEvent(txid string) *client.ChainTxEvents {
 	//no implement
 	return nil
-}
-
-func (i *blockchainInterpreter) RegParser(cc string, method_or_eventname string, p client.TxArgParser) {
-	i.regParser[strings.Join([]string{method_or_eventname, cc}, "@")] = p
 }

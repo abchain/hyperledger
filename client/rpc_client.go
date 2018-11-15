@@ -6,8 +6,16 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/caller"
 )
 
+type RpcSpec struct {
+	//notice chaincode name is different to the ccname in txgenerator, the later
+	//is used in the hyperledger-project compatible tx
+	ChaincodeName string
+	Attributes    []string
+	Options       *viper.Viper
+}
+
 type RpcClient interface {
-	Caller() (rpc.Caller, error)
+	Caller(*RpcSpec) (rpc.Caller, error)
 	Load(*viper.Viper) error
 	Quit()
 }
@@ -43,11 +51,15 @@ func (c *fabricRPCCfg) GetCCName() string {
 }
 
 func (c *fabricRPCCfg) GetCaller() (rpc.Caller, error) {
+	return c.GetCallerWithSpec(nil)
+}
+
+func (c *fabricRPCCfg) GetCallerWithSpec(spec *RpcSpec) (rpc.Caller, error) {
 	if c.cli == nil {
 		return nil, errors.New("Not use any client implement")
 	}
 
-	return c.cli.Caller()
+	return c.cli.Caller(spec)
 }
 
 func (c *fabricRPCCfg) Quit() {

@@ -1,26 +1,31 @@
 package blockchain
 
 import (
+	"fmt"
 	"github.com/gocraft/web"
 	log "github.com/op/go-logging"
+	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/applications/util"
 	"hyperledger.abchain.org/client"
+	"hyperledger.abchain.org/core/tx"
+	pbempty "github.com/golang/protobuf/ptypes/empty"
+	"net/http"
 )
 
 var logger = log.MustGetLogger("server/blockchain")
 
 type FabricBlockChain struct {
 	*util.FabricClientBase
-	cli client.ChainClient
+	cli client.ChainInfo
 }
 
-type FabricProxyRouter struct {
+type BlockChainRouter struct {
 	*web.Router
 }
 
-func CreateFabricProxyRouter(root *web.Router, path string) FabricProxyRouter {
-	return FabricProxyRouter{
-		root.Subrouter(FabricProxy{}, path),
+func CreateBlocChainRouter(root *web.Router, path string) BlockChainRouter {
+	return BlockChainRouter{
+		root.Subrouter(FabricBlockChain{}, path),
 	}
 }
 
@@ -29,21 +34,19 @@ const (
 	FabricProxy_TransactionID = "txID"
 )
 
-func (r FabricProxyRouter) Init(server string, parser BlockChainParser) FabricProxyRouter {
-	r.Middleware(func(s *FabricProxy, rw web.ResponseWriter,
+func (r BlockChainRouter) Init(cfg util.FabricRPCCfg, client.ChainClient) BlockChainRouter {
+	r.Middleware(func(s *FabricBlockChain, rw web.ResponseWriter,
 		req *web.Request, next web.NextMiddlewareFunc) {
 
-		if server == "" {
-			http.Error(rw, "REST endpoint not set", http.StatusInternalServerError)
-			return
+		c, err := cfg.GetCaller()
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
 		}
 
-		s.server = server
-
-		if parser == nil {
-			s.BlockChainParser = s
-		} else {
-			s.BlockChainParser = parser
+		s.cli, err = client.ViaRpc(c)
+		if err != nil {
+			http.Error(rw, "No support of fetching blockchain info via rpc", http.StatusInternalServerError)
+			return
 		}
 
 		next(rw, req)
@@ -52,16 +55,65 @@ func (r FabricProxyRouter) Init(server string, parser BlockChainParser) FabricPr
 	return r
 }
 
-func (r FabricProxyRouter) BuildRoutes() {
-	r.Get("/", (*FabricProxy).GetBlockchainInfo)
-	r.Get("/blocks/:"+FabricProxy_BlockHeight, (*FabricProxy).GetBlock)
-	r.Get("/transactions/:"+FabricProxy_TransactionID, (*FabricProxy).GetTransaction)
+func (r BlockChainRouter) BuildRoutes() {
+	r.Get("/", (*FabricBlockChain).GetBlockchainInfo)
+	r.Get("/blocks/:"+FabricProxy_BlockHeight, (*FabricBlockChain).GetBlock)
+	r.Get("/transactions/:"+FabricProxy_TransactionID, (*FabricBlockChain).GetTransaction)
+}
+
+var notHyperledgerTx = `Not a hyperledger project compatible transaction`
+var noParser = `No parser can be found for this transaction/event`
+
+func (s *FabricBlockChain) handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
+
+	ret := &ChainTransaction{tx, "", "", nil, nil}
+
+	parser, err := abchainTx.ParseTx(new(pbempty.Empty), tx.Method, tx.TxArgs)
+	if err != nil {
+		ret.Detail = notHyperledgerTx
+		return ret
+	}
+	ret.Nonce = fmt.Sprintf("%X", parser.GetNounce())
+	ret.ChaincodeModule = parser.GetCCname()
+
+	if addParser, ok := registryParsers[strings.Join([]string{ret.Method, ret.ChaincodeModule}, "@")]; ok {
+		//a hack: the message is always in args[1]
+		msg := addParser.Msg()
+		err = proto.Unmarshal(args[1], msg)
+		if err != nil {
+			ret.Detail = fmt.Sprintf("Invalid message arguments (%s)", err)
+			return ret
+		}
+		ret.Data = msg
+		ret.Detail = addParser.Detail(msg)
+	} else {
+		ret.Detail = noParser
+	}
+	return ret
+
+}
+
+func (s *FabricBlockChain) handleTxEvent(txe *client.ChainTxEvents) *ChainTxEvents {
+
+	if addParser, ok := i.regParser[strings.Join([]string{txe.Name}, "@")]; ok {
+		//a hack: the message is always in args[2]
+		msg := addParser.Msg()
+		err := proto.Unmarshal(txe.GetPayload(), msg)
+		if err != nil {
+			ret.Detail = fmt.Sprintf("Invalid event payload (%s)", err)
+			return ret
+		}
+		ret.Detail = addParser.Detail(msg)
+	} else {
+		ret.Detail = noParser
+	}
+
 }
 
 //dummy imply for parser
-func (s *FabricProxy) HandleBlockchainInfo(i *protos.BlockchainInfo) interface{} { return i }
-func (s *FabricProxy) HandleBlock(i *protos.Block) interface{}                   { return i }
-func (s *FabricProxy) HandleTransaction(i *protos.Transaction) interface{}       { return i }
+func (s *FabricBlockChain) HandleBlockchainInfo(i *protos.BlockchainInfo) interface{} { return i }
+func (s *FabricBlockChain) HandleBlock(i *protos.Block) interface{}                   { return i }
+func (s *FabricBlockChain) HandleTransaction(i *protos.Transaction) interface{}       { return i }
 
 type restError struct {
 	Error string `json:"Error,omitempty"`

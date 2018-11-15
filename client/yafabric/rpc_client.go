@@ -121,6 +121,30 @@ func init() {
 	client.Client_Impls["yafabric"] = NewRPCConfig
 }
 
+func setUser(s *SecurityPolicy, username string) *SecurityPolicy {
+
+	if s == nil {
+		s = &SecurityPolicy{username, nil, nil, ""}
+	} else {
+		s.User = username
+	}
+	return s
+}
+
+func setAttrs(s *SecurityPolicy, attrs []string, isAppend bool) *SecurityPolicy {
+
+	if s == nil {
+		s = &SecurityPolicy{"", nil, nil, ""}
+	}
+
+	if isAppend {
+		s.Attributes = append(s.Attributes, attrs...)
+	} else {
+		s.Attributes = attrs
+	}
+	return s
+}
+
 /*
 	the configuration for client can include these fields:
 	- chaincode
@@ -136,15 +160,15 @@ func init() {
 */
 func (c *RpcClientConfig) Load(vp *viper.Viper) error {
 	if s := vp.GetString("chaincode"); s != "" {
-		c.SetChaincode(s)
+		c.chaincodeName = s
 	}
 
 	if s := vp.GetString("username"); s != "" {
-		c.SetUser(s)
+		c.security = setUser(c.security, s)
 	}
 
 	if s := vp.GetStringSlice("userattr"); s != nil {
-		c.SetAttrs(s, false)
+		c.security = setAttrs(c.security, s, false)
 	}
 
 	if vp.IsSet("endpoint") {
@@ -158,40 +182,6 @@ func (c *RpcClientConfig) Load(vp *viper.Viper) error {
 	}
 
 	return nil
-}
-
-func (c *RpcClientConfig) SetChaincode(ccName string) {
-	c.chaincodeName = ccName
-}
-
-func (c *RpcClientConfig) SetUser(username string) {
-
-	if c == nil {
-		return
-	}
-
-	if c.security == nil {
-		c.security = &SecurityPolicy{username, nil, nil, ""}
-	} else {
-		c.security.User = username
-	}
-}
-
-func (c *RpcClientConfig) SetAttrs(attrs []string, isAppend bool) {
-
-	if c == nil {
-		return
-	}
-
-	if c.security == nil {
-		c.security = &SecurityPolicy{"", nil, nil, ""}
-	}
-
-	if isAppend {
-		c.security.Attributes = append(c.security.Attributes, attrs...)
-	} else {
-		c.security.Attributes = attrs
-	}
 }
 
 func (c *RpcClientConfig) Quit() {
@@ -212,17 +202,39 @@ type rPCClient struct {
 //Assign each http request (run cocurrency) a client, which can be adapted to a caller
 //the client is "lazy" connect: it just do connect when required (a request has come)
 //and wait for connect finish
-func (c *RpcClientConfig) Caller() (rpc.Caller, error) {
+func (c *RpcClientConfig) Caller(spec *client.RpcSpec) (rpc.Caller, error) {
 
 	conn, err := c.conn.obtainConn(c.connManager.Context())
 	if conn == nil {
 		return nil, err
 	}
 
+	ccname := c.chaincodeName
+	sec := c.security
+	if spec != nil {
+		if spec.ChaincodeName != "" {
+			ccname = spec.ChaincodeName
+		}
+
+		extendAttr := true
+		if spec.Options != nil {
+			//if the usenamem is not reset, we suppose caller wish to add
+			//more attributes instead of replace it
+			if s := spec.Options.GetString("username"); s != "" {
+				sec = setUser(sec, s)
+				extendAttr = false
+			}
+		}
+
+		if len(spec.Attributes) > 0 {
+			sec = setAttrs(sec, spec.Attributes, extendAttr)
+		}
+	}
+
 	builder := &RpcBuilder{
-		c.chaincodeName,
+		ccname,
 		"",
-		c.security,
+		sec,
 		*conn,
 		c.connManager,
 		c.TxTimeout,
