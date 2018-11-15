@@ -1,4 +1,5 @@
 
 vendor/
 *.test
+Gopkg.lock
 !vendor/github.com/abchain/fabric
