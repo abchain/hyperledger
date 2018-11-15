@@ -25,7 +25,6 @@ type FabricRPCCfg interface {
 type FabricRPCCore struct {
 	*FabricClientBase
 	*txgen.TxGenerator
-	Cfg FabricRPCCfg
 }
 
 type RPCRouter struct {
