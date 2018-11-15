@@ -1,6 +1,8 @@
 package service
 
 import (
+	"os"
+
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"hyperledger.abchain.org/applications/asset/wallet"
@@ -9,7 +11,6 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	"hyperledger.abchain.org/client"
 	"hyperledger.abchain.org/core/config"
-	"os"
 )
 
 const (
