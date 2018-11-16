@@ -1,9 +1,13 @@
 package client
 
 import (
+	"errors"
 	"github.com/spf13/viper"
-	"hyperledger.abchain.org/chaincode/lib/caller"
 )
+
+type Chain struct {
+	Height int64
+}
 
 type ChainTransaction struct {
 	Height                  int64 `json:",string"`
@@ -26,20 +30,32 @@ type ChainTxEvents struct {
 type ChainBlock struct {
 	Height       int64 `json:",string"`
 	Hash         string
-	TimeStamp    string
-	Transactions []*ChainTransaction
-	TxEvents     []*ChainTxEvents
+	TimeStamp    string              `json:",omitempty"`
+	Transactions []*ChainTransaction `json:"-"`
+	TxEvents     []*ChainTxEvents    `json:"-"`
 }
 
 type ChainInfo interface {
-	GetBlock(int64) *ChainBlock
-	GetTransaction(string) *ChainTransaction
-	GetTxEvent(string) *ChainTxEvents
+	GetChain() (*Chain, error)
+	GetBlock(int64) (*ChainBlock, error)
+	GetTransaction(string) (*ChainTransaction, error)
+	GetTxEvent(string) (*ChainTxEvents, error)
 }
 
 type ChainClient interface {
-	Load(*viper.Viper) (ChainInfo, error)
-	ViaRpc(rpc.Caller) (ChainInfo, error)
+	ViaWeb(*viper.Viper) ChainInfo
 }
 
 var ChainProxy_Impls map[string]func() ChainClient
+
+func (c *fabricRPCCfg) UseChainREST(name string, vp *viper.Viper) error {
+
+	cli, ok := ChainProxy_Impls[name]
+	if !ok {
+		return errors.New("No implement")
+	}
+
+	c.chain = cli().ViaWeb(vp)
+
+	return nil
+}

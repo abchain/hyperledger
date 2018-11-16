@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gocraft/web"
 	mainsrv "hyperledger.abchain.org/applications/asset/service"
+	"hyperledger.abchain.org/applications/blockchain"
 	regsrv "hyperledger.abchain.org/applications/supervise/service"
 	"hyperledger.abchain.org/applications/util"
 	"net/http"
@@ -25,7 +26,7 @@ func buildRouter() *web.Router {
 	mainsrv.CreateAccountRouter(root, "privkey").Init(defaultWallet).BuildPrivkeyRoutes()
 
 	//blockchain
-	// client.CreateFabricProxyRouter(root, "chain").Init(defaultFabricEP, nil).BuildRoutes()
+	blockchain.CreateBlocChainRouter(root, "chain").Init(defaultChainConfig).BuildRoutes()
 
 	rpcrouter := util.CreateRPCRouter(root, "")
 	rpcrouter.Init(defaultRpcConfig)

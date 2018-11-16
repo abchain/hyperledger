@@ -15,6 +15,7 @@ type RpcSpec struct {
 }
 
 type RpcClient interface {
+	Chain() (ChainInfo, error)
 	Caller(*RpcSpec) (rpc.Caller, error)
 	Load(*viper.Viper) error
 	Quit()
@@ -25,6 +26,7 @@ var Client_Impls map[string]func() RpcClient
 type fabricRPCCfg struct {
 	ccName string
 	cli    RpcClient
+	chain  ChainInfo
 }
 
 func NewFabricRPCConfig(ccN string) *fabricRPCCfg {
@@ -46,8 +48,22 @@ func (c *fabricRPCCfg) UseYAFabricCli(vp *viper.Viper) error {
 	return c.UseCli("yafabric", vp)
 }
 
+func (c *fabricRPCCfg) UseYAFabricREST(vp *viper.Viper) error {
+
+	return c.UseChainREST("yafabric", vp)
+}
+
 func (c *fabricRPCCfg) GetCCName() string {
 	return c.ccName
+}
+
+func (c *fabricRPCCfg) GetChain() (ChainInfo, error) {
+	if c.chain != nil {
+		return c.chain, nil
+	} else if c.cli == nil {
+		return nil, errors.New("Not use any client implement")
+	}
+	return c.cli.Chain()
 }
 
 func (c *fabricRPCCfg) GetCaller() (rpc.Caller, error) {

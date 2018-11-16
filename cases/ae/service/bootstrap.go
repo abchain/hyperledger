@@ -1,16 +1,17 @@
 package service
 
 import (
-	"os"
-
+	"errors"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"hyperledger.abchain.org/applications/asset/wallet"
+	"hyperledger.abchain.org/applications/blockchain"
 	apputil "hyperledger.abchain.org/applications/util"
 	"hyperledger.abchain.org/cases/ae/chaincode/cc"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	"hyperledger.abchain.org/client"
 	"hyperledger.abchain.org/core/config"
+	"os"
 )
 
 const (
@@ -33,10 +34,15 @@ func (rpcCfg) GetCaller() (rpc.Caller, error) {
 	return ccCaller, nil
 }
 
+func (rpcCfg) GetChain() (client.ChainInfo, error) {
+	return nil, errors.New("Not support")
+}
+
 var (
-	defaultWallet    wallet.Wallet
-	defaultRpcConfig apputil.FabricRPCCfg
-	defaultFabricEP  string
+	defaultWallet      wallet.Wallet
+	defaultRpcConfig   apputil.FabricRPCCfg
+	defaultChainConfig blockchain.FabricChainCfg
+	defaultFabricEP    string
 
 	offlineMode bool
 )
@@ -67,11 +73,14 @@ func StartService() {
 
 	if offlineMode {
 		logger.Warning("Running offline mode")
-		defaultRpcConfig = rpcCfg(chaincode.CC_NAME)
+		cfg := rpcCfg(chaincode.CC_NAME)
+		defaultRpcConfig = cfg
+		defaultChainConfig = cfg
 	} else {
 		// Init gRPC ClientConfig
 		cfg := client.NewFabricRPCConfig(chaincode.CC_NAME)
 		defaultRpcConfig = cfg
+		defaultChainConfig = cfg
 
 		rpcsetting := viper.Sub(conf_grpc)
 		fabricType := rpcsetting.GetString("fabric")
