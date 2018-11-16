@@ -42,7 +42,6 @@ var (
 	defaultWallet      wallet.Wallet
 	defaultRpcConfig   apputil.FabricRPCCfg
 	defaultChainConfig blockchain.FabricChainCfg
-	defaultFabricEP    string
 
 	offlineMode bool
 )
@@ -51,6 +50,7 @@ const (
 	conf_wallet  = "wallet"
 	conf_service = "service"
 	conf_grpc    = "grpc"
+	conf_rest    = "rest"
 )
 
 func StartService() {
@@ -92,12 +92,9 @@ func StartService() {
 			panic("No implement")
 		default:
 			cfg.UseYAFabricCli(rpcsetting)
+			cfg.UseYAFabricREST(viper.Sub(conf_rest))
 		}
 	}
-
-	// Init REST ClientConfig
-	defaultFabricEP = viper.GetString("rest.server")
-	logger.Debugf("Use fabric peer REST server: %v", defaultFabricEP)
 
 	// start server
 	apputil.StartHttpServer(viper.Sub(conf_service), buildRouter())
