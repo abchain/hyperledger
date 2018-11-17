@@ -17,8 +17,8 @@ func CanonicalizePath(path string) string {
 
 }
 
-func CanonicalizeFilePath(filepath string) string {
+func CanonicalizeFilePath(path string) string {
 
-	return filepath.ToSlash(filepath)
+	return filepath.ToSlash(path)
 
 }
