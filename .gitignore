@@ -3,3 +3,12 @@ vendor/
 *.test
 Gopkg.lock
 !vendor/github.com/abchain/fabric
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
