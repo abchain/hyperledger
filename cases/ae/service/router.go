@@ -2,12 +2,13 @@ package service
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/gocraft/web"
 	mainsrv "hyperledger.abchain.org/applications/asset/service"
 	"hyperledger.abchain.org/applications/blockchain"
 	regsrv "hyperledger.abchain.org/applications/supervise/service"
 	"hyperledger.abchain.org/applications/util"
-	"net/http"
 )
 
 var URIPrefix = "/api/v1/"
@@ -20,6 +21,7 @@ func buildRouter() *web.Router {
 
 	root := web.NewWithPrefix(util.FabricClientBase{}, URIPrefix)
 
+	root.OptionsHandler((*util.FabricClientBase).OptionsHandler)
 	//account
 	mainsrv.CreateAccountRouter(root, "account").Init(defaultWallet).BuildRoutes()
 	//privkey

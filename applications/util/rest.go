@@ -3,11 +3,13 @@ package util
 import (
 	"encoding/base64"
 	"encoding/json"
+	"net/http"
+	"strings"
+
 	"github.com/gocraft/web"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	"hyperledger.abchain.org/core/utils"
-	"net/http"
 )
 
 //a null-base to provide more elastic
@@ -116,4 +118,11 @@ func (s *FabricClientBase) EncodeEntry(nonce []byte) string {
 
 func (s *FabricClientBase) DecodeEntry(nonce string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(nonce)
+}
+
+func (c *FabricClientBase) OptionsHandler(rw web.ResponseWriter, r *web.Request, methods []string) {
+
+	rw.Header().Add("Access-Control-Allow-Methods", strings.Join(methods, ", "))
+	rw.Header().Add("Access-Control-Allow-Origin", "*")
+
 }
