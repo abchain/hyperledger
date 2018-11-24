@@ -2,8 +2,9 @@ package generaltoken
 
 import (
 	"errors"
-	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"math/big"
+
+	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 )
 
 const (
@@ -78,6 +79,10 @@ func (token *baseTokenTx) Global() (error, *pb.TokenGlobalData_s) {
 	global := &pb.TokenGlobalData_s{}
 
 	err := token.Storage.Get(deployName, global)
+
+	if global.TotalTokens == nil {
+		return errors.New("token is null , you need init token first"), global
+	}
 
 	if err != nil {
 		return err, nil

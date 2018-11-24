@@ -122,12 +122,6 @@ func (n *TokenGlobalData_s) ToPB() *TokenGlobalData {
 	if n == nil {
 		return nil
 	}
-	if n.TotalTokens == nil {
-		n.TotalTokens = big.NewInt(0)
-	}
-	if n.UnassignedTokens == nil {
-		n.UnassignedTokens = big.NewInt(0)
-	}
 	return &TokenGlobalData{
 		TotalTokens:      n.TotalTokens.Bytes(),
 		UnassignedTokens: n.UnassignedTokens.Bytes(),
