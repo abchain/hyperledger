@@ -80,12 +80,12 @@ func (token *baseTokenTx) Global() (error, *pb.TokenGlobalData_s) {
 
 	err := token.Storage.Get(deployName, global)
 
-	if global.TotalTokens == nil {
-		return errors.New("token is null , you need init token first"), global
-	}
-
 	if err != nil {
 		return err, nil
+	}
+
+	if global.TotalTokens == nil {
+		return errors.New("token is null , you need init token first"), nil
 	}
 
 	return nil, global
