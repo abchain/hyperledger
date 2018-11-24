@@ -9,6 +9,7 @@ import (
 	"hyperledger.abchain.org/applications/blockchain"
 	regsrv "hyperledger.abchain.org/applications/supervise/service"
 	"hyperledger.abchain.org/applications/util"
+	"strings"
 )
 
 var URIPrefix = "/api/v1/"
@@ -17,11 +18,19 @@ func notFound(w web.ResponseWriter, r *web.Request) {
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprintf(w, "%v Not Found", r.URL.Path)
 }
+
+func optionsHandler(rw web.ResponseWriter, r *web.Request, methods []string) {
+
+	rw.Header().Add("Access-Control-Allow-Methods", strings.Join(methods, ", "))
+	rw.Header().Add("Access-Control-Allow-Origin", "*")
+
+}
+
 func buildRouter() *web.Router {
 
 	root := web.NewWithPrefix(util.FabricClientBase{}, URIPrefix)
 
-	root.OptionsHandler((*util.FabricClientBase).OptionsHandler)
+	root.OptionsHandler(optionsHandler)
 	//account
 	mainsrv.CreateAccountRouter(root, "account").Init(defaultWallet).BuildRoutes()
 	//privkey
