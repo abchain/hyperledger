@@ -1,9 +1,10 @@
 package ccprotos
 
 import (
-	"hyperledger.abchain.org/core/utils"
 	"math/big"
 	"time"
+
+	"hyperledger.abchain.org/core/utils"
 )
 
 type FuncRecord_s struct {
@@ -121,7 +122,6 @@ func (n *TokenGlobalData_s) ToPB() *TokenGlobalData {
 	if n == nil {
 		return nil
 	}
-
 	return &TokenGlobalData{
 		TotalTokens:      n.TotalTokens.Bytes(),
 		UnassignedTokens: n.UnassignedTokens.Bytes(),
