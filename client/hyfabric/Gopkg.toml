@@ -1,0 +1,45 @@
+# Gopkg.toml example
+#
+# Refer to https://golang.github.io/dep/docs/Gopkg.toml.html
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#   name = "github.com/x/y"
+#   version = "2.4.0"
+#
+# [prune]
+#   non-go = false
+#   go-tests = true
+#   unused-packages = true
+
+# 忽略此包, 与主项目用同一个
+ignored = ["github.com/spf13/viper"]
+
+[[constraint]]
+  name = "github.com/hyperledger/fabric"
+  revision = "cae2ad4456914adffcb07b1ca873e9624ce8f8b3"
+
+[[constraint]]
+  branch="master"
+  name = "github.com/op/go-logging"
+  # version = "1.2.0"
+
+# [[constraint]]
+#   name = "github.com/spf13/viper"
+#   revision = "1967d93db724f4a5c0e101307e96d82ff520a067"
+
+[prune]
+  go-tests = true
+  unused-packages = true
