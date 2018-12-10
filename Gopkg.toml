@@ -24,7 +24,7 @@
 #   go-tests = true
 #   unused-packages = true
 
-ignored = ["github.com/abchain/fabric/*"]
+ignored = ["github.com/abchain/fabric/*","github.com/hyperledger/fabric/*"]
 
 
 [[constraint]]
