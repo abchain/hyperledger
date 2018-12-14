@@ -12,8 +12,7 @@ peers:
 
 peer0:
   address: 0.0.0.0:7051
-  serverhostoverride: 
-    #peer0.org1.example.com
+  serverhostoverride: peer0.org1.example.com
   conntimeout: 30s
   tls: true
   rootcert: /home/gjf/hyperledger-fabric/fabric-samples/first-network/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt

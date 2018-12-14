@@ -1,6 +1,7 @@
 package peerex
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -17,33 +18,41 @@ import (
 
 const (
 	defaultTimeout = 30 * time.Second
+	logsymbol      = "hyfabric_peerex"
 )
 
-//Verify 检查参数正确性 没有的构建默认值
-func (r *RPCBuilder) Verify(invoke bool) error {
-	err := r.ChaincodeEnv.verify()
-	if err != nil {
-		return err
+var logger = utils.MustGetLogger(logsymbol)
+
+type RPCManager struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+}
+
+//depecrated
+type RPC struct{}
+
+func (_ *RPC) NewManager() *RPCManager {
+	return NewRpcManager()
+}
+
+func NewRpcManager() *RPCManager {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &RPCManager{ctx, cancel}
+}
+
+func (m *RPCManager) Context() context.Context {
+	select {
+	case <-m.ctx.Done():
+		logger.Warningf("Context err %s ,creat a new context ", m.ctx.Err().Error())
+		m = NewRpcManager()
+	default:
+
 	}
-	if !invoke {
-		if len(r.Peers) > 1 {
-			r.Peers = r.Peers[:1]
-			logger.Warning("query 目前只支持单节点 取第一组数据")
-		}
-	} else {
-		err := r.OrderEnv.verify()
-		if err != nil {
-			return err
-		}
-	}
-	for _, p := range r.Peers {
-		err := p.verify()
-		if err != nil {
-			return err
-		}
-	}
-	logger.Debug("检查参数正确性=======down")
-	return nil
+	return m.ctx
+}
+
+func (m *RPCManager) Cancel() {
+	m.cancel()
 }
 
 func (cc *ChaincodeEnv) verify() error {
@@ -98,9 +107,9 @@ func (r *RPCBuilder) InitConn(isOrdererRequired bool) error {
 		return err
 	}
 	logger.Debug("========InitConn start:============")
-	var peers []*PeerEnv
+	var count = 1
 	if isOrdererRequired {
-		peers = r.Peers
+		count = len(r.Peers)
 		err := r.OrderEnv.ClientConn()
 		if err != nil {
 			return errors.WithMessage(err, "orderer grpc conn err")
@@ -111,19 +120,20 @@ func (r *RPCBuilder) InitConn(isOrdererRequired bool) error {
 			// r.Peers = r.Peers[:1]
 			logger.Warning("query 目前只支持单节点 取第一组数据", r.Peers[0].Address)
 		}
-		peers = r.Peers[:1]
+		count = 1
 	}
-	for i := 0; i < len(peers); i++ {
+	for i := 0; i < count; i++ {
 		err := r.Peers[i].ClientConn()
 		if err != nil {
 			return errors.WithMessage(err, fmt.Sprintf("peer[%d] grpc conn err", i))
 		}
 		logger.Debugf("----peer[%d] grpc conn----", i)
-		fmt.Printf("----peer[%d] grpc conn---- \n", i)
+
 	}
 	return nil
 }
 
+//CloseConn 关闭连接
 func (r *RPCBuilder) CloseConn() {
 	for i := 0; i < len(r.Peers); i++ {
 		r.Peers[i].CloseConn()
@@ -133,25 +143,27 @@ func (r *RPCBuilder) CloseConn() {
 	logger.Debug("----order close grpc conn----")
 }
 
+//VerifyConn 校验连接
 func (r *RPCBuilder) VerifyConn(isOrdererRequired bool) error {
-	logger.Debug("========InitConn start:============")
-	var peers []*PeerEnv
+	logger.Debug("========VerifyConn start:============")
+	var count = 1
 	if isOrdererRequired {
-		peers = r.Peers
+		count = len(r.Peers)
 		err := r.OrderEnv.VerifyConn()
 		if err != nil {
 			return errors.WithMessage(err, "orderer grpc Verifyconn err")
 		}
-		logger.Debug("----order grpc conn----")
+		logger.Debug("----order grpc connected----")
 	} else {
-		peers = r.Peers[:1]
+		// peers = r.Peers[:1]
+		count = 1
 	}
-	for i := 0; i < len(peers); i++ {
+	for i := 0; i < count; i++ {
 		err := r.Peers[i].VerifyConn()
 		if err != nil {
 			return errors.WithMessage(err, fmt.Sprintf("peer[%d] grpc Verifyconn err", i))
 		}
-		logger.Debugf("----peer[%d] grpc conn----", i)
+		logger.Debugf("----peer[%d] grpc is connected----", i)
 	}
 	return nil
 }
@@ -168,7 +180,6 @@ func (cc *ChaincodeEnv) getChaincodeSpec(args [][]byte) *pb.ChaincodeSpec {
 	}
 
 	logger.Debug("ChaincodeSpec input :", input, " funcname:", funcname)
-	fmt.Println("ChaincodeSpec input :", input, " funcname:", funcname)
 	var golang = pb.ChaincodeSpec_Type_name[1]
 	spec = &pb.ChaincodeSpec{
 		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[golang]),

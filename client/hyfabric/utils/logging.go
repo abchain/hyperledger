@@ -27,10 +27,10 @@ import (
 )
 
 const (
-	pkgLogID = "cc_logging"
+	pkgLogID = "hyfabric_logging"
 	// defaultFormat = "%{color}%{time:2006-01-02 15:04:05.000 MST} [%{module}] %{shortfunc} -> %{level:.4s} %{id:03x}%{color:reset} %{message}"
 	defaultLevel  = logging.INFO
-	defaultFormat = "%{color}%{time:2006-01-02 15:04:05.000 MST} [%{module}] %{shortfile} %{callpath} -> %{level:.4s} %{id:03x}%{color:reset} %{message}"
+	defaultFormat = "%{color}%{time:2006-01-02 15:04:05.000 MST} [%{module}] %{shortfile} -> %{level:.4s} %{id:03x}%{color:reset} %{message}"
 )
 
 var (

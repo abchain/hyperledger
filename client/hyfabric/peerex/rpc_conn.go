@@ -50,7 +50,7 @@ func (node *NodeEnv) ClientConn() error {
 			node.Unlock()
 
 			node.waitConn.Broadcast()
-			fmt.Println("connect node addr:", node.Address)
+			logger.Debug("connect node addr:", node.Address)
 
 			// if err != nil {
 			// 	node.reset(ctx)
@@ -66,18 +66,12 @@ func (node *NodeEnv) ClientConn() error {
 
 	if node.Connect != nil {
 		return nil
-	} else {
-		return node.connFail
 	}
-	// conn, err := node.grpcConnection()
-	// if err != nil {
-	// 	return errors.WithMessage(err, fmt.Sprintf("endorser client failed to connect to %s", node.Address))
-	// }
-	// node.Connect = conn
-	// return nil
+	return node.connFail
+
 }
 
-//grpc 关闭连接
+//CloseConn grpc 关闭连接
 func (node *NodeEnv) CloseConn() {
 	// node.Lock()
 	// defer node.Unlock()
@@ -85,9 +79,11 @@ func (node *NodeEnv) CloseConn() {
 	defer node.Unlock()
 
 	if node.waitConn != nil {
+		fmt.Println("node.waitConn != nil")
 		node.waitConn.Wait()
 	}
 	if node.Connect != nil {
+		fmt.Println("node.Connect != nil")
 		node.Connect.Close()
 		node.Connect = nil
 	}
@@ -102,11 +98,11 @@ func (node *NodeEnv) grpcConnection() (*grpc.ClientConn, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("tls true")
+
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(tls), grpc.WithBlock())
 
 	} else {
-		fmt.Println("tls false")
+
 		dialOpts = append(dialOpts, grpc.WithInsecure(), grpc.WithBlock())
 		// dialOpts = append(dialOpts, grpc.WithTransportCredentials(tls), grpc.WithBlock())
 	}
@@ -137,7 +133,7 @@ func (node *NodeEnv) VerifyConn() error {
 	if s != grpc_conn.Ready {
 		return fmt.Errorf("Conn is not ready: <%s>", s)
 	}
-
+	fmt.Println(s.String())
 	return nil
 }
 
