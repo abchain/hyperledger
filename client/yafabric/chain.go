@@ -18,18 +18,28 @@ type blockchainInterpreter struct {
 	chainAcquire
 }
 
-func decodeTransactionToInvoke(payload []byte) (*protos.ChaincodeInvocationSpec, error) {
+func decodeTransactionPayload(deployFlag bool, payload []byte) (*protos.ChaincodeSpec, error) {
 
-	invoke := &protos.ChaincodeInvocationSpec{}
-	if err := proto.Unmarshal(payload, invoke); err != nil {
-		return nil, fmt.Errorf("protobuf decode fail %s", err.Error())
+	var spec *protos.ChaincodeSpec
+	if !deployFlag {
+		invoke := &protos.ChaincodeInvocationSpec{}
+		if err := proto.Unmarshal(payload, invoke); err != nil {
+			return nil, fmt.Errorf("protobuf decode invoke fail %s", err.Error())
+		}
+		spec = invoke.GetChaincodeSpec()
+	} else {
+		cds := &protos.ChaincodeDeploymentSpec{}
+		if err := proto.Unmarshal(payload, cds); err != nil {
+			return nil, fmt.Errorf("protobuf decode cds fail %s", err.Error())
+		}
+		spec = cds.GetChaincodeSpec()
 	}
 
-	if len(invoke.GetChaincodeSpec().GetCtorMsg().GetArgs()) == 0 {
+	if len(spec.GetCtorMsg().GetArgs()) == 0 {
 		return nil, fmt.Errorf("Uninitialized invoke tx")
 	}
 
-	return invoke, nil
+	return spec, nil
 }
 
 func (i *blockchainInterpreter) resolveTxEvent(txe *protos.ChaincodeEvent) *client.ChainTxEvents {
@@ -47,14 +57,20 @@ func (i *blockchainInterpreter) resolveTx(tx *protos.Transaction) *client.ChainT
 	ret := new(client.ChainTransaction)
 
 	ret.TxID = tx.GetTxid()
-	ret.Chaincode = string(tx.GetChaincodeID())
 	ret.CreatedFlag = tx.GetType() == protos.Transaction_CHAINCODE_DEPLOY
-	inv, err := decodeTransactionToInvoke(tx.GetPayload())
+
+	if tx.GetConfidentialityLevel() != protos.ConfidentialityLevel_PUBLIC {
+		//Can't not parse non-public transaction
+		return ret
+	}
+
+	spec, err := decodeTransactionPayload(ret.CreatedFlag, tx.GetPayload())
 	if err != nil {
 		return ret
 	}
 
-	args := inv.ChaincodeSpec.CtorMsg.Args
+	ret.Chaincode = spec.GetChaincodeID().GetName()
+	args := spec.CtorMsg.Args
 	ret.Method = string(args[0])
 	ret.TxArgs = args[1:]
 
