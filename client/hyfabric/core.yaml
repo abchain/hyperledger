@@ -1,0 +1,43 @@
+logging:
+  level: debug
+  format: "%{color}%{time:2006-01-02 15:04:05.000} [%{module}] %{shortfile} -> %{level:.4s} %{color:reset} %{message}"
+
+    
+chaincode: mycc
+channel: mychannel
+
+peers:
+  - peer0
+  - peer1
+
+peer0:
+  address: 0.0.0.0:7051
+  serverhostoverride: peer0.org1.example.com
+  conntimeout: 30s
+  tls: true
+  rootcert: /home/gjf/hyperledger-fabric/fabric-samples/first-network/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+
+peer1:
+  address: 0.0.0.0:9051
+  serverhostoverride: peer0.org2.example.com
+  conntimeout: 30s
+  tls: true
+    #如果enabled 为true 则需要提供rootcert.file的值 根ca证书
+  rootcert: /home/gjf/hyperledger-fabric/fabric-samples/first-network/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+    
+# 配置peers 节点的第一个peer的msp
+msp:
+   #msp名称
+  localMspId: Org1MSP
+  # msp 路径
+  mspConfigPath: /home/gjf/hyperledger-fabric/fabric-samples/first-network/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+  # bccsp/idemix 默认bccsp
+  localMspType: bccsp
+
+orderer:
+  address: 0.0.0.0:7050
+  serverhostoverride: orderer.example.com
+  conntimeout: 3s
+  tls: true
+  rootcert: /home/gjf/hyperledger-fabric/fabric-samples/first-network/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+    

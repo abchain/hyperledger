@@ -24,40 +24,21 @@
 #   go-tests = true
 #   unused-packages = true
 
-ignored = ["github.com/abchain/fabric/*","github.com/hyperledger/fabric/*"]
-
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/gocraft/web"
+# 忽略此包, 与主项目用同一个
+ignored = ["github.com/spf13/viper"]
 
 [[constraint]]
-  name = "github.com/golang/protobuf"
-  version = "1.2.0"
+  name = "github.com/hyperledger/fabric"
+  revision = "cae2ad4456914adffcb07b1ca873e9624ce8f8b3"
 
 [[constraint]]
-  branch = "master"
+  branch="master"
   name = "github.com/op/go-logging"
+  # version = "1.2.0"
 
-[[constraint]]
-  name = "github.com/spf13/viper"
-  version = "1.2.1"
-
-[[constraint]]
-  branch = "master"
-  name = "golang.org/x/crypto"
-
-[[constraint]]
-  branch = "master"
-  name = "golang.org/x/net"
-
-[[constraint]]
-  branch = "master"
-  name = "golang.org/x/sys"
-
-[[constraint]]
-  name="google.golang.org/grpc"
-  version="1.6.0"
+# [[constraint]]
+#   name = "github.com/spf13/viper"
+#   revision = "1967d93db724f4a5c0e101307e96d82ff520a067"
 
 [prune]
   go-tests = true

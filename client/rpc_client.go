@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+
 	"github.com/spf13/viper"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 )
@@ -46,6 +47,11 @@ func (c *fabricRPCCfg) UseCli(name string, vp *viper.Viper) error {
 func (c *fabricRPCCfg) UseYAFabricCli(vp *viper.Viper) error {
 
 	return c.UseCli("yafabric", vp)
+}
+
+func (c *fabricRPCCfg) UseHyFabricCli(vp *viper.Viper) error {
+
+	return c.UseCli("hyfabric", vp)
 }
 
 func (c *fabricRPCCfg) UseYAFabricREST(vp *viper.Viper) error {

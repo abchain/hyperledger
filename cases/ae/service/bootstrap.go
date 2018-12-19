@@ -2,6 +2,9 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	"os"
+
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"hyperledger.abchain.org/applications/asset/wallet"
@@ -11,7 +14,6 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	"hyperledger.abchain.org/client"
 	"hyperledger.abchain.org/core/config"
-	"os"
 )
 
 const (
@@ -70,7 +72,7 @@ func StartService() {
 	}
 
 	offlineMode = viper.GetBool("offline")
-
+	fmt.Println("get offline:", offlineMode)
 	if offlineMode {
 		logger.Warning("Running offline mode")
 		cfg := rpcCfg(chaincode.CC_NAME)
@@ -84,10 +86,11 @@ func StartService() {
 
 		rpcsetting := viper.Sub(conf_grpc)
 		fabricType := rpcsetting.GetString("fabric")
-
 		switch fabricType {
 		case "1.x":
-			panic("No implement")
+			// panic("No implement")
+			logger.Debug("use 1.x fabric")
+			cfg.UseHyFabricCli(rpcsetting)
 		case "0.6":
 			panic("No implement")
 		default:
