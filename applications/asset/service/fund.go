@@ -1,16 +1,18 @@
 package service
 
 import (
+	"math/big"
+
 	"github.com/gocraft/web"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	tx "hyperledger.abchain.org/core/tx"
-	"math/big"
 )
 
 const (
 	FundID      = "fundID"
 	AddressFlag = "address"
+	Simple      = "simple"
 )
 
 type Fund struct {
@@ -268,8 +270,16 @@ func (s *Fund) QueryAddress(rw web.ResponseWriter, req *web.Request) {
 }
 
 type fundRecordEntry struct {
-	Txid   string `json:"txID"`
-	Amount string `json:"amount"`
+	Txid     string      `json:"txID"`
+	Amount   string      `json:"amount"`
+	FromLast *FuncRecord `json:"from"`
+	ToLast   *FuncRecord `json:"to"`
+	TxTime   string      `json: "txTime"`
+}
+
+type FuncRecord struct {
+	Noncekey string `json:"noncekey"`
+	IsSend   bool   `json:"isSend"`
 }
 
 func (s *Fund) QueryTransfer(rw web.ResponseWriter, req *web.Request) {
@@ -277,6 +287,7 @@ func (s *Fund) QueryTransfer(rw web.ResponseWriter, req *web.Request) {
 	token := token.NewFullGeneralCall(s.TxGenerator)
 
 	nonce, err := s.DecodeEntry(req.PathParams[FundID])
+
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -288,8 +299,31 @@ func (s *Fund) QueryTransfer(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	s.Normal(rw, &fundRecordEntry{
-		data.Txid,
-		data.Amount.String(),
-	})
+	short := req.FormValue(Simple)
+	if short == "true" {
+		s.Normal(rw, struct {
+			Txid   string `json:"txID"`
+			Amount string `json:"amount"`
+		}{
+			data.Txid,
+			data.Amount.String(),
+		})
+	} else {
+		from := &FuncRecord{
+			s.EncodeEntry(data.FromLast.Noncekey),
+			data.FromLast.IsSend,
+		}
+		to := &FuncRecord{
+			s.EncodeEntry(data.ToLast.Noncekey),
+			data.ToLast.IsSend,
+		}
+		s.Normal(rw, &fundRecordEntry{
+			data.Txid,
+			data.Amount.String(),
+			from,
+			to,
+			data.NonceTime.Format("2006-01-02 15:04:05"),
+		})
+	}
+
 }
