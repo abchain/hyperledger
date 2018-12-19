@@ -270,8 +270,12 @@ func (s *Fund) QueryAddress(rw web.ResponseWriter, req *web.Request) {
 }
 
 type fundRecordEntry struct {
-	Txid     string      `json:"txID"`
-	Amount   string      `json:"amount"`
+	Txid   string `json:"txID"`
+	Amount string `json:"amount"`
+	*fundRecordDetailEntry
+}
+
+type fundRecordDetailEntry struct {
 	FromLast *FuncRecord `json:"from"`
 	ToLast   *FuncRecord `json:"to"`
 	TxTime   string      `json: "txTime"`
@@ -299,31 +303,22 @@ func (s *Fund) QueryTransfer(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	short := req.FormValue(Simple)
-	if short == "true" {
-		s.Normal(rw, struct {
-			Txid   string `json:"txID"`
-			Amount string `json:"amount"`
-		}{
-			data.Txid,
-			data.Amount.String(),
-		})
-	} else {
-		from := &FuncRecord{
+	ret := &fundRecordEntry{
+		Txid:   data.Txid,
+		Amount: data.Amount.String(),
+	}
+
+	if req.FormValue(Simple) != "true" {
+		ret.FromLast = &FuncRecord{
 			s.EncodeEntry(data.FromLast.Noncekey),
 			data.FromLast.IsSend,
 		}
-		to := &FuncRecord{
+		ret.ToLast = &FuncRecord{
 			s.EncodeEntry(data.ToLast.Noncekey),
 			data.ToLast.IsSend,
 		}
-		s.Normal(rw, &fundRecordEntry{
-			data.Txid,
-			data.Amount.String(),
-			from,
-			to,
-			data.NonceTime.Format("2006-01-02 15:04:05"),
-		})
+		ret.TxTime = data.NonceTime.Format("2006-01-02 15:04:05")
 	}
+	s.Normal(rw, ret)
 
 }
