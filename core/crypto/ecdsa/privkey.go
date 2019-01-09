@@ -192,10 +192,19 @@ func (priv *PrivateKey) FromPBMessage(msg proto.Message) error {
 
 func (priv *PrivateKey) String() string {
 
-	return fmt.Sprintf("&{Version: %v, CurveType: %d, Key.D: %v, "+
-		"RootFingerPrint: %v, Index: %v, Chaincode: %v}",
-		priv.Version, priv.CurveType, priv.Key.D.Bytes(),
-		priv.RootFingerPrint, priv.Index, priv.Chaincode)
+	out := fmt.Sprintf("ecdsa_PrivateKey{Version: %v, CurveType: %d", priv.Version, priv.CurveType)
+
+	if priv.Key != nil {
+		out = fmt.Sprintf("%s, D: %v", out, priv.Key.D)
+	}
+
+	if priv.KeyDerivation != nil {
+		out = fmt.Sprintf("%s, RootFingerPrint: %x, Index: %v, Chaincode: %x",
+			out, priv.RootFingerPrint, priv.Index, priv.Chaincode)
+	}
+
+	return out + "}"
+
 }
 
 func (priv *PrivateKey) public() *PublicKey {
@@ -250,8 +259,20 @@ func (priv *PrivateKey) Sign(hash []byte) (sig *protos.Signature, err error) {
 		return nil, err
 	}
 
-	//TODO: v is still not available
-	ecsign := &protos.Signature_ECDSA{r.Bytes(), s.Bytes(), 0}
+	//TODO: using v is still not available, we put pk
+	sigpk := &protos.Signature_ECDSA_P{
+		&protos.ECPoint{
+			priv.Key.PublicKey.X.Bytes(),
+			priv.Key.PublicKey.Y.Bytes(),
+		},
+	}
+
+	ecsign := &protos.Signature_ECDSA{
+		Curvetype: priv.CurveType,
+		R:         r.Bytes(),
+		S:         s.Bytes(),
+		Pub:       sigpk,
+	}
 
 	return &protos.Signature{&protos.Signature_Ec{ecsign}}, nil
 }

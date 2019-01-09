@@ -52,6 +52,34 @@ func (pub *PublicKey) PBMessage() proto.Message {
 	return pubProto
 }
 
+func (pub *PublicKey) resetPoint(p *protos.ECPoint) error {
+
+	if p == nil {
+		return fmt.Errorf("ECPoint is empty")
+	}
+
+	curve, err := GetEC(pub.CurveType)
+	if err != nil {
+		return err
+	}
+
+	// // Compress algorithm only works for SECP256K1
+	// if pubProto.Curvetype == SECP256K1 {
+	// 	X, Y = expandPublicKey(pubProto.GetP().X, curve.Params())
+	// } else {
+	// 	X.SetBytes(pubProto.GetP().X)
+	// 	Y.SetBytes(pubProto.GetP().Y)
+	// }
+
+	pub.Key = &ecdsa.PublicKey{
+		curve,
+		big.NewInt(0).SetBytes(p.GetX()),
+		big.NewInt(0).SetBytes(p.GetY()),
+	}
+
+	return nil
+}
+
 func (pub *PublicKey) FromPBMessage(msg proto.Message) error {
 	var pubProto *protos.PublicKey_ECDSA
 
@@ -72,26 +100,7 @@ func (pub *PublicKey) FromPBMessage(msg proto.Message) error {
 		}
 	}
 
-	curve, err := GetEC(pub.CurveType)
-	if err != nil {
-		return err
-	}
-
-	// // Compress algorithm only works for SECP256K1
-	// if pubProto.Curvetype == SECP256K1 {
-	// 	X, Y = expandPublicKey(pubProto.GetP().X, curve.Params())
-	// } else {
-	// 	X.SetBytes(pubProto.GetP().X)
-	// 	Y.SetBytes(pubProto.GetP().Y)
-	// }
-
-	pub.Key = &ecdsa.PublicKey{
-		curve,
-		big.NewInt(0).SetBytes(pubProto.GetP().GetX()),
-		big.NewInt(0).SetBytes(pubProto.GetP().GetY()),
-	}
-
-	return nil
+	return pub.resetPoint(pubProto.GetP())
 }
 
 // func (pub *PublicKey) Str() string {
@@ -105,10 +114,18 @@ func (pub *PublicKey) FromPBMessage(msg proto.Message) error {
 
 func (pub *PublicKey) String() string {
 
-	return fmt.Sprintf("&{Version: %v, CurveType: %d, Key.X: %v, Key.Y: %v, "+
-		"RootFingerPrint: %v, Index: %v, Chaincode: %v}",
-		pub.Version, pub.CurveType, pub.Key.X.Bytes(), pub.Key.Y.Bytes(),
-		pub.RootFingerPrint, pub.Index, pub.Chaincode)
+	out := fmt.Sprintf("ecdsa_PublicKey{Version: %v, CurveType: %d", pub.Version, pub.CurveType)
+
+	if pub.Key != nil {
+		out = fmt.Sprintf("%s, X: %v, Y: %v", out, pub.Key.X, pub.Key.Y)
+	}
+
+	if pub.KeyDerivation != nil {
+		out = fmt.Sprintf("%s, RootFingerPrint: %x, Index: %v, Chaincode: %x",
+			out, pub.RootFingerPrint, pub.Index, pub.Chaincode)
+	}
+
+	return out + "}"
 }
 
 func (pub *PublicKey) child(index *big.Int) (*PublicKey, error) {
@@ -133,6 +150,22 @@ func (pub *PublicKey) Verify(hash []byte, sig *protos.Signature) bool {
 	}
 
 	return ecdsa.Verify(pub.Key, hash, big.NewInt(0).SetBytes(ecsig.GetR()), big.NewInt(0).SetBytes(ecsig.GetS()))
+}
+
+func (pub *PublicKey) Recover(sig *protos.Signature) error {
+
+	ecsig := sig.GetEc()
+	if ecsig == nil {
+		return fmt.Errorf("No ecdsa signature")
+	} else if pk := ecsig.GetP(); pk == nil {
+		return fmt.Errorf("recover data is not supported yet")
+	} else {
+		pub.KeyDerivation = nil
+		pub.Version = DefaultVersion
+		pub.CurveType = ecsig.GetCurvetype()
+
+		return pub.resetPoint(pk)
+	}
 }
 
 func (pub *PublicKey) IsEqual(p interface{}) bool {

@@ -73,6 +73,56 @@ func TestSigning(t *testing.T) {
 	//t.Logf("Public Key: %v", pub)
 }
 
+func TestPubRecover(t *testing.T) {
+
+	// Generate private key
+
+	priv, err := NewPrivatekey(DefaultCurveType)
+	if err != nil {
+		t.Fatal("Generate private key fail: ", err)
+	}
+
+	// Generate message data
+
+	rb := make([]byte, 32)
+	_, err = rand.Read(rb)
+	if err != nil {
+		t.Fatal("Genereate rand bytes fail: ", err)
+	}
+
+	// Child Private Key Signing
+
+	index := big.NewInt(0x1000)
+
+	sig2, err := crypto.PrivateKeySign(priv, index, rb)
+	if err != nil {
+		t.Fatal("Sign raw data fail: ", err)
+	}
+
+	// root private -> child private -> child public
+	pub2, err := priv.ChildPublic(index)
+	if err != nil {
+		t.Fatal("Get child public key fail: ", err)
+	}
+
+	pub3 := new(PublicKey)
+	err = pub3.Recover(sig2)
+	if err != nil {
+		t.Fatal("Recover public key fail: ", err)
+	}
+
+	if !pub2.Verify(rb, sig2) {
+		t.Fatal("Verify child signature fail: ", err)
+	}
+
+	if !pub2.IsEqual(pub3) {
+		t.Fatal("recover pubkey is not equal", pub2, pub3)
+	}
+
+	//t.Logf("Private Key: %v", priv)
+	//t.Logf("Public Key: %v", pub)
+}
+
 func TestPrivateKey_Serialize(t *testing.T) {
 
 	// Generate private key

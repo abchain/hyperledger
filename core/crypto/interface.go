@@ -26,10 +26,12 @@ type Verifier interface {
 	base
 	Hierarchical
 	Verify([]byte, *protos.Signature) bool
+	//the Verifier recovered from signature is not hierarchical
+	Recover(*protos.Signature) error
 }
 
 type base interface {
-	IsEqual(interface{}) bool
+	IsEqual(interface{}) bool //not compare the hierarchical data
 	String() string
 	PBMessage() proto.Message
 	FromPBMessage(proto.Message) error
