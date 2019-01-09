@@ -1,54 +1,42 @@
 package crypto
 
 import (
-	"crypto/ecdsa"
-	"io"
-	"math/big"
-
-	"errors"
+	proto "github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/protos"
+	"math/big"
 )
 
-var (
-	// ErrInvalidPrivateKey is returned when a derived private key is invalid
-	ErrInvalidPrivateKey = errors.New("Invalid private key")
-
-	// ErrInvalidPublicKey is returned when a derived public key is invalid
-	ErrInvalidPublicKey = errors.New("Invalid public key")
+const (
+	SCHEME_ECDSA = "ecdsa"
 )
 
-type Singer interface {
-	Public() *PublicKey
+type Factory interface {
+	NewSigner() Signer
+	NewVerifier() Verifier
+}
 
-	ChildPublic(index *big.Int) (*PublicKey, error)
-
-	Sign(index *big.Int, rand io.Reader, hash []byte) (sig *Signature, err error)
-
-	IsEqual(otherPriv *PrivateKey) bool
-
-	ChildKey(index *big.Int) (*PrivateKey, error)
-
-	Serialize() []byte
-
-	Str() string
-
-	ToECDSA() *ecdsa.PrivateKey
-
-	PBMessage() *protos.PrivateKey
+type Signer interface {
+	base
+	Hierarchical
+	Public() Verifier
+	Sign([]byte) (*protos.Signature, error)
 }
 
 type Verifier interface {
-	Verify(hash []byte, sig *Signature) bool
+	base
+	Hierarchical
+	Verify([]byte, *protos.Signature) bool
+}
 
-	IsEqual(otherPub *PublicKey) bool
+type base interface {
+	IsEqual(interface{}) bool
+	String() string
+	PBMessage() proto.Message
+	FromPBMessage(proto.Message) error
+}
 
-	ChildKey(index *big.Int) (*PublicKey, error)
-
-	Serialize() []byte
-
-	Str() string
-
-	ToECDSA() *ecdsa.PublicKey
-
-	PBMessage() *protos.PublicKey
+type Hierarchical interface {
+	GetRootFingerPrint() []byte
+	GetIndex() *big.Int
+	Child(*big.Int) (Hierarchical, error)
 }

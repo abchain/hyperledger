@@ -4,26 +4,48 @@ syntax = "proto3";
 
 package protos;
 
+message KeyDerived {
+    bytes   rootFingerprint = 1;
+    bytes   index           = 2;
+    bytes   chaincode       = 3;
+}
+
 message PrivateKey {
     int32   version         = 1;
-    int32   curvetype       = 2;
-    bytes   rootFingerprint = 3;
-    bytes   index           = 4;
-    bytes   chaincode       = 5;
-    bytes   d               = 6;
+
+    KeyDerived kd = 7;
+
+    message ECDSA{
+        int32   curvetype       = 1;
+        bytes   d               = 2;    
+    }
+    oneof priv {
+        ECDSA ec = 8;
+    }
 }
 
 message PublicKey {
     int32   version         = 1;
-	int32   curvetype       = 2;
-    bytes   rootFingerprint = 3;
-    bytes   index           = 4;
-    bytes   chaincode       = 5;
-    ECPoint p               = 6;
+    KeyDerived kd = 7;
+    message ECDSA{
+        int32   curvetype       = 1;
+        ECPoint p               = 2;
+    }
+    oneof pub {
+        ECDSA ec = 8;
+    }    
 }
 
 message Signature {
-    ECPoint p = 1;
+    message ECDSA {
+        bytes  r = 1;
+        bytes  s = 2;
+        int32   v = 3;
+    }
+
+    oneof data {
+        ECDSA ec = 4;
+    }
 }
 
 message ECPoint {
@@ -31,9 +53,5 @@ message ECPoint {
 	bytes  y = 2;
 }
 
-message ECSignature {
-	bytes  r = 1;
-    bytes  s = 2;
-    int32  v = 3;
-}
+
 

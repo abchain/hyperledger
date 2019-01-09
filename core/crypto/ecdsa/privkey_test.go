@@ -1,7 +1,8 @@
-package crypto
+package ecdsa
 
 import (
 	"crypto/rand"
+	"hyperledger.abchain.org/core/crypto"
 	"math/big"
 	"testing"
 )
@@ -25,7 +26,7 @@ func TestSigning(t *testing.T) {
 
 	// Root Private Key Signing
 
-	sig, err := priv.Sign(big.NewInt(0), rand.Reader, rb)
+	sig, err := priv.Sign(rb)
 	if err != nil {
 		t.Fatal("Sign raw data fail: ", err)
 	}
@@ -43,7 +44,7 @@ func TestSigning(t *testing.T) {
 
 	index := big.NewInt(0x1000)
 
-	sig2, err := priv.Sign(index, rand.Reader, rb)
+	sig2, err := crypto.PrivateKeySign(priv, index, rb)
 	if err != nil {
 		t.Fatal("Sign raw data fail: ", err)
 	}
@@ -59,7 +60,7 @@ func TestSigning(t *testing.T) {
 	}
 
 	// root private -> root public -> child public
-	pub3, err := pub.ChildKey(index)
+	pub3, err := pub.child(index)
 	if err != nil {
 		t.Fatal("Get child public key fail: ", err)
 	}
@@ -75,29 +76,8 @@ func TestSigning(t *testing.T) {
 func TestPrivateKey_Serialize(t *testing.T) {
 
 	// Generate private key
+	privateKeySerialize(t)
 
-	priv, err := NewPrivatekey(DefaultCurveType)
-	if err != nil {
-		t.Fatal("Generate private key fail: ", err)
-	}
-
-	// Dump private key
-
-	privStr := priv.Str()
-	t.Logf("Dump private key: %s", privStr)
-
-	// Import private key
-
-	priv2, err := PrivatekeyFromString(privStr)
-	if err != nil {
-		t.Fatal("Import private key fail: ", err)
-	}
-
-	// Compare
-
-	if !priv.IsEqualForTest(priv2) {
-		t.Fatal("Private keys not equal")
-	}
 }
 
 func BenchmarkPrivateKey_ECP256_FIPS186_Generate(b *testing.B) {
@@ -138,7 +118,7 @@ func BenchmarkPrivateKey_ECP256_FIPS186_Sign(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		// Signing
-		_, err := priv.Sign(big.NewInt(0), rand.Reader, rb)
+		_, err := priv.Sign(rb)
 		if err != nil {
 			b.Fatal("Sign raw data fail: ", err)
 		}
@@ -163,7 +143,7 @@ func BenchmarkPrivateKey_SECP256K1_Sign(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		// Signing
-		_, err := priv.Sign(big.NewInt(0), rand.Reader, rb)
+		_, err := priv.Sign(rb)
 		if err != nil {
 			b.Fatal("Sign raw data fail: ", err)
 		}
@@ -185,7 +165,7 @@ func BenchmarkPrivateKey_ECP256_FIPS186_Verify(b *testing.B) {
 	}
 
 	// Signing
-	sig, err := priv.Sign(big.NewInt(0), rand.Reader, rb)
+	sig, err := priv.Sign(rb)
 	if err != nil {
 		b.Fatal("Sign raw data fail: ", err)
 	}
@@ -217,7 +197,7 @@ func BenchmarkPrivateKey_SECP256K1_Verify(b *testing.B) {
 	}
 
 	// Signing
-	sig, err := priv.Sign(big.NewInt(0), rand.Reader, rb)
+	sig, err := priv.Sign(rb)
 	if err != nil {
 		b.Fatal("Sign raw data fail: ", err)
 	}
@@ -237,29 +217,32 @@ func BenchmarkPrivateKey_SECP256K1_Verify(b *testing.B) {
 func BenchmarkPrivateKey_Serialize(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
-		privateKeySerializeBenchmark(b)
+		privateKeySerialize(b)
 	}
 }
-
-func privateKeySerializeBenchmark(b *testing.B) {
+func privateKeySerialize(t testing.TB) {
 
 	// Generate private key
+
 	priv, err := NewPrivatekey(DefaultCurveType)
 	if err != nil {
-		b.Fatal("Generate private key fail: ", err)
+		t.Fatal("Generate private key fail: ", err)
 	}
 
 	// Dump private key
-	privStr := priv.Str()
+
+	privPB := priv.PBMessage()
 
 	// Import private key
-	priv2, err := PrivatekeyFromString(privStr)
-	if err != nil {
-		b.Fatal("Import private key fail: ", err)
+
+	priv2 := new(PrivateKey)
+	if err := priv2.FromPBMessage(privPB); err != nil {
+		t.Fatal("Import private key fail: ", err)
 	}
 
 	// Compare
+
 	if !priv.IsEqualForTest(priv2) {
-		b.Fatal("Private keys not equal")
+		t.Fatal("Private keys not equal")
 	}
 }

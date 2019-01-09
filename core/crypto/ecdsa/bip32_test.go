@@ -1,4 +1,4 @@
-package crypto
+package ecdsa
 
 import (
 	"fmt"
@@ -81,16 +81,16 @@ func BenchmarkBIP32_Verify_Case02(b *testing.B) {
 
 func verifyBIP32(priv *PrivateKey, index *big.Int) error {
 
-	rootpubkey := priv.Public()
+	rootpubkey := priv.public()
 
-	childPrivkey, err := priv.ChildKey(index)
+	childPrivkey, err := priv.child(index)
 	if err != nil {
 		return fmt.Errorf("Get child private key fail: ", err)
 	}
 
 	childPubkey1 := childPrivkey.Public()
 
-	childPubkey2, err := rootpubkey.ChildKey(index)
+	childPubkey2, err := rootpubkey.child(index)
 	if err != nil {
 		return fmt.Errorf("Get child public key1 fail: ", err)
 	}

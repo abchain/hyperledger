@@ -21,7 +21,7 @@ message TxHeader{
 message TxCredential {
 
     message     UserCredential{
-        ECSignature signature     = 1;
+        Signature signature     = 3;
         PublicKey   pk            = 2;  
     }
 

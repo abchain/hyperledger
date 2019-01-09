@@ -1,4 +1,4 @@
-package crypto
+package ecdsa
 
 // See http://www.hyperelliptic.org/EFD/g1p/auto-shortw.html
 // and http://stackoverflow.com/a/8392111/174463
