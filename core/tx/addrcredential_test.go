@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	abcrypto "hyperledger.abchain.org/core/crypto"
+	"hyperledger.abchain.org/core/crypto/ecdsa"
 	pb "hyperledger.abchain.org/protos"
 )
 
-var privkey1 *abcrypto.PrivateKey
-var privkey2 *abcrypto.PrivateKey
-var privkey3 *abcrypto.PrivateKey
+var privkey1 abcrypto.Signer
+var privkey2 abcrypto.Signer
+var privkey3 abcrypto.Signer
 var ccAddr1 *Address
 var ccAddr2 *Address
 var msghash []byte
@@ -20,17 +21,18 @@ func tinit(t *testing.T) {
 
 	var err error
 
-	privkey1, err = abcrypto.NewPrivatekey(abcrypto.DefaultCurveType)
+	privkey1, err = ecdsa.NewPrivatekey(ecdsa.DefaultCurveType)
 	if err != nil {
 		t.Fatal("Generate private key fail:", err)
 	}
 
-	privkey2, err = privkey1.ChildKey(big.NewInt(184467442737))
-	if err != nil {
-		t.Fatal("Generate child private key fail: %v", err)
+	if cpriv1, err := privkey1.Child(big.NewInt(184467442737)); err != nil {
+		t.Fatal("Generate child private key fail:", err)
+	} else if privkey2 = cpriv1.(abcrypto.Signer); privkey2 == nil {
+		t.Fatal("can not cast to signer")
 	}
 
-	privkey3, err = abcrypto.NewPrivatekey(abcrypto.DefaultCurveType)
+	privkey3, err = ecdsa.NewPrivatekey(ecdsa.DefaultCurveType)
 	if err != nil {
 		t.Fatal("Generate private key fail:", err)
 	}
@@ -72,14 +74,14 @@ func TestSoleCred(t *testing.T) {
 		t.Fatal("Generate addr2 fail: ", err)
 	}
 
-	sig1, err := privkey1.SignwithThis(rand.Reader, msghash)
+	sig1, err := privkey1.Sign(msghash)
 	if err != nil {
 		t.Fatal("Generate sig1 fail: ", err)
 	}
 
 	builder := NewAddrCredentialBuilder()
 
-	builder.AddSignature(pk1, &abcrypto.ECSignature{*sig1})
+	builder.AddSignature(sig1)
 
 	msg := &pb.TxCredential{}
 
@@ -144,20 +146,20 @@ func TestMutipleCred(t *testing.T) {
 		t.Fatal("Generate addr3 fail: ", err)
 	}
 
-	sig1, err := privkey1.SignwithThis(rand.Reader, msghash)
+	sig1, err := privkey1.Sign(msghash)
 	if err != nil {
 		t.Fatal("Generate sig1 fail: ", err)
 	}
 
-	sig3, err := privkey3.SignwithThis(rand.Reader, msghash)
+	sig3, err := privkey3.Sign(msghash)
 	if err != nil {
 		t.Fatal("Generate sig3 fail: ", err)
 	}
 
 	builder := NewAddrCredentialBuilder()
 
-	builder.AddSignature(pk1, &abcrypto.ECSignature{*sig1})
-	builder.AddSignature(pk3, &abcrypto.ECSignature{*sig3})
+	builder.AddSignature(sig1)
+	builder.AddSignature(sig3)
 
 	msg := &pb.TxCredential{}
 

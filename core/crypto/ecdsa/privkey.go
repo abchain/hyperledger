@@ -48,18 +48,12 @@ func NewPrivatekey(curveType int32) (*PrivateKey, error) {
 		return nil, err
 	}
 
-	// Generate Root Fingerprint
-	rootFingerprint, err := GetRootFingerprint(&key.PublicKey)
-	if err != nil {
-		return nil, err
-	}
-
 	return &PrivateKey{
 		DefaultVersion,
 		curveType,
 		key,
 		&KeyDerivation{
-			rootFingerprint,
+			nil,
 			big.NewInt(0),
 			cc,
 		}}, nil
@@ -226,10 +220,6 @@ func (priv *PrivateKey) Public() crypto.Verifier {
 
 func (priv *PrivateKey) child(index *big.Int) (*PrivateKey, error) {
 
-	if index.Int64() == 0 {
-		return priv, nil
-	}
-
 	return getChildPrivateKey(priv, index)
 }
 
@@ -274,7 +264,12 @@ func (priv *PrivateKey) Sign(hash []byte) (sig *protos.Signature, err error) {
 		Pub:       sigpk,
 	}
 
-	return &protos.Signature{&protos.Signature_Ec{ecsign}}, nil
+	var kdinf *protos.KeyDerived
+	if priv.GetRootFingerPrint() != nil {
+		kdinf = priv.ToKDMessage()
+	}
+
+	return &protos.Signature{&protos.Signature_Ec{ecsign}, kdinf}, nil
 }
 
 //deprecate APIs

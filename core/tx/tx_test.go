@@ -1,19 +1,23 @@
 package abchainTx
 
 import (
-	abcrypto "hyperledger.abchain.org/core/crypto"
-	pb "hyperledger.abchain.org/protos"
 	"strings"
 	"testing"
+
+	abcrypto "hyperledger.abchain.org/core/crypto"
+	"hyperledger.abchain.org/core/crypto/ecdsa"
+	pb "hyperledger.abchain.org/protos"
 )
 
-var privkey *abcrypto.PrivateKey
+// var privkey *abcrypto.PrivateKey
+
+var privkey abcrypto.Signer
 
 func txinit(t *testing.T) {
 
 	var err error
 
-	privkey, err = abcrypto.NewPrivatekey(abcrypto.DefaultCurveType)
+	privkey, err = ecdsa.NewPrivatekey(ecdsa.DefaultCurveType)
 	if err != nil {
 		t.Fatal("Generate private key fail:", err)
 	}

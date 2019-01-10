@@ -7,7 +7,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha512"
 	"errors"
-	"hyperledger.abchain.org/core/utils"
 	"hyperledger.abchain.org/protos"
 	"math/big"
 )
@@ -38,11 +37,39 @@ func (kd *KeyDerivation) GetRootFingerPrint() []byte {
 }
 
 func (kd *KeyDerivation) ToKDMessage() *protos.KeyDerived {
+
+	if kd == nil {
+		return nil
+	}
+
 	return &protos.KeyDerived{
 		RootFingerprint: kd.RootFingerPrint,
 		Index:           kd.Index.Bytes(),
 		Chaincode:       kd.Chaincode,
 	}
+}
+
+func (kd *KeyDerivation) isEqual(otherkd *KeyDerivation) bool {
+
+	if kd == nil {
+		return otherkd == nil
+	} else if otherkd == nil {
+		return false
+	}
+
+	if !bytes.Equal(kd.Chaincode, otherkd.Chaincode) {
+		return false
+	}
+
+	if !bytes.Equal(kd.RootFingerPrint, otherkd.RootFingerPrint) {
+		return false
+	}
+
+	if kd.Index.Cmp(otherkd.Index) != 0 {
+		return false
+	}
+
+	return true
 }
 
 func (kd *KeyDerivation) FromKDMessage(msg *protos.KeyDerived) {
@@ -68,9 +95,14 @@ func (kd *KeyDerivation) GenIntermediary(pub *ecdsa.PublicKey, index *big.Int) (
 		return nil, nil, err
 	}
 
-	rootFingerprint, err := GetRootFingerprint(pub)
+	rootFingerprint, err := digestECDSAPk(pub)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	//sanity check
+	if len(rootFingerprint) < PUBLICKEY_FINGERPRINT_LEN {
+		panic("Wrong private key fingerprint length")
 	}
 
 	ddata := hmac.Sum(nil)
@@ -78,46 +110,12 @@ func (kd *KeyDerivation) GenIntermediary(pub *ecdsa.PublicKey, index *big.Int) (
 		panic("HMAC in 512bit hash give no enough bits")
 	}
 
-	return ddata[:32], &KeyDerivation{rootFingerprint, index, ddata[32:]}, nil
+	return ddata[:32], &KeyDerivation{rootFingerprint[:PUBLICKEY_FINGERPRINT_LEN], index, ddata[32:]}, nil
 }
 
 const (
 	PUBLICKEY_FINGERPRINT_LEN = 8
 )
-
-func GetRootFingerprint(pub *ecdsa.PublicKey) ([]byte, error) {
-
-	xLen := len(pub.X.Bytes())
-	yLen := len(pub.Y.Bytes())
-
-	rawBytes := make([]byte, xLen+yLen)
-	copy(rawBytes, pub.X.Bytes())
-	copy(rawBytes[xLen:], pub.Y.Bytes())
-
-	hash, err := utils.SHA256RIPEMD160(rawBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	//sanity check
-	if len(hash) < PUBLICKEY_FINGERPRINT_LEN {
-		panic("Wrong private key fingerprint length")
-	}
-
-	return hash[:PUBLICKEY_FINGERPRINT_LEN], nil
-}
-
-func getIntermediary(pub *ecdsa.PublicKey, chaincode []byte, index *big.Int) ([]byte, error) {
-	data := bytes.Join([][]byte{pub.X.Bytes(), pub.Y.Bytes(), index.Bytes()}, nil)
-
-	hmac := hmac.New(sha512.New, chaincode)
-	_, err := hmac.Write(data)
-	if err != nil {
-		return nil, err
-	}
-
-	return hmac.Sum(nil), nil
-}
 
 func getChildPrivateKey(root *PrivateKey, index *big.Int) (*PrivateKey, error) {
 

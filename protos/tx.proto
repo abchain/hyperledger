@@ -22,7 +22,6 @@ message TxCredential {
 
     message     UserCredential{
         Signature signature     = 3;
-        PublicKey   pk            = 2;  
     }
 
     message     InnerCredential{

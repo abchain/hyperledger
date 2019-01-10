@@ -31,10 +31,11 @@ func TestSigning(t *testing.T) {
 		t.Fatal("Sign raw data fail: ", err)
 	}
 
-	pub, err := priv.ChildPublic(big.NewInt(0))
-	if err != nil {
-		t.Fatal("Get root public key fail: ", err)
+	if sig.Kd != nil {
+		t.Fatal("Sign data include ghost derived data", sig)
 	}
+
+	pub := priv.public()
 
 	if !pub.Verify(rb, sig) {
 		t.Fatal("Verify root signature fail: ", err)
@@ -47,6 +48,10 @@ func TestSigning(t *testing.T) {
 	sig2, err := crypto.PrivateKeySign(priv, index, rb)
 	if err != nil {
 		t.Fatal("Sign raw data fail: ", err)
+	}
+
+	if sig2.Kd == nil {
+		t.Fatal("Sign data not include derived data")
 	}
 
 	// root private -> child private -> child public
@@ -115,8 +120,23 @@ func TestPubRecover(t *testing.T) {
 		t.Fatal("Verify child signature fail: ", err)
 	}
 
+	if !pub2.IsEqualForTest(pub3) {
+		t.Fatal("recover pubkey is not total equal", pub2, pub3)
+	}
+
+	//deprivate derived data
+	sig2.Kd = nil
+	err = pub3.Recover(sig2)
+	if err != nil {
+		t.Fatal("Recover public key fail: ", err)
+	}
+
 	if !pub2.IsEqual(pub3) {
 		t.Fatal("recover pubkey is not equal", pub2, pub3)
+	}
+
+	if pub2.IsEqualForTest(pub3) {
+		t.Fatal("recover pubkey has ghost derived data", pub2, pub3)
 	}
 
 	//t.Logf("Private Key: %v", priv)

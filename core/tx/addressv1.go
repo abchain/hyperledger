@@ -2,40 +2,12 @@ package abchainTx
 
 import (
 	"bytes"
-	"encoding/asn1"
 	"encoding/base64"
 	"errors"
-	"math/big"
-
-	abcrypto "hyperledger.abchain.org/core/crypto"
-	"hyperledger.abchain.org/core/utils"
 )
 
 // AddressInterfaceV1 struct
 type AddressInterfaceV1 struct{}
-
-// GetPublicKeyHash for AddressInterfaceV1
-func (m AddressInterfaceV1) GetPublicKeyHash(pub *abcrypto.PublicKey) ([]byte, error) {
-
-	if pub == nil || pub.Key == nil || pub.Key.X == nil || pub.Key.Y == nil {
-		return nil, errors.New("GetPublicKeyHash: input null pointer")
-	}
-
-	type StandardPk struct {
-		X *big.Int
-		Y *big.Int
-	}
-
-	stdpk := StandardPk{X: pub.Key.X, Y: pub.Key.Y}
-
-	rawbytes, err := asn1.Marshal(stdpk)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return utils.SHA256RIPEMD160(rawbytes)
-}
 
 // NewAddressFromString for AddressInterfaceV1
 func (m AddressInterfaceV1) NewAddressFromString(addressStr string) (*Address, error) {

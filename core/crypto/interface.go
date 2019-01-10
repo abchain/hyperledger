@@ -28,6 +28,7 @@ type Verifier interface {
 	Verify([]byte, *protos.Signature) bool
 	//the Verifier recovered from signature is not hierarchical
 	Recover(*protos.Signature) error
+	Digest() []byte
 }
 
 type base interface {

@@ -1,6 +1,7 @@
 package ecdsa
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 	"testing"
@@ -97,6 +98,14 @@ func verifyBIP32(priv *PrivateKey, index *big.Int) error {
 
 	if !childPubkey1.IsEqual(childPubkey2) {
 		return fmt.Errorf("Child public keys not equal")
+	}
+
+	if bytes.Compare(childPubkey1.GetRootFingerPrint(), childPubkey2.GetRootFingerPrint()) != 0 {
+		return fmt.Errorf("Child key's root fingerprint not equal:", childPubkey1, childPubkey2)
+	}
+
+	if bytes.Compare(rootpubkey.Digest()[:PUBLICKEY_FINGERPRINT_LEN], childPubkey1.GetRootFingerPrint()) != 0 {
+		return fmt.Errorf("Child key's root fingerprint not equal to root:", rootpubkey.Digest(), childPubkey2)
 	}
 
 	if index.Cmp(big.NewInt(0)) != 0 && childPrivkey.IsEqual(priv) {

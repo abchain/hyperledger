@@ -3,19 +3,20 @@ package abchainTx
 import (
 	"crypto/rand"
 	"errors"
+	"time"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"hyperledger.abchain.org/core/crypto"
 	pb "hyperledger.abchain.org/protos"
-	"time"
 )
 
 type Builder interface {
 	GetNonce() []byte
 	GetHash() []byte
 	GetCredBuilder() AddrCredentialBuilder
-	Sign(*crypto.PrivateKey) error
-
+	// Sign(*crypto.PrivateKey) error
+	Sign(crypto.Signer) error
 	GenArguments() ([][]byte, error)
 	GenArgumentsWithoutCred() ([][]byte, error)
 }
@@ -39,20 +40,18 @@ func (b *baseBuilder) GetNonce() []byte {
 	return b.nonce
 }
 
-func (b *baseBuilder) Sign(privk *crypto.PrivateKey) error {
+func (b *baseBuilder) Sign(privk crypto.Signer) error {
 
 	if b.credBuilder == nil {
 		b.credBuilder = NewAddrCredentialBuilder()
 	}
 
-	pk := privk.Public()
-
-	sig, err := privk.SignwithThis(rand.Reader, b.txHash)
+	sig, err := privk.Sign(b.txHash)
 	if err != nil {
 		return err
 	}
 
-	b.credBuilder.AddSignature(pk, &crypto.ECSignature{*sig})
+	b.credBuilder.AddSignature(sig)
 
 	return nil
 }

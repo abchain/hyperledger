@@ -38,14 +38,19 @@ message PublicKey {
 
 message Signature {
     message ECDSA {
+        int32   curvetype       = 4;
         bytes  r = 1;
         bytes  s = 2;
-        int32   v = 3;
+        oneof pub {
+            int32   v = 3;
+            ECPoint p               = 5;  
+        }
     }
 
     oneof data {
         ECDSA ec = 4;
     }
+    KeyDerived kd = 10;
 }
 
 message ECPoint {

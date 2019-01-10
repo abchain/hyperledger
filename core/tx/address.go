@@ -25,7 +25,6 @@ type Address struct {
 
 // AddressInterface interface
 type AddressInterface interface {
-	GetPublicKeyHash(pub *abcrypto.PublicKey) ([]byte, error)
 	NewAddressFromString(addressStr string) (*Address, error)
 	Serialize(addr *Address) []byte
 }
@@ -59,11 +58,6 @@ func SetAddressInterfaceImpl(impl AddressInterface) {
 	}
 }
 
-func GetPublicKeyHash(pub *abcrypto.PublicKey) ([]byte, error) {
-
-	return addrimpl.GetPublicKeyHash(pub)
-}
-
 func NewAddressFromHash(h []byte) *Address {
 
 	if len(h) < ADDRESS_HASH_LEN {
@@ -77,7 +71,7 @@ func NewAddressFromHash(h []byte) *Address {
 	}
 }
 
-func NewAddressFromPrivateKey(priv *abcrypto.PrivateKey) (*Address, error) {
+func NewAddressFromPrivateKey(priv abcrypto.Signer) (*Address, error) {
 
 	if priv == nil {
 		return nil, errors.New("AddressFromPrivateKey: input null pointer")
@@ -86,18 +80,13 @@ func NewAddressFromPrivateKey(priv *abcrypto.PrivateKey) (*Address, error) {
 	return NewAddress(priv.Public())
 }
 
-func NewAddress(pub *abcrypto.PublicKey) (*Address, error) {
+func NewAddress(pub abcrypto.Verifier) (*Address, error) {
 
 	if pub == nil {
 		return nil, errors.New("AddressFromPublickKey: input null pointer")
 	}
 
-	hash, err := GetPublicKeyHash(pub)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewAddressFromHash(hash), nil
+	return NewAddressFromHash(pub.Digest()), nil
 }
 
 func NewAddressFromPBMessage(addrProto *pb.TxAddr) (*Address, error) {

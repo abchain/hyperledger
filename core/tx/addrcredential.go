@@ -1,13 +1,10 @@
 package abchainTx
 
 import (
-	"bytes"
 	"errors"
-	_ "fmt"
+
 	"hyperledger.abchain.org/core/crypto"
-	_ "hyperledger.abchain.org/core/utils"
 	pb "hyperledger.abchain.org/protos"
-	_ "math/big"
 )
 
 type noAddrCred struct {
@@ -21,11 +18,11 @@ func (c *noAddrCred) CredCount() int {
 	return 0
 }
 
-func (c *noAddrCred) GetCredPubkey(addr Address) *crypto.PublicKey {
+func (c *noAddrCred) GetCredPubkey(addr Address) crypto.Verifier {
 	return nil
 }
 
-func (c *noAddrCred) ListCredPubkeys() []*crypto.PublicKey {
+func (c *noAddrCred) ListCredPubkeys() []crypto.Verifier {
 	return nil
 }
 
@@ -35,22 +32,22 @@ type addrCred struct {
 	verifiedAddr Address
 }
 
-func (addrc *addrCred) GetCredPubkey(addr Address) *crypto.PublicKey {
+func (addrc *addrCred) GetCredPubkey(addr Address) crypto.Verifier {
 
-	fp, err := addrFingerPrintFromCred(addrc.c)
+	pk, err := pubkeyFromCred(addrc.c)
 	if err != nil {
 		return nil
 	}
 
-	if len(fp) < fingerprintIndexLength {
+	innerAddr, err := NewAddress(pk)
+	if err != nil {
 		return nil
 	}
 
-	if bytes.Compare(addr.Hash[:len(fp)], fp) != 0 {
+	if !addr.IsEqual(innerAddr) {
 		return nil
 	}
 
-	pk, err := pubkeyFromCred(addrc.c)
 	return pk
 
 }
@@ -94,19 +91,13 @@ type soleAddrCred struct {
 func addrFingerPrintFromCred(c *pb.TxCredential_AddrCredentials) ([]byte, error) {
 	switch v := c.Cred.(type) {
 	case *pb.TxCredential_AddrCredentials_User:
-		pk, err := crypto.PublicKeyFromPBMessage(v.User.Pk)
+		pk, err := crypto.PublicKeyFromSignature(v.User.Signature)
 
 		if err != nil {
 			return nil, err
 		}
 
-		pkh, err := GetPublicKeyHash(pk)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return pkh, nil
+		return pk.Digest(), nil
 	case *pb.TxCredential_AddrCredentials_Cc:
 		return v.Cc.Fingerprint, nil
 	default:
@@ -114,31 +105,26 @@ func addrFingerPrintFromCred(c *pb.TxCredential_AddrCredentials) ([]byte, error)
 	}
 }
 
-func pubkeyFromCred(c *pb.TxCredential_AddrCredentials) (*crypto.PublicKey, error) {
-
-	var pkk *pb.PublicKey
+func pubkeyFromCred(c *pb.TxCredential_AddrCredentials) (crypto.Verifier, error) {
 
 	switch v := c.Cred.(type) {
 	case *pb.TxCredential_AddrCredentials_User:
-		pkk = v.User.Pk
+		return crypto.PublicKeyFromSignature(v.User.GetSignature())
 	case *pb.TxCredential_AddrCredentials_Cc:
 		return nil, errors.New("use deprecatd cc credential")
 	default:
 		return nil, errors.New("Unrecognized cred type")
 	}
 
-	return crypto.PublicKeyFromPBMessage(pkk)
 }
 
-func verifyPk(pk *crypto.PublicKey, hash []byte, u *pb.TxCredential_UserCredential) error {
+func verifyPk(pk crypto.Verifier, hash []byte, u *pb.TxCredential_UserCredential) error {
 
-	sign, err := crypto.ECSignatureFromPB(u.Signature)
-
-	if err != nil {
-		return err
+	if u.Signature == nil {
+		return errors.New("No signature")
 	}
 
-	if sign.Verify(hash, pk) {
+	if pk.Verify(hash, u.Signature) {
 		return nil
 	}
 
@@ -158,20 +144,22 @@ func (addrc *soleAddrCred) CredCount() int {
 	return 1
 }
 
-func (addrc *soleAddrCred) ListCredPubkeys() []*crypto.PublicKey {
+func (addrc *soleAddrCred) ListCredPubkeys() []crypto.Verifier {
 
 	pk, err := pubkeyFromCred(addrc.c)
 	if err != nil {
 		return nil
 	}
 
-	return []*crypto.PublicKey{pk}
+	return []crypto.Verifier{pk}
 }
 
 type mutipleAddrCred struct {
 	hash  []byte
 	creds map[uint32]*addrCred
 }
+
+var powconst = [4]uint32{1, 256, 65536, 1677216}
 
 func toFingerPrint(b []byte) (ret uint32) {
 
@@ -180,10 +168,8 @@ func toFingerPrint(b []byte) (ret uint32) {
 		blen = len(b)
 	}
 
-	pow := [4]uint32{1, 256, 65536, 1677216}
-
 	for i := 0; i < blen; i++ {
-		ret += uint32(b[i]) * pow[i]
+		ret += uint32(b[i]) * powconst[i]
 	}
 
 	return
@@ -204,7 +190,7 @@ func (maddrc *mutipleAddrCred) CredCount() int {
 	return len(maddrc.creds)
 }
 
-func (maddrc *mutipleAddrCred) GetCredPubkey(addr Address) *crypto.PublicKey {
+func (maddrc *mutipleAddrCred) GetCredPubkey(addr Address) crypto.Verifier {
 
 	c, ok := maddrc.creds[toFingerPrint(addr.Hash)]
 
@@ -220,9 +206,9 @@ func (maddrc *mutipleAddrCred) GetCredPubkey(addr Address) *crypto.PublicKey {
 	return pk
 }
 
-func (maddrc *mutipleAddrCred) ListCredPubkeys() []*crypto.PublicKey {
+func (maddrc *mutipleAddrCred) ListCredPubkeys() []crypto.Verifier {
 
-	ret := make([]*crypto.PublicKey, 0, maddrc.CredCount())
+	ret := make([]crypto.Verifier, 0, maddrc.CredCount())
 
 	for _, c := range maddrc.creds {
 		pk, _ := pubkeyFromCred(c.c)
@@ -280,34 +266,34 @@ func NewAddrCredentialBuilder() AddrCredentialBuilder {
 	return &builder{nil, fingerprintIndexLength, make(map[uint32]*builderCache)}
 }
 
-func (b *builder) AddSignature(pk *crypto.PublicKey, sign *crypto.ECSignature) {
+func (b *builder) AddSignature(sign *pb.Signature) {
 
-	bt, err := GetPublicKeyHash(pk)
+	pk, err := crypto.PublicKeyFromSignature(sign)
 	if err != nil {
 		b.e = err
 		return
 	}
 
+	bt := pk.Digest()
 	if len(bt) < b.indexLen {
 		b.e = errors.New("Wrong index for pk: too short")
 		return
 	}
 
-	cache := &builderCache{bt,
-		pb.TxCredential_AddrCredentials{
-			&pb.TxCredential_AddrCredentials_User{
-				&pb.TxCredential_UserCredential{
-					sign.ToPB(),
-					pk.PBMessage(),
-				},
-			},
-		},
+	ind := toFingerPrint(bt)
+	if _, ok := b.cache[ind]; ok {
+		b.e = errors.New("Duplicated signature from same source")
+		return
 	}
 
-	b.cache[toFingerPrint(bt)] = cache
+	b.cache[ind] = &builderCache{bt,
+		pb.TxCredential_AddrCredentials{
+			&pb.TxCredential_AddrCredentials_User{&pb.TxCredential_UserCredential{sign}},
+		},
+	}
 }
 
-func (b *builder) AddCc(ccname string, addr Address, pub *crypto.PublicKey) {
+func (b *builder) AddCc(ccname string, addr Address, pub crypto.Verifier) {
 
 	b.e = errors.New("cc credential has been deprecated")
 	// if len(addr.Hash) < b.indexLen {

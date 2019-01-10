@@ -7,6 +7,7 @@ import (
 	"fmt"
 	proto "github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/core/crypto"
+	"hyperledger.abchain.org/core/utils"
 	"hyperledger.abchain.org/protos"
 	"math/big"
 )
@@ -130,10 +131,6 @@ func (pub *PublicKey) String() string {
 
 func (pub *PublicKey) child(index *big.Int) (*PublicKey, error) {
 
-	if index.Int64() == 0 {
-		return pub, nil
-	}
-
 	return getChildPublicKey(pub, index)
 }
 
@@ -160,7 +157,13 @@ func (pub *PublicKey) Recover(sig *protos.Signature) error {
 	} else if pk := ecsig.GetP(); pk == nil {
 		return fmt.Errorf("recover data is not supported yet")
 	} else {
+
 		pub.KeyDerivation = nil
+		if kd := sig.GetKd(); kd != nil {
+			pub.KeyDerivation = new(KeyDerivation)
+			pub.FromKDMessage(kd)
+		}
+
 		pub.Version = DefaultVersion
 		pub.CurveType = ecsig.GetCurvetype()
 
@@ -180,6 +183,33 @@ func (pub *PublicKey) IsEqual(p interface{}) bool {
 	return true
 }
 
+func digestECDSAPk(pub *ecdsa.PublicKey) ([]byte, error) {
+
+	xLen := len(pub.X.Bytes())
+	yLen := len(pub.Y.Bytes())
+
+	rawBytes := make([]byte, xLen+yLen)
+	copy(rawBytes, pub.X.Bytes())
+	copy(rawBytes[xLen:], pub.Y.Bytes())
+
+	hash, err := utils.SHA256RIPEMD160(rawBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return hash, nil
+}
+
+func (pub *PublicKey) Digest() []byte {
+
+	d, err := digestECDSAPk(pub.Key)
+	if err != nil {
+		return nil
+	}
+
+	return d
+}
+
 //for testing and legacy purpose
 
 func (pub *PublicKey) IsEqualForTest(otherPub *PublicKey) bool {
@@ -192,19 +222,7 @@ func (pub *PublicKey) IsEqualForTest(otherPub *PublicKey) bool {
 		return false
 	}
 
-	if !bytes.Equal(pub.Chaincode, otherPub.Chaincode) {
-		return false
-	}
-
-	if !bytes.Equal(pub.RootFingerPrint, otherPub.RootFingerPrint) {
-		return false
-	}
-
-	if pub.Index.Cmp(otherPub.Index) != 0 {
-		return false
-	}
-
-	return true
+	return pub.KeyDerivation.isEqual(otherPub.KeyDerivation)
 }
 
 func (pub *PublicKey) ToECDSA() *ecdsa.PublicKey {

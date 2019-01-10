@@ -49,6 +49,27 @@ func PublicKeyFromPBMessage(pubProto *protos.PublicKey) (Verifier, error) {
 
 }
 
+func PublicKeyFromSignature(sig *protos.Signature) (Verifier, error) {
+
+	switch sig.GetData().(type) {
+	case *protos.Signature_Ec:
+		fac, ok := CryptoSchemes[SCHEME_ECDSA]
+		if !ok {
+			return nil, errors.New("ECDSA scheme is not available")
+		}
+
+		v := fac.NewVerifier()
+		if err := v.Recover(sig); err != nil {
+			return nil, err
+		}
+
+		return v, nil
+	default:
+		return nil, errors.New("Unknown signature type")
+	}
+
+}
+
 func PrivateKeySign(s Signer, index *big.Int, hash []byte) (*protos.Signature, error) {
 	if ch, err := s.Child(index); err != nil {
 		return nil, err

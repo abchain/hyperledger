@@ -1,24 +1,19 @@
 package abchainTx
 
 import (
-	"math/big"
 	"testing"
 
 	abcrypto "hyperledger.abchain.org/core/crypto"
+	"hyperledger.abchain.org/core/crypto/ecdsa"
 )
 
-func GetPublicKey(t *testing.T) *abcrypto.PublicKey {
-	priv, err := abcrypto.NewPrivatekey(abcrypto.DefaultCurveType)
+func GetPublicKey(t *testing.T) abcrypto.Verifier {
+	priv, err := ecdsa.NewPrivatekey(ecdsa.DefaultCurveType)
 	if err != nil {
 		t.Fatal("Generate private key fail: ", err)
 	}
 
-	pub, err := priv.ChildPublic(big.NewInt(0))
-	if err != nil {
-		t.Fatal("Get root public key fail: ", err)
-	}
-
-	return pub
+	return priv.Public()
 }
 
 func TestAddress_Serialize(t *testing.T) {
