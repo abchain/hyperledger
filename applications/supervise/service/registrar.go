@@ -4,6 +4,7 @@ import (
 	"github.com/gocraft/web"
 	accsrv "hyperledger.abchain.org/applications/asset/service"
 	reg "hyperledger.abchain.org/chaincode/modules/registrar"
+	"hyperledger.abchain.org/core/crypto"
 )
 
 const (
@@ -85,7 +86,13 @@ func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	err := s.reg.AdminRegistrar(s.ActivePrivk.Public())
+	pkbytes, err := crypto.PublicKeyToBytes(s.ActivePrivk.Public())
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	err = s.reg.AdminRegistrar(pkbytes)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -99,7 +106,7 @@ func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
 
 	s.Normal(rw, &accsrv.FundEntry{
 		string(txid),
-		s.EncodeEntry(s.ActivePrivk.Public().RootFingerPrint),
+		s.EncodeEntry(s.ActivePrivk.Public().GetRootFingerPrint()),
 		s.TxGenerator.GetBuilder().GetNonce(),
 	})
 

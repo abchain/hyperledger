@@ -9,6 +9,7 @@ import (
 const (
 	SECP256K1 int32 = iota + 1
 	ECP256_FIPS186
+	PUBLICKEY_FINGERPRINT_LEN = crypto.PUBLICKEY_FINGERPRINT_LEN
 )
 
 type cryptoFactory struct{}

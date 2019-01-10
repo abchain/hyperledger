@@ -11,7 +11,6 @@ import (
 )
 
 var DefaultRandSrc io.Reader
-var DefaultCryptoScheme Factory
 var CryptoSchemes = map[string]Factory{}
 
 func init() {
@@ -27,6 +26,11 @@ func PublicKeyFromBytes(raw []byte) (Verifier, error) {
 	}
 
 	return PublicKeyFromPBMessage(pubProto)
+}
+
+func PublicKeyToBytes(pk Verifier) ([]byte, error) {
+
+	return proto.Marshal(pk.PBMessage())
 }
 
 func PrivatekeyFromString(privkeyStr string) (Signer, error) {

@@ -2,6 +2,7 @@ package registrar
 
 import (
 	"errors"
+
 	"hyperledger.abchain.org/chaincode/lib/txhandle"
 	"hyperledger.abchain.org/chaincode/shim"
 	"hyperledger.abchain.org/core/crypto"
@@ -37,7 +38,13 @@ func (h *regPreHandler) PreHandling(stub shim.ChaincodeStubInterface, _ string, 
 
 	reg := h.NewTx(stub)
 
-	err, regData := reg.Pubkey(pk.RootFingerPrint)
+	useRoot := false
+	pkk := pk.GetRootFingerPrint()
+	if len(pkk) == 0 {
+		pkk = pk.Digest()
+		useRoot = true
+	}
+	err, regData := reg.pubkey(pkk)
 	if err != nil {
 		return err
 	}
@@ -46,12 +53,11 @@ func (h *regPreHandler) PreHandling(stub shim.ChaincodeStubInterface, _ string, 
 		return errors.New("Registried pk is not enabled")
 	}
 
-	rootpk, err := crypto.PublicKeyFromPBMessage(regData.Pk)
-	if err != nil {
-		return err
+	if useRoot {
+		return nil
 	}
 
-	child, err := rootpk.ChildKey(pk.Index)
+	child, err := crypto.GetChildPublicKey(regData.Pk, pk.GetIndex())
 	if err != nil {
 		return err
 	}
@@ -65,7 +71,7 @@ func (h *regPreHandler) PreHandling(stub shim.ChaincodeStubInterface, _ string, 
 
 func (m *RegPkMsg) GetAddress() *txutil.Address {
 
-	pk, err := crypto.PublicKeyFromPBMessage(m.msg.Pk)
+	pk, err := crypto.PublicKeyFromBytes(m.msg.PkBytes)
 	if err != nil {
 		return nil
 	}

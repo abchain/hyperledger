@@ -2,9 +2,11 @@ package registrar
 
 import (
 	"errors"
+
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	pb "hyperledger.abchain.org/chaincode/modules/registrar/protos"
 	"hyperledger.abchain.org/core/crypto"
+	protos "hyperledger.abchain.org/protos"
 )
 
 type GeneralCall struct {
@@ -19,31 +21,26 @@ const (
 	Method_Init           = "REGISTRAR.INIT"
 )
 
-func (i *GeneralCall) AdminRegistrar(pk *crypto.PublicKey) error {
+func (i *GeneralCall) AdminRegistrar(pkbytes []byte) error {
 
 	msg := &pb.RegPublicKey{
-		pk.PBMessage(),
-		"",
+		PkBytes: pkbytes,
+		Region:  "",
 	}
 
 	err := i.Invoke(Method_AdminRegistrar, msg)
 	return err
 }
 
-func (i *GeneralCall) Registrar(pk *crypto.PublicKey, region string) ([]byte, error) {
+func (i *GeneralCall) Registrar(pkbytes []byte, region string) error {
 
 	msg := &pb.RegPublicKey{
-		pk.PBMessage(),
-		"",
+		PkBytes: pkbytes,
+		Region:  "",
 	}
 
 	err := i.Invoke(Method_Registrar, msg)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return pk.RootFingerPrint, nil
+	return err
 }
 
 func (i *GeneralCall) ActivePk(key []byte) error {
@@ -56,10 +53,10 @@ func (i *GeneralCall) ActivePk(key []byte) error {
 	return err
 }
 
-func (i *GeneralCall) RevokePk(pk *crypto.PublicKey) error {
+func (i *GeneralCall) RevokePk(pk crypto.Verifier) error {
 
 	msg := &pb.RevokePublicKey{
-		pk.PBMessage(),
+		pk.PBMessage().(*protos.PublicKey),
 	}
 
 	err := i.Invoke(Method_Revoke, msg)

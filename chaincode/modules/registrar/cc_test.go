@@ -1,15 +1,16 @@
 package registrar
 
 import (
-	"bytes"
+	"math/big"
+	"testing"
+
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	"hyperledger.abchain.org/core/crypto"
+	"hyperledger.abchain.org/core/crypto/ecdsa"
 	tx "hyperledger.abchain.org/core/tx"
-	"math/big"
-	"testing"
 )
 
 const (
@@ -39,8 +40,11 @@ func init() {
 	tokenQuerycfg.SetReadOnly(true)
 }
 
-var privkey *crypto.PrivateKey
-var privkeyNotReg *crypto.PrivateKey
+// var privkey *crypto.PrivateKey
+// var privkeyNotReg *crypto.PrivateKey
+
+var privkey crypto.Signer
+var privkeyNotReg crypto.Signer
 
 func assign(t *testing.T) {
 	bolt.Reset()
@@ -77,12 +81,12 @@ func assign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	privkey, err = crypto.NewPrivatekey(crypto.DefaultCurveType)
+	privkey, err = ecdsa.NewDefaultPrivatekey()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	privkeyNotReg, err = crypto.NewPrivatekey(crypto.DefaultCurveType)
+	privkeyNotReg, err = ecdsa.NewDefaultPrivatekey()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,26 +141,35 @@ func assign(t *testing.T) {
 	return
 }
 
+func genPkBytes(t *testing.T, pk crypto.Verifier) []byte {
+	bt, err := crypto.PublicKeyToBytes(pk)
+	if err != nil {
+		t.Fatal("Get bytes fail", err)
+	}
+
+	return bt
+}
+
 func TestReg(t *testing.T) {
 	assign(t)
 	spout := &GeneralCall{spoutcore}
 
 	spoutcore.BeginTx(nil)
 	spoutcore.Dispatcher = bolt.GetCaller("registrar1", RegistrarHandler(cfg))
-	qkey, err := spout.Registrar(privkey.Public(), "Yosemite")
+	err := spout.Registrar(genPkBytes(t, privkey.Public()), "Yosemite")
 	if err != nil {
 		t.Fatal(err)
 	}
 	<-spoutcore.TxDone()
 
-	subk, err := privkey.ChildKey(big.NewInt(184467442737))
+	subk, err := crypto.GetChildPrivateKey(privkey, big.NewInt(184467442737))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	spoutcore.BeginTx(nil)
 	spoutcore.Dispatcher = bolt.GetCaller("registrar2", RegistrarHandler(cfg))
-	_, err = spout.Registrar(subk.Public(), "Yosemite")
+	err = spout.Registrar(genPkBytes(t, subk.Public()), "Yosemite")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,7 +181,7 @@ func TestReg(t *testing.T) {
 
 	spoutcore.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
 
-	err, data := spout.Pubkey(qkey)
+	err, data := spout.Pubkey(privkey.Public().Digest())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,9 +203,7 @@ func TestReg(t *testing.T) {
 		t.Fatal("wrong enable status")
 	}
 
-	if bytes.Compare(qkey, privkey.Public().RootFingerPrint) != 0 {
-		t.Fatal("wrong pkey index")
-	}
+	qkey := privkey.Public().Digest()
 
 	spoutcore.BeginTx(nil)
 	spoutcore.Dispatcher = bolt.GetCaller("active", ActivePkHandler(cfg))
@@ -222,7 +233,7 @@ func TestDirectReg(t *testing.T) {
 
 	spoutcore.BeginTx(nil)
 	spoutcore.Dispatcher = bolt.GetCaller("adminreg1", AdminRegistrarHandler(cfg))
-	err := spout.AdminRegistrar(privkey.Public())
+	err := spout.AdminRegistrar(genPkBytes(t, privkey.Public()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +241,7 @@ func TestDirectReg(t *testing.T) {
 
 	spoutcore.Dispatcher = bolt.GetQueryer(QueryPkHandler(querycfg))
 
-	err, data := spout.Pubkey(privkey.Public().RootFingerPrint)
+	err, data := spout.Pubkey(privkey.Public().Digest())
 	if err != nil {
 		t.Fatal(err)
 	}

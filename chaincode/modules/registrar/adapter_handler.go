@@ -75,23 +75,18 @@ func (h *initHandler) Msg() proto.Message           { return &h.msg }
 
 func (h *registrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
-	pk, err := crypto.PublicKeyFromPBMessage(msg.Pk)
+	err := h.NewTx(stub).Registrar(msg.PkBytes, msg.Region)
 	if err != nil {
 		return nil, err
 	}
 
-	return h.NewTx(stub).Registrar(pk, msg.Region)
+	return []byte("OK"), nil
 }
 
 func (h *adminRegistrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	msg := &h.msg
 
-	pk, err := crypto.PublicKeyFromPBMessage(msg.Pk)
-	if err != nil {
-		return nil, err
-	}
-
-	err = h.NewTx(stub).AdminRegistrar(pk)
+	err := h.NewTx(stub).AdminRegistrar(msg.PkBytes)
 	if err != nil {
 		return nil, err
 	}

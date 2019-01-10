@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	SCHEME_ECDSA = "ecdsa"
+	SCHEME_ECDSA              = "ecdsa"
+	PUBLICKEY_FINGERPRINT_LEN = 8
 )
 
 type Factory interface {

@@ -113,10 +113,6 @@ func (kd *KeyDerivation) GenIntermediary(pub *ecdsa.PublicKey, index *big.Int) (
 	return ddata[:32], &KeyDerivation{rootFingerprint[:PUBLICKEY_FINGERPRINT_LEN], index, ddata[32:]}, nil
 }
 
-const (
-	PUBLICKEY_FINGERPRINT_LEN = 8
-)
-
 func getChildPrivateKey(root *PrivateKey, index *big.Int) (*PrivateKey, error) {
 
 	curve, err := GetEC(root.CurveType)

@@ -2,10 +2,10 @@ package registrar
 
 import (
 	"errors"
+
 	"hyperledger.abchain.org/chaincode/impl"
 	pb "hyperledger.abchain.org/chaincode/modules/registrar/protos"
 	"hyperledger.abchain.org/core/crypto"
-	"hyperledger.abchain.org/core/utils"
 )
 
 const (
@@ -13,35 +13,39 @@ const (
 	debugModeFlag = 'D'
 )
 
-func (db *registrarTx) registrar(pk *crypto.PublicKey, region string, enable bool) error {
+func (db *registrarTx) registrar(pkbyte []byte, region string, enable bool) error {
 
-	if !pk.Index.IsUint64() || pk.Index.Uint64() != 0 {
+	pk, err := crypto.PublicKeyFromBytes(pkbyte)
+	if err != nil {
+		return err
+	}
+
+	if len(pk.GetRootFingerPrint()) != 0 {
 		return errors.New("Can only register root publickey")
 	}
 
 	regkey := registrarKey(pk)
-	data := &pb.RegData{}
-	err := db.Get(regkey, data)
+	data := &pb.RegData_s{}
+	err = db.Get(regkey, data)
 
 	if err != nil {
 		return err
 	}
 
+	data.PkBytes = pkbyte
+	data.RegTxid = db.stub.GetTxID()
+	data.RegTs, _ = db.stub.GetTxTime()
+	data.Enabled = enable
+	data.Region = region
+
 	if data.Pk != nil {
 		return errors.New("Public key has been reg")
-	}
-
-	t, _ := db.stub.GetTxTime()
-	data = &pb.RegData{
-		pk.PBMessage(),
-		db.stub.GetTxID(),
-		utils.CreatePBTimestamp(t), region, enable, nil,
 	}
 
 	return db.Set(regkey, data)
 }
 
-func (db *registrarTx) AdminRegistrar(pk *crypto.PublicKey) error {
+func (db *registrarTx) AdminRegistrar(pkbyte []byte) error {
 
 	attrif, err := impl.GetCallerAttributes(db.stub)
 	if err != nil {
@@ -53,22 +57,18 @@ func (db *registrarTx) AdminRegistrar(pk *crypto.PublicKey) error {
 		return err
 	}
 
-	return db.registrar(pk, string(attr), true)
+	return db.registrar(pkbyte, string(attr), true)
 }
 
-func (r *registrarTx) Registrar(pk *crypto.PublicKey, region string) ([]byte, error) {
-	err := r.registrar(pk, region, false)
-	if err != nil {
-		return nil, err
-	}
+func (r *registrarTx) Registrar(pkbyte []byte, region string) error {
+	return r.registrar(pkbyte, region, false)
 
-	return pk.RootFingerPrint, nil
 }
 
 func (db *registrarTx) ActivePk(key []byte) error {
 
 	regkey := registrarQueryKey(key)
-	data := &pb.RegData{}
+	data := &pb.RegData_s{}
 	err := db.Get(regkey, data)
 
 	if err != nil {
@@ -88,13 +88,13 @@ func (db *registrarTx) ActivePk(key []byte) error {
 
 }
 
-func (db *registrarTx) RevokePk(pk *crypto.PublicKey) error {
+func (db *registrarTx) RevokePk(pk crypto.Verifier) error {
 	return errors.New("No implement")
 }
 
 func (db *registrarTx) Init(enablePrivilege bool, managePriv string, regPriv string) error {
 
-	deploy := &pb.RegGlobalData{}
+	deploy := &pb.RegGlobalData_s{}
 	err := db.Get(deployName, deploy)
 
 	if err != nil {
@@ -118,10 +118,9 @@ func (db *registrarTx) Init(enablePrivilege bool, managePriv string, regPriv str
 
 }
 
-func (db *registrarTx) Pubkey(key []byte) (error, *pb.RegData) {
-
+func (db *registrarTx) pubkey(key []byte) (error, *pb.RegData_s) {
 	regkey := registrarQueryKey(key)
-	data := &pb.RegData{}
+	data := &pb.RegData_s{}
 	err := db.Get(regkey, data)
 
 	if err != nil {
@@ -135,9 +134,19 @@ func (db *registrarTx) Pubkey(key []byte) (error, *pb.RegData) {
 	return nil, data
 }
 
+func (db *registrarTx) Pubkey(key []byte) (error, *pb.RegData) {
+
+	err, data := db.pubkey(key)
+	if err != nil {
+		return err, nil
+	}
+
+	return nil, data.ToPB()
+}
+
 func (db *registrarTx) Global() (error, *pb.RegGlobalData) {
 
-	data := &pb.RegGlobalData{}
+	data := &pb.RegGlobalData_s{}
 	err := db.Get(deployName, data)
 
 	if err != nil {
@@ -148,5 +157,5 @@ func (db *registrarTx) Global() (error, *pb.RegGlobalData) {
 		return errors.New("Not deploy yet"), nil
 	}
 
-	return nil, data
+	return nil, data.ToPB()
 }
