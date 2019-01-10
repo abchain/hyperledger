@@ -281,7 +281,7 @@ type fundRecordEntry struct {
 type fundRecordDetailEntry struct {
 	FromLast *FuncRecord `json:"from,omitempty"`
 	ToLast   *FuncRecord `json:"to,omitempty"`
-	TxTime   string      `json: "txTime,omitempty"`
+	TxTime   string      `json:"txTime,omitempty"`
 }
 
 type FuncRecord struct {
