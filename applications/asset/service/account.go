@@ -198,13 +198,13 @@ func (s *Account) QueryChild(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	childPk, err := priv.Public().ChildKey(index)
+	childPk, err := crypto.GetChildPrivateKey(priv, index)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	addr, err := abchainTx.NewAddress(childPk)
+	addr, err := abchainTx.NewAddress(childPk.Public())
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -290,7 +290,13 @@ func (s *Account) ExportKey(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	s.Normal(rw, priv.Str())
+	privstr, err := crypto.PrivatekeyToString(priv)
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	s.Normal(rw, privstr)
 }
 
 func (s *Account) ImportKey(rw web.ResponseWriter, req *web.Request) {

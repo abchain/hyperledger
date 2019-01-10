@@ -24,6 +24,10 @@ type PrivateKey struct {
 	*KeyDerivation
 }
 
+func NewDefaultPrivatekey() (*PrivateKey, error) {
+	return NewPrivatekey(DefaultCurveType)
+}
+
 func NewPrivatekey(curveType int32) (*PrivateKey, error) {
 
 	curve, err := GetEC(curveType)

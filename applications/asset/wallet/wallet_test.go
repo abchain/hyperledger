@@ -28,7 +28,7 @@ func (s *sampleSets) prepare() error {
 	randlimit := big.NewInt(0xFFFFFFFF)
 
 	for i := 0; i < s.sampleCnt; i++ {
-		k, err := abcrypto.NewPrivatekey(abcrypto.DefaultCurveType)
+		k, err := DefaultKeySource()
 		if err != nil {
 			return err
 		}
@@ -38,8 +38,13 @@ func (s *sampleSets) prepare() error {
 			return err
 		}
 
-		s.existGroup.ImportPrivKey(fmt.Sprintf("TestSet%v%v", i, rbn.Int64()), k.Str())
-		s.nonexistGroup.ImportPrivKey(fmt.Sprintf("TestSetNot%v%v", i, rbn.Int64()), k.Str())
+		kstr, err := abcrypto.PrivatekeyToString(k)
+		if err != nil {
+			return err
+		}
+
+		s.existGroup.ImportPrivKey(fmt.Sprintf("TestSet%v%v", i, rbn.Int64()), kstr)
+		s.nonexistGroup.ImportPrivKey(fmt.Sprintf("TestSetNot%v%v", i, rbn.Int64()), kstr)
 	}
 
 	return nil
@@ -52,7 +57,13 @@ func testChargeProcess(t *testing.T, target Wallet, sample *sampleSets) {
 	}
 
 	for k, v := range vm {
-		target.ImportPrivKey(k, v.Str())
+
+		kstr, err := abcrypto.PrivatekeyToString(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		target.ImportPrivKey(k, kstr)
 	}
 }
 
@@ -69,7 +80,7 @@ func testStandardProcess(t *testing.T, target Wallet, sample *sampleSets) {
 			t.Fatal(err)
 		}
 
-		if !v1.IsEqualForTest(v) {
+		if !v1.IsEqual(v) {
 			t.Fatal("Value not match for key", k)
 		}
 	}

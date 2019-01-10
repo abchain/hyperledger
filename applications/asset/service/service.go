@@ -1,20 +1,22 @@
 package service
 
 import (
+	"math/big"
+
 	"github.com/gocraft/web"
 	log "github.com/op/go-logging"
 	"hyperledger.abchain.org/applications/asset/wallet"
 	"hyperledger.abchain.org/applications/util"
 	"hyperledger.abchain.org/core/crypto"
-	"math/big"
 )
 
 var logger = log.MustGetLogger("server/asset")
 
 type RPCCoreWithAccount struct {
 	*util.FabricRPCCore
-	wallet      wallet.Wallet
-	ActivePrivk *crypto.PrivateKey
+	wallet wallet.Wallet
+	// ActivePrivk *crypto.PrivateKey
+	ActivePrivk crypto.Signer
 }
 
 type RPCAccountRouter struct {
@@ -35,15 +37,16 @@ func (r RPCAccountRouter) Init(wallet wallet.Wallet) {
 		//should allow error or ID is not provided
 		privk, err := wallet.LoadPrivKey(req.PostFormValue(AccountID))
 		if err == nil {
-			index, ok := big.NewInt(0).SetString(req.PostFormValue(AccountIndex), 0)
-			if ok {
-				privk, err = privk.ChildKey(index)
-				if err != nil {
-					s.NormalError(rw, err)
-					return
+			if indstr := req.PostFormValue(AccountIndex); indstr != "" {
+				index, ok := big.NewInt(0).SetString(indstr, 0)
+				if ok {
+					privk, err = crypto.GetChildPrivateKey(privk, index)
+					if err != nil {
+						s.NormalError(rw, err)
+						return
+					}
 				}
 			}
-
 			s.ActivePrivk = privk
 		}
 

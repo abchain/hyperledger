@@ -6,6 +6,7 @@ import (
 	"github.com/gocraft/web"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
+	"hyperledger.abchain.org/core/crypto"
 	tx "hyperledger.abchain.org/core/tx"
 )
 
@@ -220,12 +221,14 @@ func (s *Fund) Query(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	index, ok := big.NewInt(0).SetString(req.PathParams[AccountIndex], 0)
-	if ok {
-		privk, err = privk.ChildKey(index)
-		if err != nil {
-			s.NormalError(rw, err)
-			return
+	if indstr, ok := req.PathParams[AccountIndex]; ok {
+		index, ok := big.NewInt(0).SetString(indstr, 0)
+		if ok {
+			privk, err = crypto.GetChildPrivateKey(privk, index)
+			if err != nil {
+				s.NormalError(rw, err)
+				return
+			}
 		}
 	}
 
@@ -272,13 +275,13 @@ func (s *Fund) QueryAddress(rw web.ResponseWriter, req *web.Request) {
 type fundRecordEntry struct {
 	Txid   string `json:"txID"`
 	Amount string `json:"amount"`
-	*fundRecordDetailEntry
+	fundRecordDetailEntry
 }
 
 type fundRecordDetailEntry struct {
-	FromLast *FuncRecord `json:"from"`
-	ToLast   *FuncRecord `json:"to"`
-	TxTime   string      `json: "txTime"`
+	FromLast *FuncRecord `json:"from,omitempty"`
+	ToLast   *FuncRecord `json:"to,omitempty"`
+	TxTime   string      `json: "txTime,omitempty"`
 }
 
 type FuncRecord struct {

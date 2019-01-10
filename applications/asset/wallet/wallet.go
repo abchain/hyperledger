@@ -4,17 +4,20 @@ import (
 	"bytes"
 	"encoding/gob"
 	"errors"
-	log "github.com/op/go-logging"
-	"github.com/spf13/viper"
-	"hyperledger.abchain.org/core/config"
-	abcrypto "hyperledger.abchain.org/core/crypto"
 	"io"
 	"io/ioutil"
 	"path/filepath"
 	"sync"
+
+	log "github.com/op/go-logging"
+	"github.com/spf13/viper"
+	"hyperledger.abchain.org/core/config"
+	abcrypto "hyperledger.abchain.org/core/crypto"
+	"hyperledger.abchain.org/core/crypto/ecdsa"
 )
 
 var logger = log.MustGetLogger("WALLET")
+var DefaultKeySource = func() (abcrypto.Signer, error) { return ecdsa.NewDefaultPrivatekey() }
 
 const (
 	defaultWalletFileName = "simplewallet.dat"
@@ -22,8 +25,10 @@ const (
 
 type simpleWallet struct {
 	PersistFile string
-	keyData     map[string]*abcrypto.PrivateKey
-	lock        sync.RWMutex
+	KeySource   func() (abcrypto.Signer, error)
+	// keyData     map[string]*abcrypto.PrivateKey
+	keyData map[string]abcrypto.Signer
+	lock    sync.RWMutex
 }
 
 type persistElem struct {
@@ -34,7 +39,9 @@ type persistElem struct {
 func NewWallet(fpath string) *simpleWallet {
 	return &simpleWallet{
 		PersistFile: fpath,
-		keyData:     map[string]*abcrypto.PrivateKey{}}
+		KeySource:   DefaultKeySource,
+		// keyData:     map[string]*abcrypto.PrivateKey{}}
+		keyData: map[string]abcrypto.Signer{}}
 }
 
 //read path setting from viper with var "filePath"
@@ -50,9 +57,9 @@ func LoadWallet(vp *viper.Viper) *simpleWallet {
 	return NewWallet(filepath.Join(ph, fname))
 }
 
-func (w *simpleWallet) NewPrivKey(accountID string) (*abcrypto.PrivateKey, error) {
+func (w *simpleWallet) NewPrivKey(accountID string) (abcrypto.Signer, error) {
 
-	priv, err := abcrypto.NewPrivatekey(abcrypto.DefaultCurveType)
+	priv, err := w.KeySource()
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +76,7 @@ func (w *simpleWallet) NewPrivKey(accountID string) (*abcrypto.PrivateKey, error
 	return priv, nil
 }
 
-func (w *simpleWallet) ImportPrivateKey(accountID string, priv *abcrypto.PrivateKey) error {
+func (w *simpleWallet) ImportPrivateKey(accountID string, priv abcrypto.Signer) error {
 
 	w.lock.Lock()
 	defer w.lock.Unlock()
@@ -102,7 +109,7 @@ func (w *simpleWallet) ImportPrivKey(accountID string, privkey string) error {
 	return nil
 }
 
-func (w *simpleWallet) LoadPrivKey(accountID string) (*abcrypto.PrivateKey, error) {
+func (w *simpleWallet) LoadPrivKey(accountID string) (abcrypto.Signer, error) {
 
 	w.lock.RLock()
 	defer w.lock.RUnlock()
@@ -142,21 +149,20 @@ func (w *simpleWallet) Rename(old string, new string) error {
 		return errors.New("new account id already exist")
 	}
 
-	err = w.ImportPrivKey(new, priv.Str())
-	if err != nil {
-		return err
-	}
+	w.lock.Lock()
+	w.keyData[new] = priv
+	w.lock.Unlock()
 
 	return w.RemovePrivKey(old)
 }
 
-func (w *simpleWallet) ListAll() (map[string]*abcrypto.PrivateKey, error) {
+func (w *simpleWallet) ListAll() (map[string]abcrypto.Signer, error) {
 
 	w.lock.RLock()
 	defer w.lock.RUnlock()
 
 	// we do a deep copy
-	copiedmap := map[string]*abcrypto.PrivateKey{}
+	copiedmap := map[string]abcrypto.Signer{}
 
 	for k, v := range w.keyData {
 		copiedmap[k] = v
@@ -170,7 +176,7 @@ func (m *simpleWallet) Load() error {
 	var err error
 
 	if m.keyData == nil {
-		m.keyData = map[string]*abcrypto.PrivateKey{}
+		m.keyData = map[string]abcrypto.Signer{}
 	}
 
 	origSize := len(m.keyData)
@@ -221,9 +227,15 @@ func (m *simpleWallet) Persist() error {
 	var saveSize = 0
 	for k, v := range m.keyData {
 
-		err := enc.Encode(&persistElem{k, v.Str()})
+		kstr, err := abcrypto.PrivatekeyToString(v)
 		if err != nil {
-			logger.Warning("Encode privkey fail", err)
+			logger.Warning("Encode privkey to string fail", err)
+			continue
+		}
+
+		err = enc.Encode(&persistElem{k, kstr})
+		if err != nil {
+			logger.Warning("Encode item fail", err)
 			continue
 		}
 		saveSize++
