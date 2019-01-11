@@ -4,9 +4,7 @@ import (
 	"math/big"
 
 	"github.com/gocraft/web"
-	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
-	"hyperledger.abchain.org/core/crypto"
 	tx "hyperledger.abchain.org/core/tx"
 )
 
@@ -79,24 +77,28 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	if s.ActivePrivk == nil {
-		s.NormalErrorF(rw, -100, "No account is specified")
-		return
-	}
-
-	fromAddr, err := tx.NewAddressFromPrivateKey(s.ActivePrivk)
-	if err != nil {
-		s.NormalError(rw, err)
-		return
-	}
-
 	toAddr, err := tx.NewAddressFromString(req.PostFormValue("to"))
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	var fromAddr *tx.Address
+	if s.ActivePrivk == nil {
+		fromAddr, err = tx.NewAddressFromString(req.PostFormValue("from"))
+		if err != nil {
+			s.NormalError(rw, err)
+			return
+		}
+	} else {
+		fromAddr, err = tx.NewAddressFromPrivateKey(s.ActivePrivk)
+		if err != nil {
+			s.NormalError(rw, err)
+			return
+		}
+	}
+
+	//s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 
 	nonceid, err := token.Transfer(fromAddr.Hash, toAddr.Hash, amount)
 	if err != nil {
@@ -215,21 +217,9 @@ func (s *Fund) Query(rw web.ResponseWriter, req *web.Request) {
 
 	token := token.GeneralCall{s.TxGenerator}
 
-	privk, err := s.wallet.LoadPrivKey(req.PathParams[AccountID])
-	if err != nil {
-		s.NormalError(rw, err)
+	if s.ActivePrivk == nil {
+		s.NormalErrorF(rw, -100, "No account is specified")
 		return
-	}
-
-	if indstr, ok := req.PathParams[AccountIndex]; ok {
-		index, ok := big.NewInt(0).SetString(indstr, 0)
-		if ok {
-			privk, err = crypto.GetChildPrivateKey(privk, index)
-			if err != nil {
-				s.NormalError(rw, err)
-				return
-			}
-		}
 	}
 
 	addr, err := tx.NewAddressFromPrivateKey(s.ActivePrivk)

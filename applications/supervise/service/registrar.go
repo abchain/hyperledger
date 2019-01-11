@@ -81,15 +81,16 @@ func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
 
 	logger.Debug("Received create registrar request")
 
+	var pkbytes []byte
+	var err error
 	if s.ActivePrivk == nil {
-		s.NormalErrorF(rw, -100, "No account is specified")
-		return
-	}
 
-	pkbytes, err := crypto.PublicKeyToBytes(s.ActivePrivk.Public())
-	if err != nil {
-		s.NormalError(rw, err)
-		return
+	} else {
+		pkbytes, err = crypto.PublicKeyToBytes(s.ActivePrivk.Public())
+		if err != nil {
+			s.NormalError(rw, err)
+			return
+		}
 	}
 
 	err = s.reg.AdminRegistrar(pkbytes)

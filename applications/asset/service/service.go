@@ -14,7 +14,6 @@ var logger = log.MustGetLogger("server/asset")
 
 type RPCCoreWithAccount struct {
 	*util.FabricRPCCore
-	wallet wallet.Wallet
 	// ActivePrivk *crypto.PrivateKey
 	ActivePrivk crypto.Signer
 }
@@ -50,7 +49,7 @@ func (r RPCAccountRouter) Init(wallet wallet.Wallet) {
 			s.ActivePrivk = privk
 		}
 
-		s.wallet = wallet
+		//		s.wallet = wallet
 		next(rw, req)
 	}
 

@@ -6,11 +6,6 @@ import (
 	"hyperledger.abchain.org/core/utils"
 )
 
-type tx struct {
-	header proto.Message
-	msgObj proto.Message
-}
-
 func msgToByte(m proto.Message) []byte {
 	h, err := proto.Marshal(m)
 
@@ -38,13 +33,13 @@ func DecodeProto(arg []byte, m proto.Message) error {
 	return proto.Unmarshal(arg, m)
 }
 
-func (hasher *tx) GenHash(method string) []byte {
+// func (hasher *tx) GenHash(method string) []byte {
 
-	hh := msgToByte(hasher.header)
-	hm := msgToByte(hasher.msgObj)
-	if hh == nil || hm == nil {
-		return nil
-	}
+// 	hh := msgToByte(hasher.header)
+// 	hm := msgToByte(hasher.msgObj)
+// 	if hh == nil || hm == nil {
+// 		return nil
+// 	}
 
-	return genHash(hh, hm, method)
-}
+// 	return genHash(hh, hm, method)
+// }

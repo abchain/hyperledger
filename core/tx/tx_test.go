@@ -23,6 +23,17 @@ func txinit(t *testing.T) {
 	}
 }
 
+func signInBuilder(builder Builder, privk abcrypto.Signer) error {
+	sig, err := privk.Sign(builder.GetHash())
+	if err != nil {
+		return err
+	}
+
+	builder.GetCredBuilder().AddSignature(sig)
+
+	return nil
+}
+
 func TestTx(t *testing.T) {
 
 	txinit(t)
@@ -35,7 +46,7 @@ func TestTx(t *testing.T) {
 		t.Fatal("builder fail", err)
 	}
 
-	builder.Sign(privkey)
+	signInBuilder(builder, privkey)
 
 	args, err := builder.GenArguments()
 

@@ -7,56 +7,30 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"hyperledger.abchain.org/core/crypto"
 	pb "hyperledger.abchain.org/protos"
 )
 
-type Builder interface {
-	GetNonce() []byte
-	GetHash() []byte
+type TxMaker interface {
 	GetCredBuilder() AddrCredentialBuilder
-	// Sign(*crypto.PrivateKey) error
-	Sign(crypto.Signer) error
 	GenArguments() ([][]byte, error)
 	GenArgumentsWithoutCred() ([][]byte, error)
 }
 
-type baseBuilder struct {
-	tx
-	txHash      []byte
-	nonce       []byte
+type baseMaker struct {
+	txArgs      [][]byte
 	credBuilder AddrCredentialBuilder
 }
 
-func (b *baseBuilder) GetCredBuilder() AddrCredentialBuilder {
+func NewTxMaker(args [][]byte) TxMaker {
+	return &baseMaker{args, NewAddrCredentialBuilder()}
+}
+
+func (b *baseMaker) GetCredBuilder() AddrCredentialBuilder {
+
 	return b.credBuilder
 }
 
-func (b *baseBuilder) GetHash() []byte {
-	return b.txHash
-}
-
-func (b *baseBuilder) GetNonce() []byte {
-	return b.nonce
-}
-
-func (b *baseBuilder) Sign(privk crypto.Signer) error {
-
-	if b.credBuilder == nil {
-		b.credBuilder = NewAddrCredentialBuilder()
-	}
-
-	sig, err := privk.Sign(b.txHash)
-	if err != nil {
-		return err
-	}
-
-	b.credBuilder.AddSignature(sig)
-
-	return nil
-}
-
-func (b *baseBuilder) GenArguments() ([][]byte, error) {
+func (b *baseMaker) GenArguments() ([][]byte, error) {
 	if b.credBuilder == nil {
 		return nil, errors.New("No cred yet")
 	}
@@ -81,20 +55,28 @@ func (b *baseBuilder) GenArguments() ([][]byte, error) {
 	return append(arg, cr), nil
 }
 
-func (b *baseBuilder) GenArgumentsWithoutCred() ([][]byte, error) {
+func (b *baseMaker) GenArgumentsWithoutCred() ([][]byte, error) {
+	return b.txArgs, nil
+}
 
-	if b.msgObj == nil {
-		return nil, errors.New("No message binded")
-	}
+type Builder interface {
+	TxMaker
+	GetNonce() []byte
+	GetHash() []byte
+}
 
-	hh := msgToByte(b.header)
-	hm := msgToByte(b.msgObj)
+type baseBuilder struct {
+	baseMaker
+	txHash []byte
+	nonce  []byte
+}
 
-	if hh == nil || hm == nil {
-		return nil, errors.New("Invalid message data")
-	}
+func (b *baseBuilder) GetHash() []byte {
+	return b.txHash
+}
 
-	return [][]byte{hh, hm}, nil
+func (b *baseBuilder) GetNonce() []byte {
+	return b.nonce
 }
 
 const (
@@ -115,6 +97,11 @@ func GenerateNonce() []byte {
 
 func NewTxBuilder(ccname string, nonce []byte, method string, msg proto.Message) (Builder, error) {
 
+	hm := msgToByte(msg)
+	if hm == nil {
+		return nil, errors.New("No message binded")
+	}
+
 	if nonce == nil {
 		nonce = GenerateNonce()
 	}
@@ -133,8 +120,15 @@ func NewTxBuilder(ccname string, nonce []byte, method string, msg proto.Message)
 		nonce,
 	}
 
-	b := &baseBuilder{tx{header, msg}, nil, nonce, nil}
-	b.txHash = b.GenHash(method)
+	hh := msgToByte(header)
+	if hh == nil {
+		return nil, errors.New("Encode header fail")
+	}
+
+	b := &baseBuilder{
+		baseMaker{[][]byte{hh, hm}, NewAddrCredentialBuilder()},
+		genHash(hh, hm, method),
+		nonce}
 
 	return b, nil
 

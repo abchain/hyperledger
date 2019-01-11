@@ -18,7 +18,15 @@ type singleKeyCred struct {
 }
 
 func (c *singleKeyCred) DoCred(builder txutil.Builder) error {
-	return builder.Sign(c.privkey)
+
+	sig, err := c.privkey.Sign(builder.GetHash())
+	if err != nil {
+		return err
+	}
+
+	builder.GetCredBuilder().AddSignature(sig)
+
+	return nil
 }
 
 func NewSingleKeyCred(privkey crypto.Signer) TxCredHandler {

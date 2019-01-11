@@ -13,7 +13,8 @@ import (
 
 //a null-base to provide more elastic
 type FabricClientBase struct {
-	debugData interface{}
+	debugData    interface{}
+	RespWrapping func(interface{}) interface{}
 }
 
 //so we can support both config in client and local adapter
@@ -96,6 +97,10 @@ func (s *FabricClientBase) Normal(rw web.ResponseWriter, v interface{}) {
 
 	s.normalHeader(rw)
 	// Create response encoder
+	if s.RespWrapping != nil {
+		v = s.RespWrapping(v)
+	}
+
 	json.NewEncoder(rw).Encode(utils.JRPCSuccess(v))
 }
 

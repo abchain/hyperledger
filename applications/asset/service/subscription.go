@@ -58,11 +58,6 @@ type contractEntry struct {
 
 func (s *Subscription) NewContract(rw web.ResponseWriter, req *web.Request) {
 
-	if s.ActivePrivk == nil {
-		s.NormalErrorF(rw, -100, "No account is specified")
-		return
-	}
-
 	contractStrs := req.PostForm["contract"]
 	contract := make(map[string]int32)
 
@@ -82,13 +77,23 @@ func (s *Subscription) NewContract(rw web.ResponseWriter, req *web.Request) {
 		contract[ret[0]] = int32(w)
 	}
 
-	s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	//s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 	share := share.GeneralCall{s.TxGenerator}
 
-	addr, err := tx.NewAddressFromPrivateKey(s.ActivePrivk)
-	if err != nil {
-		s.NormalError(rw, err)
-		return
+	var addr *tx.Address
+	var err error
+	if s.ActivePrivk == nil {
+		addr, err = tx.NewAddressFromString(req.PostFormValue("initiator"))
+		if err != nil {
+			s.NormalError(rw, err)
+			return
+		}
+	} else {
+		addr, err = tx.NewAddressFromPrivateKey(s.ActivePrivk)
+		if err != nil {
+			s.NormalError(rw, err)
+			return
+		}
 	}
 
 	conaddr, err := share.New(contract, addr.Hash)
