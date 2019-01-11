@@ -78,6 +78,16 @@ func (kd *KeyDerivation) FromKDMessage(msg *protos.KeyDerived) {
 	kd.Chaincode = msg.GetChaincode()
 }
 
+func paddingBytes(bt []byte, size int) []byte {
+	if len(bt) > size {
+		panic("Large bytes")
+	} else if len(bt) == size {
+		return bt
+	} else {
+		return append(make([]byte, size-len(bt)), bt...)
+	}
+}
+
 func (kd *KeyDerivation) GenIntermediary(pub *ecdsa.PublicKey, index *big.Int) ([]byte, *KeyDerivation, error) {
 
 	if kd == nil {
@@ -87,7 +97,13 @@ func (kd *KeyDerivation) GenIntermediary(pub *ecdsa.PublicKey, index *big.Int) (
 		return nil, nil, errors.New("Not valid chaincode")
 	}
 
-	data := bytes.Join([][]byte{pub.X.Bytes(), pub.Y.Bytes(), index.Bytes()}, nil)
+	cmpPoint := compressPublicKey(pub.X, pub.Y)
+	indBytes := index.Bytes()
+	if len(indBytes) < 4 {
+		indBytes = append(make([]byte, 4-len(indBytes)), indBytes...)
+	}
+
+	data := bytes.Join([][]byte{cmpPoint, indBytes}, nil)
 
 	hmac := hmac.New(sha512.New, kd.Chaincode)
 	_, err := hmac.Write(data)
