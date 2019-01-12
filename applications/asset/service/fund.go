@@ -22,7 +22,7 @@ type FundRouter struct {
 	*web.Router
 }
 
-func CreateFundRouter(root RPCAccountRouter, path string) FundRouter {
+func CreateFundRouter(root *web.Router, path string) FundRouter {
 	return FundRouter{
 		root.Subrouter(Fund{}, path),
 	}
@@ -86,16 +86,12 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 	var fromAddr *tx.Address
 	if s.ActivePrivk == nil {
 		fromAddr, err = tx.NewAddressFromString(req.PostFormValue("from"))
-		if err != nil {
-			s.NormalError(rw, err)
-			return
-		}
 	} else {
 		fromAddr, err = tx.NewAddressFromPrivateKey(s.ActivePrivk)
-		if err != nil {
-			s.NormalError(rw, err)
-			return
-		}
+	}
+	if err != nil {
+		s.NormalError(rw, err)
+		return
 	}
 
 	//s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)

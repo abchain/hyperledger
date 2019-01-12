@@ -8,6 +8,7 @@ import (
 	"github.com/gocraft/web"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
+	"hyperledger.abchain.org/core/crypto"
 	"hyperledger.abchain.org/core/utils"
 )
 
@@ -27,36 +28,7 @@ type FabricRPCCfg interface {
 type FabricRPCCore struct {
 	*FabricClientBase
 	*txgen.TxGenerator
-}
-
-type RPCRouter struct {
-	*web.Router
-}
-
-func CreateRPCRouter(root *web.Router, path string) RPCRouter {
-	return RPCRouter{
-		root.Subrouter(FabricRPCCore{}, path),
-	}
-}
-
-func (r RPCRouter) Init(cfg FabricRPCCfg) {
-
-	initCall := func(s *FabricRPCCore, rw web.ResponseWriter,
-		req *web.Request, next web.NextMiddlewareFunc) {
-
-		var err error
-		s.TxGenerator = txgen.SimpleTxGen(cfg.GetCCName())
-		s.TxGenerator.Dispatcher, err = cfg.GetCaller()
-
-		if err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
-		} else {
-			next(rw, req)
-		}
-	}
-
-	r.Middleware(initCall).
-		Middleware((*FabricRPCCore).PrehandlePost)
+	ActivePrivk crypto.Signer
 }
 
 func (s *FabricRPCCore) PrehandlePost(rw web.ResponseWriter,
@@ -122,4 +94,34 @@ func (s *FabricClientBase) EncodeEntry(nonce []byte) string {
 
 func (s *FabricClientBase) DecodeEntry(nonce string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(nonce)
+}
+
+type RPCRouter struct {
+	*web.Router
+}
+
+func CreateRPCRouter(root *web.Router, path string) RPCRouter {
+	return RPCRouter{
+		root.Subrouter(FabricRPCCore{}, path),
+	}
+}
+
+func (r RPCRouter) Init(cfg FabricRPCCfg) {
+
+	initCall := func(s *FabricRPCCore, rw web.ResponseWriter,
+		req *web.Request, next web.NextMiddlewareFunc) {
+
+		var err error
+		s.TxGenerator = txgen.SimpleTxGen(cfg.GetCCName())
+		s.TxGenerator.Dispatcher, err = cfg.GetCaller()
+
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+		} else {
+			next(rw, req)
+		}
+	}
+
+	r.Middleware(initCall).
+		Middleware((*FabricRPCCore).PrehandlePost)
 }

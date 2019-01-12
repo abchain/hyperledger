@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"github.com/gocraft/web"
 	accsrv "hyperledger.abchain.org/applications/asset/service"
 	reg "hyperledger.abchain.org/chaincode/modules/registrar"
@@ -20,7 +21,7 @@ type RegistrarRouter struct {
 	*web.Router
 }
 
-func CreatRegistrarRouter(root accsrv.RPCAccountRouter, path string) RegistrarRouter {
+func CreatRegistrarRouter(root *web.Router, path string) RegistrarRouter {
 	return RegistrarRouter{
 		root.Subrouter(Registrar{}, path),
 	}
@@ -84,13 +85,14 @@ func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
 	var pkbytes []byte
 	var err error
 	if s.ActivePrivk == nil {
+		_, err = fmt.Sscanf(req.PostFormValue("publicKey"), "%x", pkbytes)
 
 	} else {
 		pkbytes, err = crypto.PublicKeyToBytes(s.ActivePrivk.Public())
-		if err != nil {
-			s.NormalError(rw, err)
-			return
-		}
+	}
+	if err != nil {
+		s.NormalError(rw, err)
+		return
 	}
 
 	err = s.reg.AdminRegistrar(pkbytes)

@@ -26,7 +26,7 @@ type SubscriptionRouter struct {
 	*web.Router
 }
 
-func CreatSubscriptionRouter(root RPCAccountRouter, path string) SubscriptionRouter {
+func CreatSubscriptionRouter(root *web.Router, path string) SubscriptionRouter {
 	return SubscriptionRouter{
 		root.Subrouter(Subscription{}, path),
 	}
