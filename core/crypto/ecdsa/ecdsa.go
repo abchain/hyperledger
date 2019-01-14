@@ -24,7 +24,7 @@ func (cryptoFactory) NewVerifier() crypto.Verifier {
 
 var (
 	DefaultCurveType = ECP256_FIPS186
-	DefaultVersion   int32
+	DefaultVersion   = crypto.DefaultVersion
 	DefaultFactory   = cryptoFactory{}
 )
 

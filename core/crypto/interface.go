@@ -11,6 +11,8 @@ const (
 	PUBLICKEY_FINGERPRINT_LEN = 8
 )
 
+var DefaultVersion int32
+
 type Factory interface {
 	NewSigner() Signer
 	NewVerifier() Verifier

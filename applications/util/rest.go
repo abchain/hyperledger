@@ -33,7 +33,8 @@ func CreateRPCRouter(root *web.Router) RPCRouter {
 }
 
 func (r RPCRouter) BuildRoutes() {
-	r.Post("/sendrawtransaction", (*FabricRPCBase).SendRawTx)
+	r.Post("/rawtransaction", (*FabricRPCBase).SendRawTx)
+	r.Post("/address", (*FabricRPCBase).GetAddress)
 }
 
 //so we can support both config in client and local adapter

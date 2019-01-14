@@ -47,6 +47,24 @@ func decodeArguments(args []string) (r [][]byte, e error) {
 	return
 }
 
+func (s *FabricRPCBase) GetAddress(rw web.ResponseWriter, req *web.Request) {
+	pkstr := req.PostFormValue("pubkeybuffer")
+
+	pk, err := crypto.DecodeCompactPublicKey(pkstr)
+	if err != nil {
+		s.NormalError(rw, fmt.Errorf("decode public key fail: %s", err))
+		return
+	}
+
+	addr, err := txutil.NewAddress(pk)
+	if err != nil {
+		s.NormalError(rw, fmt.Errorf("create addr fail: %s", err))
+		return
+	}
+
+	s.Normal(rw, addr.ToString())
+}
+
 func (s *FabricRPCBase) SendRawTx(rw web.ResponseWriter, req *web.Request) {
 
 	rawTx := strings.Split(req.PostFormValue("tx"), ":")

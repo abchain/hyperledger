@@ -33,6 +33,7 @@ Promise.resolve(msg).then(msg => {
 
         //this is what we should do to grasp data from sign and send it to SDK
         let pkbuf = util.ecrecover(hash, v, r, s)
-        console.log('public key buffer:', pkbuf.toString('hex'))
+        console.log('public key buffer:', 'EC:01,'+util.privateToPublic(secret).toString('hex'))
+        console.log('signature: ', 'EC:01,'+pkbuf.toString('hex')+','+r.toString('hex')+s.toString('hex')+":")
     }
 ).catch(console.log).then(() => {prompt.close()})

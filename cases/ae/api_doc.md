@@ -50,7 +50,7 @@ FORMAT:1A
     - accountID: 新创建账号的账号 ID
         - 账号 ID 在本地需要保证唯一性
         - 账号 ID 仅用于方便本地操作，该信息并未在机器间同步
-    - [ index ]: 使用已经创建的账号创建子账号
+    - \[index\]: 使用已经创建的账号创建子账号
         - 账号 ID 之前必须已经创建
         - 创建的子账号将会被记录在本地，并以 accountID : index 的形式显示 
 
@@ -420,7 +420,7 @@ FORMAT:1A
 
     - accountID | account: 支付人的账号ID或账号地址
         - 账号地址必须是已经记录在本地的地址，可以是根账号或者子账号
-    - [index]: 使用 accountID 的子账号
+    - \[index\]: 使用 accountID 的子账号
     - from: 支付人地址，如果指定账号，此参数被忽略
     - to: 受付人地址
     - amount: 转账金额
@@ -460,7 +460,7 @@ FORMAT:1A
         - from: 支付人地址
         - to: 受付人地址
         - amount：转账金额
-        - [external]: 表示转账由外部chaincode执行
+        - \[external\]: 表示转账由外部chaincode执行
         - time: 事务上链时间
  
 + Parameters
@@ -493,9 +493,9 @@ FORMAT:1A
 
     - accountID | account: 分润账户的账号 ID 或账号地址
         - 账号地址必须是已经记录在本地的地址，可以是根账号或者子账号
-    - [index]: 使用 accountID 的子账号
+    - \[index\]: 使用 accountID 的子账号
     - initiator: 发起协议的地址，如果指定账号，则此参数被忽略
-    - contract: 分润方案，是[ 地址 : 权重 ] 形式的字符串，代表接收分润的地址和对应的分润比例，可以包含多个contract字段
+    - contract: 分润方案，是\[ 地址 : 权重 \] 形式的字符串，代表接收分润的地址和对应的分润比例，可以包含多个contract字段
 
 - 响应参数说明
 
@@ -577,13 +577,95 @@ FORMAT:1A
     - accountID | account: 账号 ID 或账号地址
         - 账号地址必须是已经记录在本地的地址，可以是根账号或者子账号
         - 账号 ID 对应的地址必须包含在分润协议中
-    - [index]: 使用 accountID 的子账号
-    - [amount]: 希望从分润账户中提取的金额，默认提取当前所有可用的数目
+    - \[index\]: 使用 accountID 的子账号
+    - \[amount\]: 希望从分润账户中提取的金额，默认提取当前所有可用的数目
 
 - 响应参数说明
 
     - result
         - 转账事务 ID (fundID)
+
+
+# Group RawTransaction 
+
+## 生成一个待签名的事务 [/api/v1/data]
+
+- 说明
+
+     此路径下可以连接上述业务API中的任何路径，结果将产生一个对应的待签名事务内容和需签名的hash值，调用者可以使用自己的私钥签名此hash并提交已签名的事务，例如 \[POST\] /api/v1/data/fund 将生成一个待签名的转账事务
+
+- 响应参数说明
+
+    - raw: 生成的待签名事务
+    - hash: 此事务需要签名的hash值，以十六进制数表示
+    - promise: 此事务如果是调用（invoke），提供和实际调用时相同的返回值；如果是查询（query），仅显示返回值中包含的数据内容，而不包含实际的值
+
++ Response 200 (application/json;charset=utf-8)
+
+    + Body
+
+            {
+                "jsonrpc" : "2.0",
+                "result": {
+                    "raw":"I::TOKEN.TRANSFER:ChoKB0FCQ0hBSU4SD0F0b21pY0VuZXJneV92MRIGCPPk8OEFGhRrumYaeGyTASFlvIj4UyA1NTgckw==:CgsIRZUWFAFISgAAABIWChT9hccdqdkYsNsFR5nG+3qAMCdWnhoWChQSbaukOOqE58Q8L1ajIA7WXjcbOw==",
+                    "hash":"03BD91127B5FED4EC9C0F71A516944880558E5EFC71520A38607189EC302251E",
+                    "promise": {
+                        "txID": "pending",
+                        "fundNonce": "H-5R9kjK42HSFuA1_h4CqY_8IfBdEAU2aE1FWE79gVA=",
+                        "Nonce": "a7pmGnhskwEhZbyI+FMgNTU4HJM="
+                    }
+                }
+            }
+
+## 基础地址服务 [/api/v1/address]
+
+### 转换公钥到地址 [POST]
+
+- 请求参数说明
+
+    - pubkeybuffer: 需要转换为地址的公钥内容，以16进制数表示，格式可以参考 application/util/signhelper 中的node.js示例
+
+- 响应参数说明
+
+    - result: 公钥对应的地址
+
++ Request (application/x-www-form-urlencoded;charset=utf-8)
+
+    + Body
+
+            tx=EC:01,d0de0aaeaefad02b8bdc8a01a1b8b11c696bd3d66a2c5f10780d95b7df42645cd85228a6fb29940e858e7e55842ae2bd115d1ed7cc0e82d934e929c97648cb0a
+
++ Response 200 (application/json;charset=utf-8)
+
+    + Body
+
+            {
+                "jsonrpc": "2.0",
+                "result": "ARJtq6Q46oTnxDwvVqMgDtZeNxs7Ybt81A"
+            }
+
+
+## 基础事务 [/api/v1/rawtransaction]
+
+### 提交基础事务 [POST]
+
+- 请求参数说明
+
+    - tx: 提交的事务内容，编码方案和生成待签名事务时相同
+    - \[sig\]: 编码为字符串的签名值，生成的格式可以参考 application/util/signhelper 中的node.js示例
+        - 一次请求可携带0 ~ 多个 sig 参数
+
+- 响应参数说明
+
+    - result: 提交的事务 ID
+        - 当前API不支持提交query类型的事务
+
++ Request (application/x-www-form-urlencoded;charset=utf-8)
+
+    + Body
+
+            tx=I::TOKEN.TRANSFER:ChoKB0FCQ0hBSU4SD0F0b21pY0VuZXJneV92MRIGCKKw8OEFGhRiXies8Zp97ktRv1lyR4mZtZV8Vw==:CgoVLQLH4Ur2gAAAEhYKFJT1uordAf/qOrTeOPjfYkl4eSUUGhYKFBJtq6Q46oTnxDwvVqMgDtZeNxs7&sig=EC:01,d0de0aaeaefad02b8bdc8a01a1b8b11c696bd3d66a2c5f10780d95b7df42645cd85228a6fb29940e858e7e55842ae2bd115d1ed7cc0e82d934e929c97648cb0a,5f27d831cfe37e7542a1a5d9c687d935f0fd10dc60c2605be7a07ae26b77e22e23ebcbeed6ca7a1c9873009bc060ece0930d3013221efc87e9a4b1b1bb654b6c:
+
 
 
 # Group Blockchain

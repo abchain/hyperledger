@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// <curvetype>:<pub part>:<sig part>
+// <curvetype>,<pub part>,<sig part>
 func decodeECDSASig(sig string) (*protos.Signature_ECDSA, error) {
 	sigparts := strings.Split(sig, ",")
 	if len(sigparts) != 3 {
