@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/gocraft/web"
-	accsrv "hyperledger.abchain.org/applications/asset/service"
+	"hyperledger.abchain.org/applications/util"
 	reg "hyperledger.abchain.org/chaincode/modules/registrar"
 	"hyperledger.abchain.org/core/crypto"
 )
@@ -13,7 +13,7 @@ const (
 )
 
 type Registrar struct {
-	*accsrv.RPCCoreWithAccount
+	*util.FabricRPCCore
 	reg reg.GeneralCall
 }
 
@@ -21,7 +21,7 @@ type RegistrarRouter struct {
 	*web.Router
 }
 
-func CreatRegistrarRouter(root *web.Router, path string) RegistrarRouter {
+func CreatRegistrarRouter(root util.TxRouter, path string) RegistrarRouter {
 	return RegistrarRouter{
 		root.Subrouter(Registrar{}, path),
 	}
@@ -48,6 +48,11 @@ func (s *Registrar) InitCaller(rw web.ResponseWriter,
 	next(rw, req)
 }
 
+type ReqEntry struct {
+	Txid  string `json:"txID"`
+	Nonce []byte `json:"Nonce"`
+}
+
 func (s *Registrar) InitReg(rw web.ResponseWriter, req *web.Request) {
 
 	manager := req.FormValue("Admin")
@@ -71,9 +76,8 @@ func (s *Registrar) InitReg(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	s.Normal(rw, &accsrv.FundEntry{
+	s.Normal(rw, &ReqEntry{
 		txid,
-		"",
 		s.TxGenerator.GetBuilder().GetNonce(),
 	})
 }
@@ -85,7 +89,7 @@ func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
 	var pkbytes []byte
 	var err error
 	if s.ActivePrivk == nil {
-		_, err = fmt.Sscanf(req.PostFormValue("publicKey"), "%x", pkbytes)
+		_, err = fmt.Sscanf(req.PostFormValue("publicKey"), "%x", &pkbytes)
 
 	} else {
 		pkbytes, err = crypto.PublicKeyToBytes(s.ActivePrivk.Public())
@@ -107,9 +111,8 @@ func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	s.Normal(rw, &accsrv.FundEntry{
+	s.Normal(rw, &ReqEntry{
 		string(txid),
-		s.EncodeEntry(s.ActivePrivk.Public().GetRootFingerPrint()),
 		s.TxGenerator.GetBuilder().GetNonce(),
 	})
 

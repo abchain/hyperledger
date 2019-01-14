@@ -13,7 +13,7 @@ type FabricChainCfg interface {
 }
 
 type FabricBlockChain struct {
-	*util.FabricClientBase
+	*util.FabricRPCBase
 	cli client.ChainInfo
 }
 
@@ -21,7 +21,7 @@ type BlockChainRouter struct {
 	*web.Router
 }
 
-func CreateBlocChainRouter(root *web.Router, path string) BlockChainRouter {
+func CreateBlocChainRouter(root util.RPCRouter, path string) BlockChainRouter {
 	return BlockChainRouter{
 		root.Subrouter(FabricBlockChain{}, path),
 	}

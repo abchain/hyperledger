@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/gocraft/web"
+	"hyperledger.abchain.org/applications/util"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	share "hyperledger.abchain.org/chaincode/modules/sharesubscription"
@@ -17,7 +18,7 @@ const (
 )
 
 type Subscription struct {
-	*RPCCoreWithAccount
+	*util.FabricRPCCore
 	token token.GeneralCall
 	share share.GeneralCall
 }
@@ -26,7 +27,7 @@ type SubscriptionRouter struct {
 	*web.Router
 }
 
-func CreatSubscriptionRouter(root *web.Router, path string) SubscriptionRouter {
+func CreatSubscriptionRouter(root util.TxRouter, path string) SubscriptionRouter {
 	return SubscriptionRouter{
 		root.Subrouter(Subscription{}, path),
 	}

@@ -36,12 +36,14 @@ type persistElem struct {
 	Dump string
 }
 
+//we add a debug signer
+
 func NewWallet(fpath string) *simpleWallet {
 	return &simpleWallet{
 		PersistFile: fpath,
 		KeySource:   DefaultKeySource,
 		// keyData:     map[string]*abcrypto.PrivateKey{}}
-		keyData: map[string]abcrypto.Signer{}}
+		keyData: map[string]abcrypto.Signer{"example": ecdsa.NewSECP256K1Privkey("0C28FCA386C7A227600B2FE50B7CAE11EC86D3BF1FBE471BE89827E19D72AA1D")}}
 }
 
 //read path setting from viper with var "filePath"

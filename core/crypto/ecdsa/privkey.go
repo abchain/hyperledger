@@ -63,6 +63,34 @@ func NewPrivatekey(curveType int32) (*PrivateKey, error) {
 		}}, nil
 }
 
+func NewSECP256K1Privkey(s string) *PrivateKey {
+
+	ec, err := GetEC(SECP256K1)
+	if err != nil {
+		panic("ec fail")
+	}
+
+	var sbt []byte
+	if _, err := fmt.Sscanf(s, "%x", &sbt); err != nil {
+		panic(err)
+	}
+
+	priv := new(ecdsa.PrivateKey)
+	priv.PublicKey.Curve = ec
+	priv.D = big.NewInt(0).SetBytes(sbt)
+	priv.PublicKey.X, priv.PublicKey.Y = ec.ScalarBaseMult(priv.D.Bytes())
+
+	return &PrivateKey{
+		DefaultVersion,
+		SECP256K1,
+		priv,
+		&KeyDerivation{
+			nil,
+			big.NewInt(0),
+			make([]byte, 32),
+		}}
+}
+
 // func PrivatekeyFromString(privkeyStr string) (*PrivateKey, error) {
 
 // 	raw, err := base64.URLEncoding.DecodeString(privkeyStr)

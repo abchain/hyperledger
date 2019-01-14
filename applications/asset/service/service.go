@@ -8,21 +8,12 @@ import (
 	"hyperledger.abchain.org/applications/asset/wallet"
 	"hyperledger.abchain.org/applications/util"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
+	"hyperledger.abchain.org/core/crypto"
 )
 
 var logger = log.MustGetLogger("server/asset")
 
-type RPCAccountRouter struct {
-	*web.Router
-}
-
-func CreateRPCAccountRouter(root util.RPCRouter, path string) RPCAccountRouter {
-	return RPCAccountRouter{
-		root.Subrouter(util.FabricRPCCore{}, path),
-	}
-}
-
-func (r RPCAccountRouter) Init(wallet wallet.Wallet) {
+func InitTxRouterWithWallet(r util.TxRouter, wallet wallet.Wallet) {
 
 	Initcall := func(s *util.FabricRPCCore, rw web.ResponseWriter,
 		req *web.Request, next web.NextMiddlewareFunc) {

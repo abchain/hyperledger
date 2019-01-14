@@ -3,12 +3,11 @@ package util
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gocraft/web"
 	"hyperledger.abchain.org/chaincode/lib/caller"
-	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
-	"hyperledger.abchain.org/core/crypto"
 	"hyperledger.abchain.org/core/utils"
 )
 
@@ -18,6 +17,25 @@ type FabricClientBase struct {
 	RespWrapping func(interface{}) interface{}
 }
 
+type FabricRPCBase struct {
+	*FabricClientBase
+	GetCaller func(string) (rpc.Caller, error)
+}
+
+type RPCRouter struct {
+	*web.Router
+}
+
+func CreateRPCRouter(root *web.Router) RPCRouter {
+	return RPCRouter{
+		root.Subrouter(FabricRPCBase{}, ""),
+	}
+}
+
+func (r RPCRouter) BuildRoutes() {
+	r.Post("/sendrawtransaction", (*FabricRPCBase).SendRawTx)
+}
+
 //so we can support both config in client and local adapter
 type FabricRPCCfg interface {
 	GetCaller() (rpc.Caller, error)
@@ -25,30 +43,26 @@ type FabricRPCCfg interface {
 	Quit()
 }
 
-type FabricRPCCore struct {
-	*FabricClientBase
-	*txgen.TxGenerator
-	ActivePrivk crypto.Signer
-}
+func (r RPCRouter) Init(cfg FabricRPCCfg) RPCRouter {
 
-func (s *FabricRPCCore) PrehandlePost(rw web.ResponseWriter,
-	req *web.Request, next web.NextMiddlewareFunc) {
-	if req.Method == http.MethodPost {
-		err := req.ParseForm()
-		if err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
-			return
+	ccn := cfg.GetCCName()
+	f := func(n string) (rpc.Caller, error) {
+		if n != "" && n != ccn {
+			return nil, fmt.Errorf("CC is not match (expect %s but has %s)", ccn, n)
 		}
 
-		nonce := req.PostFormValue("nonce")
-		if nonce != "" {
-			s.TxGenerator.BeginTx([]byte(nonce))
-		} else {
-			s.TxGenerator.BeginTx(nil)
-		}
+		return cfg.GetCaller()
 	}
 
-	next(rw, req)
+	initCall := func(s *FabricRPCBase, rw web.ResponseWriter,
+		req *web.Request, next web.NextMiddlewareFunc) {
+
+		s.GetCaller = f
+		next(rw, req)
+	}
+
+	r.Middleware(initCall)
+	return r
 }
 
 func (s *FabricClientBase) normalHeader(rw web.ResponseWriter) {
@@ -73,6 +87,8 @@ func (s *FabricClientBase) Normal(rw web.ResponseWriter, v interface{}) {
 		v = s.RespWrapping(v)
 	}
 
+	logger.Debugf("Normal finish, output %v", v)
+
 	json.NewEncoder(rw).Encode(utils.JRPCSuccess(v))
 }
 
@@ -94,34 +110,4 @@ func (s *FabricClientBase) EncodeEntry(nonce []byte) string {
 
 func (s *FabricClientBase) DecodeEntry(nonce string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(nonce)
-}
-
-type RPCRouter struct {
-	*web.Router
-}
-
-func CreateRPCRouter(root *web.Router, path string) RPCRouter {
-	return RPCRouter{
-		root.Subrouter(FabricRPCCore{}, path),
-	}
-}
-
-func (r RPCRouter) Init(cfg FabricRPCCfg) {
-
-	initCall := func(s *FabricRPCCore, rw web.ResponseWriter,
-		req *web.Request, next web.NextMiddlewareFunc) {
-
-		var err error
-		s.TxGenerator = txgen.SimpleTxGen(cfg.GetCCName())
-		s.TxGenerator.Dispatcher, err = cfg.GetCaller()
-
-		if err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
-		} else {
-			next(rw, req)
-		}
-	}
-
-	r.Middleware(initCall).
-		Middleware((*FabricRPCCore).PrehandlePost)
 }

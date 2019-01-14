@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/gocraft/web"
+	"hyperledger.abchain.org/applications/util"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	tx "hyperledger.abchain.org/core/tx"
 )
@@ -15,14 +16,14 @@ const (
 )
 
 type Fund struct {
-	*RPCCoreWithAccount
+	*util.FabricRPCCore
 }
 
 type FundRouter struct {
 	*web.Router
 }
 
-func CreateFundRouter(root *web.Router, path string) FundRouter {
+func CreateFundRouter(root util.TxRouter, path string) FundRouter {
 	return FundRouter{
 		root.Subrouter(Fund{}, path),
 	}

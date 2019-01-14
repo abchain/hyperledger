@@ -57,12 +57,11 @@ const (
 
 func StartService() {
 
-	config.LoggingInit(`%{color}%{time:15:04:05.000} %{level:.4s} [%{module:.6s}] %{shortfile} %{shortfunc} ▶ %{message}%{color:reset}`, os.Stdout)
-
 	if err := config.LoadConfig("conf", []string{"src/hyperledger.abchain.org/cases/ae"}); err != nil {
 		logger.Errorf("Init global config failed: %v", err)
 		return
 	}
+	config.LoggingInit(`%{color}%{time:15:04:05.000} %{level:.4s} [%{module:.6s}] %{shortfile} %{shortfunc} ▶ %{message}%{color:reset}`, os.Stdout)
 
 	// Init Wallet
 	defaultWallet = wallet.LoadWallet(viper.Sub(conf_wallet))

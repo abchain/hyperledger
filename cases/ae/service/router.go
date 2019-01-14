@@ -31,38 +31,38 @@ func buildRouter() *web.Router {
 	root := web.NewWithPrefix(util.FabricClientBase{}, URIPrefix)
 
 	root.OptionsHandler(optionsHandler)
+
+	rpcrouter := util.CreateRPCRouter(root).Init(defaultRpcConfig)
+	rpcrouter.BuildRoutes()
+
 	//account
 	mainsrv.CreateAccountRouter(root, "account").Init(defaultWallet).BuildRoutes()
 	//privkey
 	mainsrv.CreateAccountRouter(root, "privkey").Init(defaultWallet).BuildPrivkeyRoutes()
 
 	//blockchain
-	blockchain.CreateBlocChainRouter(root, "chain").Init(defaultChainConfig).BuildRoutes()
+	blockchain.CreateBlocChainRouter(rpcrouter, "chain").Init(defaultChainConfig).BuildRoutes()
 
-	rpcrouter := util.CreateRPCRouter(root, "")
-	rpcrouter.Init(defaultRpcConfig)
+	apirouter := util.CreateTxRouter(rpcrouter, "").Init(defaultRpcConfig.GetCCName())
+	localrouter := util.CreateTxRouter(rpcrouter, "data").InitLocalCall(defaultRpcConfig.GetCCName())
 
-	apirouter := mainsrv.CreateRPCAccountRouter(rpcrouter, "")
-	apirouter.Init(defaultWallet)
-
-	localrouter := util.CreateLocalTxRouter(rpcrouter.Router, "data")
-	localrouter.Init(defaultRpcConfig.GetCCName())
+	mainsrv.InitTxRouterWithWallet(apirouter, defaultWallet)
 
 	//assign
-	mainsrv.CreateFundRouter(apirouter.Router, "assign").Init().BuildGlobalRoutes()
+	mainsrv.CreateFundRouter(apirouter, "assign").Init().BuildGlobalRoutes()
 
 	//fund
-	mainsrv.CreateFundRouter(apirouter.Router, "fund").Init().BuildFundRoutes()
-	mainsrv.CreateFundRouter(localrouter.Router, "fund").Init().BuildFundRoutes()
+	mainsrv.CreateFundRouter(apirouter, "fund").Init().BuildFundRoutes()
+	mainsrv.CreateFundRouter(localrouter, "fund").Init().BuildFundRoutes()
 
 	//address
-	mainsrv.CreateFundRouter(apirouter.Router, "address").Init().BuildAddressRoutes()
+	mainsrv.CreateFundRouter(apirouter, "address").Init().BuildAddressRoutes()
 
 	//share
-	mainsrv.CreatSubscriptionRouter(apirouter.Router, "subscription").Init().BuildRoutes()
+	mainsrv.CreatSubscriptionRouter(apirouter, "subscription").Init().BuildRoutes()
 
 	//registrar
-	regsrv.CreatRegistrarRouter(apirouter.Router, "registrar").Init().BuildRoutes()
+	regsrv.CreatRegistrarRouter(apirouter, "registrar").Init().BuildRoutes()
 
 	// NotFound
 	root.NotFound(notFound)

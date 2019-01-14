@@ -9,6 +9,8 @@ Gopkg.lock
 *.dll
 *.so
 *.dylib
+node_modules
+package-lock.json
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
