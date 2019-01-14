@@ -43,7 +43,11 @@ func NewWallet(fpath string) *simpleWallet {
 		PersistFile: fpath,
 		KeySource:   DefaultKeySource,
 		// keyData:     map[string]*abcrypto.PrivateKey{}}
-		keyData: map[string]abcrypto.Signer{"example": ecdsa.NewSECP256K1Privkey("0C28FCA386C7A227600B2FE50B7CAE11EC86D3BF1FBE471BE89827E19D72AA1D")}}
+		keyData: map[string]abcrypto.Signer{
+			"example":   ecdsa.NewSECP256K1Privkey("0C28FCA386C7A227600B2FE50B7CAE11EC86D3BF1FBE471BE89827E19D72AA1D"),
+			"example01": ecdsa.NewSECP256K1Privkey("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"),
+		},
+	}
 }
 
 //read path setting from viper with var "filePath"
