@@ -1,13 +1,22 @@
 package multitoken
 
 import (
+	"hyperledger.abchain.org/chaincode/lib/runtime"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
-	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
-	"hyperledger.abchain.org/chaincode/shim"
+	_ "hyperledger.abchain.org/chaincode/shim"
+	"math/big"
 )
 
+//Currying: except for createToken, most of the tx in multitoken formed by two continuous calling:
+//GetToken and then one of the methods in the returned TokenTx
 type MultiTokenTx interface {
-	GetToken(string) generaltoken.TokenTx
-	Create(string) error
+	GetToken(string) (generaltoken.TokenTx, error)
+	CreateToken(string, *big.Int) error
+}
+
+type baseMultiTokenTx struct {
+	*runtime.ChaincodeRuntime
+	nonce      []byte
+	tokenNonce nonce.TokenNonceTx
 }

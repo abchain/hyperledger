@@ -52,13 +52,17 @@ type baseTokenTx struct {
 	tokenNonce nonce.TokenNonceTx
 }
 
+func NewTokenTxImpl(rt *runtime.ChaincodeRuntime, nc []byte, ncTx nonce.TokenNonceTx) *baseTokenTx {
+	return &baseTokenTx{rt, nc, ncTx}
+}
+
 const (
 	tx_tag_prefix = "GenToken_"
 )
 
 func (cfg *StandardTokenConfig) NewTx(stub shim.ChaincodeStubInterface, nc []byte) TokenTx {
 
-	return &baseTokenTx{runtime.NewRuntime(cfg.Root, stub, cfg.Config), nc, cfg.NonceCfg.NewTx(stub, nc)}
+	return NewTokenTxImpl(runtime.NewRuntime(cfg.Root, stub, cfg.Config), nc, cfg.NonceCfg.NewTx(stub, nc))
 
 }
 

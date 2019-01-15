@@ -4,10 +4,12 @@ package rpc
 
 import (
 	"hyperledger.abchain.org/chaincode/shim"
+	"sync"
 	"time"
 )
 
 type ChaincodeAdapter struct {
+	sync.Mutex
 	*shim.MockStub
 	TxIDGen func() string
 }
@@ -30,17 +32,29 @@ func (c *ChaincodeAdapter) DefaultTxID() {
 }
 
 func (c *ChaincodeAdapter) Deploy(method string, arg [][]byte) (string, error) {
+
+	c.Lock()
+	defer c.Unlock()
+
 	txid := c.TxIDGen()
 	_, err := c.MockInit(txid, method, arg)
 	return txid, err
 }
 
 func (c *ChaincodeAdapter) Invoke(method string, arg [][]byte) (string, error) {
+
+	c.Lock()
+	defer c.Unlock()
+
 	txid := c.TxIDGen()
 	_, err := c.MockInvoke(txid, method, arg)
 	return txid, err
 }
 
 func (c *ChaincodeAdapter) Query(method string, arg [][]byte) ([]byte, error) {
+
+	c.Lock()
+	defer c.Unlock()
+
 	return c.MockQuery(method, arg)
 }
