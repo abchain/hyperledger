@@ -10,8 +10,7 @@ import (
 	"math/big"
 )
 
-type TokenTx interface {
-	nonce.TokenNonceTx
+type TokenTxCore interface {
 	Init(amount *big.Int) error
 	Transfer(from []byte, to []byte, amount *big.Int) ([]byte, error)
 	Assign(to []byte, amount *big.Int) ([]byte, error)
@@ -20,6 +19,11 @@ type TokenTx interface {
 	//this is only used for inner call to register their address, have
 	//no effect on the status of module
 	TouchAddr([]byte) error
+}
+
+type TokenTx interface {
+	TokenTxCore
+	nonce.TokenNonceTx
 }
 
 type TokenConfig interface {

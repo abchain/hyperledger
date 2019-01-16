@@ -11,7 +11,7 @@ import (
 //Currying: except for createToken, most of the tx in multitoken formed by two continuous calling:
 //GetToken and then one of the methods in the returned TokenTx
 type MultiTokenTx interface {
-	GetToken(string) (generaltoken.TokenTx, error)
+	GetToken(string) (generaltoken.TokenTxCore, error)
 	CreateToken(string, *big.Int) error
 }
 
@@ -19,4 +19,8 @@ type baseMultiTokenTx struct {
 	*runtime.ChaincodeRuntime
 	nonce      []byte
 	tokenNonce nonce.TokenNonceTx
+}
+
+type TokenConfig interface {
+	NewTx(shim.ChaincodeStubInterface, []byte) MultiTokenTx
 }
