@@ -89,6 +89,10 @@ func newContract(contract map[string]int32, addr []byte) (*pb.Contract_s, error)
 	return pcon, nil
 }
 
+//if subscription is working within a chaincode along with the token, it should use
+//local mode so the contract address will not be a collision with external chaincode
+var LocalContractMode = false
+
 func hashContract(contract *pb.Contract_s, nonce []byte) (*tx.Address, error) {
 
 	var maphash []byte
@@ -122,7 +126,12 @@ func hashContract(contract *pb.Contract_s, nonce []byte) (*tx.Address, error) {
 		return nil, err
 	}
 
+	if !LocalContractMode {
+		hash = tx.NormalizeExternalHash(hash)
+	}
+
 	return tx.NewAddressFromHash(hash), nil
+
 }
 
 func (cn *baseContractTx) New(contract map[string]int32, addr []byte) ([]byte, error) {

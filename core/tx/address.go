@@ -58,6 +58,22 @@ func SetAddressInterfaceImpl(impl AddressInterface) {
 	}
 }
 
+func NormalizeHash(h []byte) []byte {
+	if len(h) < ADDRESS_HASH_LEN {
+		h = bytes.Join([][]byte{h, make([]byte, ADDRESS_HASH_LEN)}, nil)
+	}
+
+	return h[:ADDRESS_HASH_LEN]
+}
+
+// we need to define another type of address used for inter-chaincode calling,
+// such an address must be distinguished from the general addr built from
+// private key so any chaincode can not make collision with the user address
+
+func NormalizeExternalHash(h []byte) []byte {
+	return append([]byte{69}, NormalizeHash(h)...)
+}
+
 func NewAddressFromHash(h []byte) *Address {
 
 	if len(h) < ADDRESS_HASH_LEN {
@@ -67,7 +83,7 @@ func NewAddressFromHash(h []byte) *Address {
 	return &Address{
 		ADDRESS_VERSION,
 		networkId,
-		h[:ADDRESS_HASH_LEN],
+		h,
 	}
 }
 
@@ -86,7 +102,7 @@ func NewAddress(pub abcrypto.Verifier) (*Address, error) {
 		return nil, errors.New("AddressFromPublickKey: input null pointer")
 	}
 
-	return NewAddressFromHash(pub.Digest()), nil
+	return NewAddressFromHash(NormalizeHash(pub.Digest())), nil
 }
 
 func NewAddressFromPBMessage(addrProto *pb.TxAddr) (*Address, error) {
@@ -103,9 +119,9 @@ func NewAddressFromPBMessage(addrProto *pb.TxAddr) (*Address, error) {
 }
 
 const (
-	AddressPartByteSize   = ADDRESS_HASH_LEN + ADDRESS_VERSION
-	AddressVerifyCodeSize = ADDRESS_CRC_LEN
-	AddressFullByteSize   = AddressVerifyCodeSize + AddressPartByteSize
+	AddressRequirePartByteSize = ADDRESS_HASH_LEN + ADDRESS_VERSION
+	AddressVerifyCodeSize      = ADDRESS_CRC_LEN
+	// AddressFullByteSize   = AddressVerifyCodeSize + AddressPartByteSize
 )
 
 func GetAddrCheckSum(rb []byte) ([AddressVerifyCodeSize]byte, error) {
@@ -146,6 +162,12 @@ func (addr *Address) Dump() string {
 
 	return fmt.Sprintf("&{Version: %d, Network: %v, Hash: %v}",
 		addr.Version, addr.NetworkId, addr.Hash)
+}
+
+func (addr *Address) IsExternal() bool {
+
+	return len(addr.Hash) > ADDRESS_HASH_LEN && addr.Hash[0] == byte(69)
+
 }
 
 func (addr *Address) IsEqual(otherAddr *Address) bool {

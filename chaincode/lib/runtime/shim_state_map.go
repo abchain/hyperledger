@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"encoding/asn1"
+	"errors"
 	"hyperledger.abchain.org/chaincode/shim"
 )
 
@@ -39,6 +40,9 @@ func (w *shimStateMap) GetRaw(key string) ([]byte, error) {
 }
 
 func (w *shimStateMap) SetRaw(key string, raw []byte) error {
+	if key == "" {
+		return errors.New("Empty key is not allowed")
+	}
 	return w.stub.PutState(w.path+key, raw)
 }
 func (w *shimStateMap) Get(key string, m StorageObject) error {
@@ -60,6 +64,11 @@ func (w *shimStateMap) Get(key string, m StorageObject) error {
 }
 
 func (w *shimStateMap) Set(key string, m StorageObject) error {
+
+	if key == "" {
+		return errors.New("Empty key is not allowed")
+	}
+
 	raw, err := asn1.Marshal(m.Save())
 	if err != nil {
 		return err

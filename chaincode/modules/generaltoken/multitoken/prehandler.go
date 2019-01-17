@@ -1,41 +1,25 @@
-package generaltoken
+package multitoken
 
 import (
-	"github.com/golang/protobuf/proto"
-	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
+	"hyperledger.abchain.org/chaincode/modules/generaltoken"
 	txutil "hyperledger.abchain.org/core/tx"
 )
 
 type fundAddrCred struct {
-	*pb.SimpleFund
-	*pb.QueryToken
+	bind *basehandler
 }
 
-func FundAddrCred(msg proto.Message) fundAddrCred {
-
-	switch m := msg.(type) {
-	case *pb.SimpleFund:
-		return fundAddrCred{m, nil}
-	case *pb.QueryToken:
-		return fundAddrCred{nil, m}
-	default:
-		panic("Binding to wrong txhandler")
-	}
+func FundAddrCred(bindh *basehandler) fundAddrCred {
+	return fundAddrCred{bindh}
 
 }
 
 //and set it as RegistrarPreHandler for registrar
 func (m fundAddrCred) GetAddress() *txutil.Address {
 
-	addrpb := m.GetFrom()
-	if m.SimpleFund == nil {
-		addrpb = m.GetAddr()
-	}
+	m.bind.innerPrehandled()
 
-	addr, err := txutil.NewAddressFromPBMessage(addrpb)
-	if err != nil {
-		return nil
-	}
+	innerC := generaltoken.FundAddrCred(m.bind.inner.Msg())
 
-	return addr
+	return innerC.GetAddress()
 }

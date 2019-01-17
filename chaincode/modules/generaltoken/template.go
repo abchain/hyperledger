@@ -15,8 +15,21 @@ func GeneralAdminTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveTxs)
 	return
 }
 
-func InnerInvokingTemplate(ccname string, cfg *StandardTokenConfig) (ret tx.CollectiveTxs) {
+func GeneralInvokingTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveTxs) {
+
 	ret = tx.NewCollectiveTxs()
+
+	h := TransferHandler(cfg)
+	txh := &tx.ChaincodeTx{ccname, h, nil, nil}
+	txh.PreHandlers = append(txh.PreHandlers, tx.AddrCredVerifier{FundAddrCred(h.Msg()), nil})
+	ret[Method_Transfer] = txh
+	return
+}
+
+func ExtendInvokingTemplate(cts tx.CollectiveTxs, ccname string, cfg *StandardTokenConfig) (ret tx.CollectiveTxs) {
+	if h, ok := cts[Method_Transfer]; ok {
+		h.PreHandlers = append(fundH.PreHandlers, tx.InnerAddrVerifier{ib, FundAddrCred(fundH.Handler.Msg())})
+	}
 	ib := &tx.InnerAddrBase{cfg.Root, cfg.Config}
 
 	fundH := &tx.ChaincodeTx{ccname, TransferHandler(cfg), nil, nil}
@@ -27,17 +40,6 @@ func InnerInvokingTemplate(ccname string, cfg *StandardTokenConfig) (ret tx.Coll
 	touchH.PreHandlers = append(touchH.PreHandlers, tx.InnerAddrRegister{ib, FundAddrCred(touchH.Handler.Msg())})
 	ret[Method_TouchAddr] = touchH
 
-	return
-}
-
-func GeneralInvokingTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveTxs) {
-
-	ret = tx.NewCollectiveTxs()
-
-	h := TransferHandler(cfg)
-	txh := &tx.ChaincodeTx{ccname, h, nil, nil}
-	txh.PreHandlers = append(txh.PreHandlers, tx.AddrCredVerifier{FundAddrCred(h.Msg()), nil})
-	ret[Method_Transfer] = txh
 	return
 }
 

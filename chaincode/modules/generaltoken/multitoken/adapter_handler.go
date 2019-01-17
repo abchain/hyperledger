@@ -10,29 +10,26 @@ import (
 )
 
 type basehandler struct {
-	msg ccpb.MultiTokenMsg
+	msg        ccpb.MultiTokenMsg
+	inner      txh.TxHandler
+	prehandled error
 	TokenConfig
 }
 
-type GetTokenError struct {
+type getTokenError struct {
 	e error
 }
 
+type noError struct{}
+
+func (noError) Error() string { return "No error" }
+
 func (h *basehandler) Msg() proto.Message { return &h.msg }
-func (h *basehandler) NewTx(stub shim.ChaincodeStubInterface, nc []byte) generaltoken.TokenTx {
-	r, err := h.TokenConfig.NewTx(stub, nc).GetToken(h.msg.GetTokenName())
-	if err != nil {
-		panic(GetTokenError{err})
-	}
 
-	return r
-}
-
-func (h *basehandler) innerCall(ih txh.TxHandler, stub shim.ChaincodeStubInterface, parser txutil.Parser) (r []byte, e error) {
-
+func (h *basehandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) (b []byte, e error) {
 	defer func() {
 		r := recover()
-		if err, ok := r.(GetTokenError); ok {
+		if err, ok := r.(getTokenError); ok {
 			e = err.e
 			return
 		} else {
@@ -40,64 +37,69 @@ func (h *basehandler) innerCall(ih txh.TxHandler, stub shim.ChaincodeStubInterfa
 		}
 	}()
 
-	err := proto.Unmarshal(h.msg.GetTokenMsg(), ih.Msg())
-	if err != nil {
-		return nil, err
+	h.innerPrehandled()
+
+	if _, ok := h.prehandled.(noError); !ok {
+		return nil, h.prehandled
 	}
 
-	return ih.Call(stub, parser)
+	return h.inner.Call(stub, parser)
 }
 
-type transferHandler struct{ *basehandler }
-type assignHandler struct{ *basehandler }
-type tokenQueryHandler struct{ *basehandler }
-type touchHandler struct{ *basehandler }
-type globalQueryHandler struct{ *basehandler }
-type initHandler struct{ *basehandler }
+func (h *basehandler) NewTx(stub shim.ChaincodeStubInterface, nc []byte) generaltoken.TokenTx {
+	r, err := h.TokenConfig.NewTx(stub, nc).GetToken(h.msg.GetTokenName())
+	if err != nil {
+		panic(getTokenError{err})
+	}
 
-func TransferHandler(cfg TokenConfig) *transferHandler {
-	return &transferHandler{&basehandler{TokenConfig: cfg}}
+	return r
 }
 
-func AssignHandler(cfg TokenConfig) *assignHandler {
-	return &assignHandler{&basehandler{TokenConfig: cfg}}
+func (h *basehandler) innerPrehandled() {
+	if h.prehandled != nil {
+		return
+	}
+
+	err := proto.Unmarshal(h.msg.GetTokenMsg(), h.inner.Msg())
+	if err != nil {
+		h.prehandled = err
+	} else {
+		h.prehandled = noError{}
+	}
 }
 
-func TouchHandler() *touchHandler {
-	return &touchHandler{&basehandler{}}
+func TransferHandler(cfg TokenConfig) *basehandler {
+	bh := &basehandler{TokenConfig: cfg}
+	bh.inner = generaltoken.TransferHandler(bh)
+	return bh
 }
 
-func TokenQueryHandler(cfg TokenConfig) *tokenQueryHandler {
-	return &tokenQueryHandler{&basehandler{TokenConfig: cfg}}
-}
-func GlobalQueryHandler(cfg TokenConfig) *globalQueryHandler {
-	return &globalQueryHandler{&basehandler{TokenConfig: cfg}}
+func AssignHandler(cfg TokenConfig) *basehandler {
+	bh := &basehandler{TokenConfig: cfg}
+	bh.inner = generaltoken.AssignHandler(bh)
+	return bh
+
 }
 
-func InitHandler(cfg TokenConfig) *initHandler {
-	return &initHandler{&basehandler{TokenConfig: cfg}}
+func TouchHandler(cfg TokenConfig) *basehandler {
+	bh := &basehandler{TokenConfig: cfg}
+	bh.inner = generaltoken.TouchHandler()
+	return bh
 }
 
-func (h *transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	return h.innerCall(generaltoken.TransferHandler(h), stub, parser)
+func TokenQueryHandler(cfg TokenConfig) *basehandler {
+	bh := &basehandler{TokenConfig: cfg}
+	bh.inner = generaltoken.TokenQueryHandler(bh)
+	return bh
+}
+func GlobalQueryHandler(cfg TokenConfig) *basehandler {
+	bh := &basehandler{TokenConfig: cfg}
+	bh.inner = generaltoken.GlobalQueryHandler(bh)
+	return bh
 }
 
-func (h *assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	return h.innerCall(generaltoken.AssignHandler(h), stub, parser)
-}
-
-func (h *touchHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	return h.innerCall(generaltoken.TouchHandler(), stub, parser)
-}
-
-func (h *tokenQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	return h.innerCall(generaltoken.TokenQueryHandler(h), stub, parser)
-}
-
-func (h *globalQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	return h.innerCall(generaltoken.GlobalQueryHandler(h), stub, parser)
-}
-
-func (h *initHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	return h.innerCall(generaltoken.InitHandler(h), stub, parser)
+func InitHandler(cfg TokenConfig) *basehandler {
+	bh := &basehandler{TokenConfig: cfg}
+	bh.inner = generaltoken.InitHandler(bh)
+	return bh
 }

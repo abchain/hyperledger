@@ -53,6 +53,9 @@ func (itxh CollectiveTxs_InnerSupport) Invoke(stub shim.ChaincodeStubInterface, 
 
 }
 
+//this module help to bind a specified addr with a chaincode, so other chaincode
+//could not touch this address
+
 type InnerAddrBase struct {
 	Root string
 	*runtime.Config
@@ -108,7 +111,12 @@ func (v InnerAddrVerifier) PreHandling(stub shim.ChaincodeStubInterface, functio
 
 	rt := v.rt(stub)
 
-	cc, err := rt.Storage.GetRaw(v.GetAddress().ToString())
+	addr := v.GetAddress()
+	if !addr.IsExternal() {
+		return fmt.Errorf("Is not external address")
+	}
+
+	cc, err := rt.Storage.GetRaw(addr.ToString())
 	if err != nil {
 		return err
 	}

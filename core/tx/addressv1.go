@@ -18,7 +18,7 @@ func (m AddressInterfaceV1) NewAddressFromString(addressStr string) (*Address, e
 		return nil, err
 	}
 
-	if len(data) != AddressFullByteSize {
+	if len(data) < AddressRequirePartByteSize+AddressVerifyCodeSize {
 		return nil, errors.New("Invalid address size")
 	}
 
@@ -26,19 +26,21 @@ func (m AddressInterfaceV1) NewAddressFromString(addressStr string) (*Address, e
 		return nil, errors.New("Not current network")
 	}
 
-	ck, err := GetAddrCheckSum(data[:AddressPartByteSize])
+	ckborder := len(data) - AddressVerifyCodeSize
+
+	ck, err := GetAddrCheckSum(data[:ckborder])
 	if err != nil {
 		return nil, err
 	}
 
-	if bytes.Compare(ck[:], data[AddressPartByteSize:]) != 0 {
+	if bytes.Compare(ck[:], data[ckborder:]) != 0 {
 		return nil, errors.New("checksum error")
 	}
 
 	return &Address{
 		ADDRESS_VERSION,
 		data[0],
-		data[1:AddressPartByteSize],
+		data[1:ckborder],
 	}, nil
 }
 
@@ -47,7 +49,7 @@ func (m AddressInterfaceV1) Serialize(addr *Address) []byte {
 
 	fullbytes := bytes.Join([][]byte{[]byte{addr.NetworkId}, addr.Hash}, nil)
 
-	if len(fullbytes) != AddressPartByteSize {
+	if len(fullbytes) < AddressRequirePartByteSize {
 		return nil
 	}
 
