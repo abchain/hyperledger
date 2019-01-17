@@ -4,6 +4,7 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/runtime"
 	"hyperledger.abchain.org/chaincode/lib/txhandle"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
+	tokenNc "hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	_ "hyperledger.abchain.org/chaincode/modules/registrar"
 	share "hyperledger.abchain.org/chaincode/modules/sharesubscription"
 )
@@ -24,11 +25,14 @@ func NewChaincode(debugMode bool) *AECC {
 
 	tokencfg := token.NewConfig(CC_TAG)
 	tokencfg.Config = ret.runtimeCfg
+	tokenNccfg := tokenNc.NewConfig(CC_TAG)
+	tokenNccfg.Config = ret.runtimeCfg
 
 	handlers := token.GeneralAdminTemplate(CC_NAME, tokencfg)
 	handlers = handlers.MustMerge(
 		token.GeneralInvokingTemplate(CC_NAME, tokencfg),
 		token.GeneralQueryTemplate(CC_NAME, tokencfg),
+		tokenNc.GeneralTemplate(CC_NAME, tokenNccfg),
 	)
 
 	sharecfg := share.NewConfig(CC_TAG)

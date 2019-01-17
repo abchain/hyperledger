@@ -66,3 +66,9 @@ message TokenGlobalData{
 	bytes unassignedTokens = 11;
 	 
 }
+
+message MultiTokenMsg {
+
+	string tokenName = 1;
+	bytes tokenMsg = 2;
+}

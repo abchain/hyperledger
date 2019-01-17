@@ -6,7 +6,7 @@ import (
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
-	"hyperledger.abchain.org/core/crypto"
+	"hyperledger.abchain.org/core/crypto/ecdsa"
 	tx "hyperledger.abchain.org/core/tx"
 	"math/big"
 	"testing"
@@ -72,7 +72,7 @@ func initCond(mutilcc bool) {
 	shareCC := GeneralInvokingTemplate(test_ccname, cfg).MustMerge(GeneralQueryTemplate(test_ccname, querycfg))
 
 	tokenCC := token.GeneralAdminTemplate(test_ccname, tokencfg)
-	tokenCC = tokenCC.MustMerge(token.LimitedQueryTemplate(test_ccname, tokenQuerycfg))
+	tokenCC = tokenCC.MustMerge(token.GeneralQueryTemplate(test_ccname, tokenQuerycfg))
 
 	if mutilcc {
 
@@ -139,7 +139,7 @@ func testContractBase(t *testing.T) {
 	tokenSpout := &token.GeneralCall{tokenspoutcore}
 	spout := &GeneralCall{spoutcore}
 
-	priv, err := crypto.NewPrivatekey(crypto.DefaultCurveType)
+	priv, err := ecdsa.NewDefaultPrivatekey()
 	spoutcore.Credgenerator = txgen.NewSingleKeyCred(priv)
 
 	if err != nil {

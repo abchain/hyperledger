@@ -119,6 +119,16 @@ func TestDeployCc(t *testing.T) {
 	testDeployCc(t)
 }
 
+type fullGeneralCall struct {
+	*GeneralCall
+	nonce.TokenNonceTx
+}
+
+func NewFullGeneralCall(core txgen.TxCaller) TokenTxExt {
+
+	return &fullGeneralCall{&GeneralCall{core}, &nonce.GeneralCall{core}}
+}
+
 func testAssignCc(t *testing.T) {
 
 	spout := NewFullGeneralCall(spoutcore)

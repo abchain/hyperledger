@@ -49,10 +49,10 @@ func (token *baseTokenTx) txNonce(txnonce []byte, from []byte, to []byte, amount
 
 }
 
-func (token *baseTokenTx) Nonce(key []byte) (error, *pb.NonceData_s) {
-	return token.tokenNonce.Nonce(key)
-}
+// func (token *baseTokenTx) Nonce(key []byte) (error, *pb.NonceData_s) {
+// 	return token.tokenNonce.Nonce(key)
+// }
 
-func (token *baseTokenTx) Add(key []byte, amount *big.Int, from *pb.FuncRecord, to *pb.FuncRecord) error {
-	return token.tokenNonce.Add(key, amount, from, to)
-}
+// func (token *baseTokenTx) Add(key []byte, amount *big.Int, from *pb.FuncRecord, to *pb.FuncRecord) error {
+// 	return token.tokenNonce.Add(key, amount, from, to)
+// }

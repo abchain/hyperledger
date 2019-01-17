@@ -6,6 +6,7 @@ import (
 	"github.com/gocraft/web"
 	"hyperledger.abchain.org/applications/util"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
+	tokenNonce "hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	tx "hyperledger.abchain.org/core/tx"
 )
 
@@ -278,7 +279,7 @@ type FuncRecord struct {
 
 func (s *Fund) QueryTransfer(rw web.ResponseWriter, req *web.Request) {
 
-	token := token.NewFullGeneralCall(s.TxGenerator)
+	nc := tokenNonce.GeneralCall{s.TxGenerator}
 
 	nonce, err := s.DecodeEntry(req.PathParams[FundID])
 
@@ -287,7 +288,7 @@ func (s *Fund) QueryTransfer(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	err, data := token.Nonce([]byte(nonce))
+	err, data := nc.Nonce([]byte(nonce))
 	if err != nil {
 		s.NormalError(rw, err)
 		return

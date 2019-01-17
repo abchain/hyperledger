@@ -12,15 +12,15 @@ type GeneralCall struct {
 	txgen.TxCaller
 }
 
-type FullGeneralCall struct {
-	*GeneralCall
-	nonce.TokenNonceTx
-}
+// type FullGeneralCall struct {
+// 	*GeneralCall
+// 	nonce.TokenNonceTx
+// }
 
-func NewFullGeneralCall(core txgen.TxCaller) *FullGeneralCall {
+// func NewFullGeneralCall(core txgen.TxCaller) *FullGeneralCall {
 
-	return &FullGeneralCall{&GeneralCall{core}, &nonce.GeneralCall{core}}
-}
+// 	return &FullGeneralCall{&GeneralCall{core}, &nonce.GeneralCall{core}}
+// }
 
 const (
 	Method_Init        = "TOKEN.INIT"

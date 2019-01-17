@@ -10,7 +10,7 @@ import (
 	"math/big"
 )
 
-type TokenTxCore interface {
+type TokenTx interface {
 	Init(amount *big.Int) error
 	Transfer(from []byte, to []byte, amount *big.Int) ([]byte, error)
 	Assign(to []byte, amount *big.Int) ([]byte, error)
@@ -21,20 +21,13 @@ type TokenTxCore interface {
 	TouchAddr([]byte) error
 }
 
-type TokenTx interface {
-	TokenTxCore
+type TokenTxExt interface {
+	TokenTx
 	nonce.TokenNonceTx
 }
 
 type TokenConfig interface {
 	NewTx(shim.ChaincodeStubInterface, []byte) TokenTx
-}
-
-//the local config must provide both a executable interface and the sub-config (corresponding its sub interface)
-//for local handler building
-type LocalConfig interface {
-	TokenConfig
-	Nonce() nonce.NonceConfig
 }
 
 type StandardTokenConfig struct {
@@ -70,14 +63,14 @@ func (cfg *StandardTokenConfig) NewTx(stub shim.ChaincodeStubInterface, nc []byt
 
 }
 
-func (cfg *StandardTokenConfig) Nonce() nonce.NonceConfig { return cfg.NonceCfg }
+//func (cfg *StandardTokenConfig) Nonce() nonce.NonceConfig { return cfg.NonceCfg }
 
 type InnerInvokeConfig struct {
 	txgen.InnerChaincode
 }
 
 func (c InnerInvokeConfig) NewTx(stub shim.ChaincodeStubInterface, nc []byte) TokenTx {
-	return NewFullGeneralCall(c.NewInnerTxInterface(stub, nc))
+	return &GeneralCall{c.NewInnerTxInterface(stub, nc)}
 }
 
 func toAmount(a []byte) *big.Int {
