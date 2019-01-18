@@ -19,8 +19,6 @@ const (
 
 type Subscription struct {
 	*util.FabricRPCCore
-	token token.GeneralCall
-	share share.GeneralCall
 }
 
 type SubscriptionRouter struct {

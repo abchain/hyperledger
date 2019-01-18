@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	TokenName   = "tokenName"
 	FundID      = "fundID"
 	AddressFlag = "address"
 	Simple      = "simple"
@@ -18,6 +19,7 @@ const (
 
 type Fund struct {
 	*util.FabricRPCCore
+	token token.TokenTx
 }
 
 type FundRouter struct {
@@ -31,7 +33,6 @@ func CreateFundRouter(root util.TxRouter, path string) FundRouter {
 }
 
 func (r FundRouter) Init() FundRouter {
-
 	r.Middleware((*Fund).InitCaller)
 	return r
 }
@@ -58,6 +59,7 @@ func (r FundRouter) BuildGlobalRoutes() {
 func (s *Fund) InitCaller(rw web.ResponseWriter,
 	req *web.Request, next web.NextMiddlewareFunc) {
 
+	s.token = &token.GeneralCall{s.TxGenerator}
 	next(rw, req)
 }
 
@@ -70,7 +72,7 @@ type FundEntry struct {
 func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 
 	logger.Debug("Received create fund request")
-	token := token.GeneralCall{s.TxGenerator}
+	//token := token.GeneralCall{s.TxGenerator}
 
 	amount, ok := big.NewInt(0).SetString(req.PostFormValue("amount"), 0)
 
@@ -98,13 +100,13 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 
 	//s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 
-	nonceid, err := token.Transfer(fromAddr.Hash, toAddr.Hash, amount)
+	nonceid, err := s.token.Transfer(fromAddr.Hash, toAddr.Hash, amount)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	txid, err := token.Result().TxID()
+	txid, err := s.TxGenerator.Result().TxID()
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -119,8 +121,6 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 
 func (s *Fund) InitGlobal(rw web.ResponseWriter, req *web.Request) {
 
-	token := token.GeneralCall{s.TxGenerator}
-
 	//token deployment
 	total, ok := big.NewInt(0).SetString(req.PostFormValue("total"), 0)
 	if !ok || total.Int64() == 0 {
@@ -128,13 +128,13 @@ func (s *Fund) InitGlobal(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	err := token.Init(total)
+	err := s.token.Init(total)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	txid, err := token.Result().TxID()
+	txid, err := s.TxGenerator.Result().TxID()
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -149,8 +149,6 @@ func (s *Fund) InitGlobal(rw web.ResponseWriter, req *web.Request) {
 
 func (s *Fund) Assign(rw web.ResponseWriter, req *web.Request) {
 
-	token := token.GeneralCall{s.TxGenerator}
-
 	amount, ok := big.NewInt(0).SetString(req.PostFormValue("amount"), 0)
 
 	if !ok || (amount.IsUint64() && amount.Uint64() == 0) {
@@ -164,13 +162,13 @@ func (s *Fund) Assign(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	nonceid, err := token.Assign(toAddr.Hash, amount)
+	nonceid, err := s.token.Assign(toAddr.Hash, amount)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	txid, err := token.Result().TxID()
+	txid, err := s.TxGenerator.Result().TxID()
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -191,9 +189,7 @@ type globalEntry struct {
 
 func (s *Fund) QueryGlobal(rw web.ResponseWriter, req *web.Request) {
 
-	token := token.GeneralCall{s.TxGenerator}
-
-	err, data := token.Global()
+	err, data := s.token.Global()
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -213,8 +209,6 @@ type balanceEntry struct {
 
 func (s *Fund) Query(rw web.ResponseWriter, req *web.Request) {
 
-	token := token.GeneralCall{s.TxGenerator}
-
 	if s.ActivePrivk == nil {
 		s.NormalErrorF(rw, -100, "No account is specified")
 		return
@@ -226,7 +220,7 @@ func (s *Fund) Query(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	err, data := token.Account(addr.Hash)
+	err, data := s.token.Account(addr.Hash)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -240,15 +234,13 @@ func (s *Fund) Query(rw web.ResponseWriter, req *web.Request) {
 
 func (s *Fund) QueryAddress(rw web.ResponseWriter, req *web.Request) {
 
-	token := token.GeneralCall{s.TxGenerator}
-
 	addr, err := tx.NewAddressFromString(req.PathParams[AddressFlag])
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	err, data := token.Account(addr.Hash)
+	err, data := s.token.Account(addr.Hash)
 	if err != nil {
 		s.NormalError(rw, err)
 		return

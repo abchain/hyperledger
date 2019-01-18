@@ -5,7 +5,15 @@ import (
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
-	"math/big"
+)
+
+const (
+	Method_Init        = "M" + generaltoken.Method_Init
+	Method_Transfer    = "M" + generaltoken.Method_Transfer
+	Method_Assign      = "M" + generaltoken.Method_Assign
+	Method_TouchAddr   = "M" + generaltoken.Method_TouchAddr
+	Method_QueryToken  = "M" + generaltoken.Method_QueryToken
+	Method_QueryGlobal = "M" + generaltoken.Method_QueryGlobal
 )
 
 type GeneralCall struct {
@@ -25,7 +33,7 @@ func (d dummyCaller) Invoke(method string, msg proto.Message) error {
 		return err
 	}
 
-	return d.TxCaller.Invoke(method, &pb.MultiTokenMsg{TokenName: d.name, TokenMsg: wrapmsg})
+	return d.TxCaller.Invoke("M"+method, &pb.MultiTokenMsg{TokenName: d.name, TokenMsg: wrapmsg})
 
 }
 
@@ -36,7 +44,7 @@ func (d dummyCaller) Query(method string, msg proto.Message) (chan txgen.QueryRe
 		return nil, err
 	}
 
-	return d.TxCaller.Query(method, &pb.MultiTokenMsg{TokenName: d.name, TokenMsg: wrapmsg})
+	return d.TxCaller.Query("M"+method, &pb.MultiTokenMsg{TokenName: d.name, TokenMsg: wrapmsg})
 
 }
 
@@ -47,17 +55,5 @@ func (i *GeneralCall) GetToken(name string) (generaltoken.TokenTx, error) {
 	}
 
 	return &generaltoken.GeneralCall{dummyCaller{name, i}}, nil
-
-}
-
-func (i *GeneralCall) CreateToken(name string, amount *big.Int) error {
-
-	if err := baseNameVerifier(name); err != nil {
-		return err
-	}
-
-	subg := generaltoken.GeneralCall{dummyCaller{name, i}}
-
-	return subg.Init(amount)
 
 }

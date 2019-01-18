@@ -119,7 +119,7 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ strin
 		done := false
 		//verified by inspectors, finnaly by incomming credential
 		for _, inp := range v.inspectors {
-			if inp.Verify(addr) != nil {
+			if inp.Verify(addr) == nil {
 				done = true
 				break
 			}

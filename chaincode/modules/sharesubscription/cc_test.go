@@ -78,7 +78,7 @@ func initCond(mutilcc bool) {
 
 		tokenCfg := token.NewConfig(test_tag)
 		tokenCC = tokenCC.MustMerge(token.GeneralInvokingTemplate(test_ccname, tokenCfg))
-		token.ExtendInvokingTemplate(tokenCC, test_ccname, tokenCfg)
+		tokenCC = token.ExtendInvokingTemplate(tokenCC, test_ccname, tokenCfg)
 
 		tokenbolt = rpc.NewLocalChaincode(txhandle.CollectiveTxs_InnerSupport(tokenCC))
 		tokenbolt.Name = "tokenCC"
