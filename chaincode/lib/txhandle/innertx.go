@@ -59,11 +59,14 @@ func (itxh CollectiveTxs_InnerSupport) Invoke(stub shim.ChaincodeStubInterface, 
 type InnerAddrBase struct {
 	Root string
 	*runtime.Config
+	//runtime: it catch information for manager to work as an addrverifier
+	callingccName string
+	rt            *runtime.ChaincodeRuntime
 }
 
-func (i *InnerAddrBase) rt(stub shim.ChaincodeStubInterface) *runtime.ChaincodeRuntime {
+func (i *InnerAddrBase) getRT(stub shim.ChaincodeStubInterface) {
 	rrt := runtime.NewRuntime(i.Root, stub, i.Config)
-	return rrt.SubRuntime("inneraddr")
+	i.rt = rrt.SubRuntime("inneraddr")
 }
 
 type InnerAddrRegister struct {
@@ -71,36 +74,58 @@ type InnerAddrRegister struct {
 	ParseAddress
 }
 
-func (v InnerAddrRegister) PreHandling(stub shim.ChaincodeStubInterface, function string, p txutil.Parser) error {
+func (v InnerAddrRegister) PostHandling(stub shim.ChaincodeStubInterface, function string, p txutil.Parser, retbt []byte) ([]byte, error) {
 	if !strings.HasPrefix(function, ".") {
-		return nil
+		return retbt, nil
 	}
 
 	ivf, err := impl.GetInnerInvoke(stub)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	rt := v.rt(stub)
+	v.getRT(stub)
 	addrs := v.GetAddress().ToString()
 
-	ret, err := rt.Storage.GetRaw(addrs)
+	ret, err := v.rt.Storage.GetRaw(addrs)
 	if err != nil {
-		return err
+		return nil, err
 	} else if len(ret) > 0 {
-		return fmt.Errorf("Registry duplicated address")
+		return nil, fmt.Errorf("Registry duplicated address")
 	}
 
-	return rt.Storage.SetRaw(addrs, []byte(ivf.GetCallingChaincodeName()))
+	err = v.rt.Storage.SetRaw(addrs, []byte(ivf.GetCallingChaincodeName()))
+	if err != nil {
+		return nil, err
+	}
+
+	return retbt, nil
 }
 
 type InnerAddrVerifier struct {
 	*InnerAddrBase
-	ParseAddress
+}
+
+func (v InnerAddrVerifier) Verify(addr *txutil.Address) error {
+	if v.callingccName == "" {
+		return nil
+	}
+
+	cc, err := v.rt.Storage.GetRaw(addr.ToString())
+	if err != nil {
+		return err
+	}
+
+	if strings.Compare(string(cc), v.callingccName) != 0 {
+		return fmt.Errorf("Addr is not from registered cc")
+	}
+
+	return nil
 }
 
 func (v InnerAddrVerifier) PreHandling(stub shim.ChaincodeStubInterface, function string, p txutil.Parser) error {
 	if !strings.HasPrefix(function, ".") {
+		v.callingccName = ""
 		return nil
 	}
 
@@ -109,21 +134,8 @@ func (v InnerAddrVerifier) PreHandling(stub shim.ChaincodeStubInterface, functio
 		return err
 	}
 
-	rt := v.rt(stub)
-
-	addr := v.GetAddress()
-	if !addr.IsExternal() {
-		return fmt.Errorf("Is not external address")
-	}
-
-	cc, err := rt.Storage.GetRaw(addr.ToString())
-	if err != nil {
-		return err
-	}
-
-	if strings.Compare(string(cc), ivf.GetCallingChaincodeName()) != 0 {
-		return fmt.Errorf("Addr is not from registered cc")
-	}
+	v.callingccName = ivf.GetCallingChaincodeName()
+	v.getRT(stub)
 
 	return nil
 }

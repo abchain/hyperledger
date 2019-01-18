@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/golang/protobuf/proto"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
+	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
 )
 
@@ -33,7 +34,7 @@ func (h newContractAddrCred) GetAddress() *txutil.Address {
 
 type redeemContractAddrCred struct {
 	*pb.RedeemContract
-	//runtime data
+
 	constructMode  bool
 	specifiedAddrs map[string]bool
 	runtimeErr     error
@@ -49,46 +50,35 @@ func NewRedeemContractAddrCred(msg proto.Message) *redeemContractAddrCred {
 	return &redeemContractAddrCred{RedeemContract: m}
 }
 
-//in match mode, redeem take any address found in credentials and omit the Redeem in msg
-func (h *redeemContractAddrCred) Match(addr *txutil.Address) bool {
-
+//this module will first catch the runtime data (as prehandler) to collect redeem address (if required), then act as verifyer,
+func (h *redeemContractAddrCred) PreHandling(_ shim.ChaincodeStubInterface, _ string, parser txutil.Parser) error {
 	if len(h.GetRedeems()) == 0 {
-		h.constructMode = true
-	} else {
-		//build matching table
-		h.specifiedAddrs = make(map[string]bool)
-		for _, addrpb := range h.GetRedeems() {
 
-			addr, err := txutil.NewAddressFromPBMessage(addrpb)
+		cred := parser.GetAddrCredential()
+		if cred == nil {
+			return errors.New("Could not found which addresses should be redeem to")
+		}
+
+		for _, pk := range cred.ListCredPubkeys() {
+			addr, err := txutil.NewAddress(pk)
 			if err != nil {
-				h.runtimeErr = err
-				return false
+				return err
 			}
-			h.specifiedAddrs[addr.ToString()] = true
+
+			h.Redeems = append(h.Redeems, addr.PBMessage())
 		}
 	}
 
-	if h.constructMode {
-		h.Redeems = append(h.Redeems, addr.PBMessage())
-		return true
-	} else {
-		addrs := addr.ToString()
-		_, ok := h.specifiedAddrs[addrs]
-		delete(h.specifiedAddrs, addrs)
-		return ok
-	}
+	return nil
 }
 
-func (h *redeemContractAddrCred) Next(last bool) bool { return h.runtimeErr == nil }
+func (h *redeemContractAddrCred) ListAddress() (ret []*txutil.Address) {
 
-func (h *redeemContractAddrCred) Final() error {
-	if h.runtimeErr != nil {
-		return h.runtimeErr
+	for _, redeemAddr := range h.GetRedeems() {
+		if addr, err := txutil.NewAddressFromPBMessage(redeemAddr); err != nil {
+			ret = append(ret, addr)
+		}
 	}
 
-	if len(h.specifiedAddrs) != 0 {
-		return errors.New("No enough creds")
-	}
-
-	return nil
+	return
 }

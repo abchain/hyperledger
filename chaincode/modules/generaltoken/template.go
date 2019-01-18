@@ -21,26 +21,25 @@ func GeneralInvokingTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveT
 
 	h := TransferHandler(cfg)
 	txh := &tx.ChaincodeTx{ccname, h, nil, nil}
-	txh.PreHandlers = append(txh.PreHandlers, tx.AddrCredVerifier{FundAddrCred(h.Msg()), nil})
+	txh.PreHandlers = append(txh.PreHandlers, tx.NewAddrCredVerifier(FundAddrCred(h.Msg()), nil))
 	ret[Method_Transfer] = txh
 	return
 }
 
-func ExtendInvokingTemplate(cts tx.CollectiveTxs, ccname string, cfg *StandardTokenConfig) (ret tx.CollectiveTxs) {
-	if h, ok := cts[Method_Transfer]; ok {
-		h.PreHandlers = append(fundH.PreHandlers, tx.InnerAddrVerifier{ib, FundAddrCred(fundH.Handler.Msg())})
-	}
-	ib := &tx.InnerAddrBase{cfg.Root, cfg.Config}
+func ExtendInvokingTemplate(cts tx.CollectiveTxs, ccname string, cfg *StandardTokenConfig) tx.CollectiveTxs {
 
-	fundH := &tx.ChaincodeTx{ccname, TransferHandler(cfg), nil, nil}
-	fundH.PreHandlers = append(fundH.PreHandlers, tx.InnerAddrVerifier{ib, FundAddrCred(fundH.Handler.Msg())})
-	ret[Method_Transfer] = fundH
+	ib := &tx.InnerAddrBase{Root: cfg.Root, Config: cfg.Config}
+
+	if h, ok := cts[Method_Transfer]; ok {
+		tx.AttachAddrVerifier(h.PreHandlers, tx.InnerAddrVerifier{ib})
+		h.PreHandlers = append([]tx.TxPreHandler{tx.InnerAddrVerifier{ib}}, h.PreHandlers...)
+	}
 
 	touchH := &tx.ChaincodeTx{ccname, TouchHandler(), nil, nil}
-	touchH.PreHandlers = append(touchH.PreHandlers, tx.InnerAddrRegister{ib, FundAddrCred(touchH.Handler.Msg())})
-	ret[Method_TouchAddr] = touchH
+	touchH.PostHandlers = append(touchH.PostHandlers, tx.InnerAddrRegister{ib, FundAddrCred(touchH.Handler.Msg())})
+	cts[Method_TouchAddr] = touchH
 
-	return
+	return cts
 }
 
 func GeneralQueryTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveTxs) {

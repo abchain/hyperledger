@@ -65,88 +65,74 @@ type ParseAddress interface {
 	GetAddress() *txutil.Address
 }
 
-//matchAddress do not require the interface has immutable nature
-//side-effect is allowed for "anchored" the matched/unmatched result for the following process
-type MatchAddress interface {
-	Match(*txutil.Address) bool
-	Next() bool
-	Final() error
+type ListAddresses interface {
+	ListAddress() []*txutil.Address
 }
 
-//Verify only one address and its corresponding cred
+type AddrVerifier interface {
+	Verify(*txutil.Address) error
+}
+
+type AddrCredInspector interface {
+	AddVerifier(AddrVerifier)
+}
+
+//Verify addresses which the interface required
 //One of the interface is used, And interface is tried from top to bottom
-type AddrCredVerifier struct {
+type addrCredVerifier struct {
 	ParseAddress
-	MatchAddress
+	ListAddresses
+	inspectors []AddrVerifier
 }
 
-func (v AddrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
+func NewAddrCredVerifier(pa ParseAddress, la ListAddresses) *addrCredVerifier {
+	return &addrCredVerifier{pa, la, nil}
+}
 
-	if v.ParseAddress == nil && v.MatchAddress == nil {
+func AttachAddrVerifier(phs []TxPreHandler, v AddrVerifier) {
+	for _, ph := range phs {
+		if phA, ok := ph.(AddrCredInspector); ok {
+			phA.AddVerifier(v)
+		}
+	}
+}
+
+func (v *addrCredVerifier) AddVerifier(vv AddrVerifier) { v.inspectors = append(v.inspectors, vv) }
+
+func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
+
+	if v.ParseAddress == nil && v.ListAddresses == nil {
 		panic("Uninit interface")
+	}
+
+	var addrs []*txutil.Address
+	if v.ParseAddress != nil {
+		addrs = append(addrs, v.GetAddress())
+	} else {
+		addrs = v.ListAddress()
 	}
 
 	cred := tx.GetAddrCredential()
 
-	if cred == nil {
-		return fmt.Errorf("Tx contains no credentials")
-	}
+	for _, addr := range addrs {
 
-	var e error
-
-	if v.ParseAddress != nil {
-		if err := tryAddrParser(v.ParseAddress, cred); err == nil {
-			return nil
-		} else {
-			e = err
-		}
-	}
-
-	if v.MatchAddress != nil {
-		if err := tryAddrMatcher(v.MatchAddress, cred); err == nil {
-			return nil
-		} else {
-			e = err
-		}
-	}
-
-	return e
-}
-
-func tryAddrParser(v ParseAddress, cred txutil.AddrCredentials) error {
-
-	addr := v.GetAddress()
-
-	if addr == nil {
-		return fmt.Errorf("Invalid address")
-	}
-
-	return cred.Verify(*addr)
-}
-
-func tryAddrMatcher(v MatchAddress, cred txutil.AddrCredentials) (err error) {
-
-	allpks := cred.ListCredPubkeys()
-
-	defer func() {
-		err = v.Final()
-	}()
-
-	for i, pk := range allpks {
-
-		if i > 0 && !v.Next() {
-			return
-		}
-
-		addr, err := txutil.NewAddress(pk)
-		if err != nil {
-			return err
-		}
-		if v.Match(addr) {
-			//match!
-			if err := cred.Verify(*addr); err != nil {
-				return err
+		done := false
+		//verified by inspectors, finnaly by incomming credential
+		for _, inp := range v.inspectors {
+			if inp.Verify(addr) != nil {
+				done = true
+				break
 			}
+		}
+
+		if !done && cred != nil {
+			if cred.Verify(*addr) == nil {
+				done = true
+			}
+		}
+
+		if !done {
+			return fmt.Errorf("Addr [%s] has no credential", addr.ToString())
 		}
 	}
 
