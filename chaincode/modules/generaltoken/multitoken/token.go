@@ -1,7 +1,7 @@
 package multitoken
 
 import (
-	"errors"
+	"fmt"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken"
 	"regexp"
 )
@@ -11,7 +11,7 @@ var baseVerifier = regexp.MustCompile(`[A-Za-z0-9]{4,16}`)
 func baseNameVerifier(name string) error {
 	ret := baseVerifier.FindString(name)
 	if len(ret) < len(name) {
-		return errors.New("Token name contain invalid part")
+		return fmt.Errorf("Token name [%s] contain invalid part", name)
 	}
 
 	return nil

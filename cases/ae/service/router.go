@@ -46,23 +46,31 @@ func buildRouter() *web.Router {
 	apirouter := util.CreateTxRouter(rpcrouter, "").Init(defaultRpcConfig.GetCCName())
 	localrouter := util.CreateTxRouter(rpcrouter, "data").InitLocalCall(defaultRpcConfig.GetCCName())
 
+	buildBusiness := func(root util.TxRouter) {
+
+		//assign
+		mainsrv.CreateFundRouter(root, "assign").Init().BuildGlobalRoutes()
+		mainsrv.CreateFundRouter(root, mainsrv.TokenNamePath+"/assign").Init().BuildGlobalRoutes()
+
+		//fund
+		mainsrv.CreateFundRouter(root, "fund").Init().BuildFundRoutes()
+		mainsrv.CreateFundRouter(root, mainsrv.TokenNamePath+"/fund").Init().BuildFundRoutes()
+
+		//address
+		mainsrv.CreateFundRouter(root, "address").Init().BuildAddressRoutes()
+		mainsrv.CreateFundRouter(root, mainsrv.TokenNamePath+"/address").Init().BuildAddressRoutes()
+
+		//share
+		mainsrv.CreatSubscriptionRouter(root, "subscription").Init().BuildRoutes()
+
+		//registrar
+		regsrv.CreatRegistrarRouter(root, "registrar").Init().BuildRoutes()
+
+	}
+
 	mainsrv.InitTxRouterWithWallet(apirouter, defaultWallet)
-
-	//assign
-	mainsrv.CreateFundRouter(apirouter, "assign").Init().BuildGlobalRoutes()
-
-	//fund
-	mainsrv.CreateFundRouter(apirouter, "fund").Init().BuildFundRoutes()
-	mainsrv.CreateFundRouter(localrouter, "fund").Init().BuildFundRoutes()
-
-	//address
-	mainsrv.CreateFundRouter(apirouter, "address").Init().BuildAddressRoutes()
-
-	//share
-	mainsrv.CreatSubscriptionRouter(apirouter, "subscription").Init().BuildRoutes()
-
-	//registrar
-	regsrv.CreatRegistrarRouter(apirouter, "registrar").Init().BuildRoutes()
+	buildBusiness(apirouter)
+	buildBusiness(localrouter)
 
 	// NotFound
 	root.NotFound(notFound)

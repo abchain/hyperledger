@@ -38,6 +38,7 @@ func NewChaincode(debugMode bool) *AECC {
 
 	mtokencfg := mtoken.ConfigFromToken(tokencfg)
 	handlers = handlers.MustMerge(
+		mtoken.GeneralAdminTemplate(CC_NAME, mtokencfg),
 		mtoken.GeneralInvokingTemplate(CC_NAME, mtokencfg),
 		mtoken.GeneralQueryTemplate(CC_NAME, mtokencfg),
 	)

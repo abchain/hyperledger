@@ -29,7 +29,9 @@ func (h *basehandler) Msg() proto.Message { return &h.msg }
 func (h *basehandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) (b []byte, e error) {
 	defer func() {
 		r := recover()
-		if err, ok := r.(getTokenError); ok {
+		if r == nil {
+			return
+		} else if err, ok := r.(getTokenError); ok {
 			e = err.e
 			return
 		} else {
