@@ -9,6 +9,7 @@ import (
 	"hyperledger.abchain.org/applications/blockchain"
 	regsrv "hyperledger.abchain.org/applications/supervise/service"
 	"hyperledger.abchain.org/applications/util"
+	"hyperledger.abchain.org/cases/ae/chaincode/cc"
 	"strings"
 )
 
@@ -55,6 +56,10 @@ func buildRouter() *web.Router {
 		//fund
 		mainsrv.CreateFundRouter(root, "fund").Init().BuildFundRoutes()
 		mainsrv.CreateFundRouter(root, mainsrv.TokenNamePath+"/fund").Init().BuildFundRoutes()
+
+		//fundbatch
+		batchroot := util.CreateBatchRouter(root, "adv").Init(chaincode.CC_BATCH)
+		mainsrv.CreateFundBatchRouter(batchroot, "").BuildRoutes()
 
 		//address
 		mainsrv.CreateFundRouter(root, "address").Init().BuildAddressRoutes()

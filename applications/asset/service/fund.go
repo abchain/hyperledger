@@ -78,9 +78,9 @@ func (s *Fund) InitCaller(rw web.ResponseWriter,
 }
 
 type FundEntry struct {
-	Txid  string `json:"txID"`
-	Entry string `json:"fundNonce"`
-	Nonce []byte `json:"Nonce"`
+	Txid  string `json:"txID,omitempty"`
+	Entry string `json:"FundNonce"`
+	Nonce []byte `json:"Nonce,omitempty"`
 }
 
 func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
@@ -134,34 +134,6 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 }
 
 func (s *Fund) InitGlobal(rw web.ResponseWriter, req *web.Request) {
-
-	//token deployment
-	total, ok := big.NewInt(0).SetString(req.PostFormValue("total"), 0)
-	if !ok || total.Int64() == 0 {
-		s.NormalErrorF(rw, 0, "Invalid amount")
-		return
-	}
-
-	err := s.token.Init(total)
-	if err != nil {
-		s.NormalError(rw, err)
-		return
-	}
-
-	txid, err := s.TxGenerator.Result().TxID()
-	if err != nil {
-		s.NormalError(rw, err)
-		return
-	}
-
-	s.Normal(rw, &FundEntry{
-		txid,
-		"",
-		s.TxGenerator.GetBuilder().GetNonce(),
-	})
-}
-
-func (s *Fund) InitAndAssign(rw web.ResponseWriter, req *web.Request) {
 
 	//token deployment
 	total, ok := big.NewInt(0).SetString(req.PostFormValue("total"), 0)

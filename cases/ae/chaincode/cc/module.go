@@ -16,8 +16,9 @@ type AECC struct {
 }
 
 const (
-	CC_NAME = "AtomicEnergy_v1"
-	CC_TAG  = "AE"
+	CC_NAME  = "AtomicEnergy_v1"
+	CC_TAG   = "AE"
+	CC_BATCH = "batch"
 )
 
 func NewChaincode(debugMode bool) *AECC {
@@ -52,13 +53,16 @@ func NewChaincode(debugMode bool) *AECC {
 	)
 
 	if !debugMode {
-		//build init batch function ...
-		initH := token.GeneralAdminTemplate(CC_NAME, tokencfg)
-		handlers["init"] = &tx.ChaincodeTx{CC_NAME, tx.BatchTxHandler(initH), nil, nil}
-		delete(handlers.Map(), token.Method_Init) //remove this method from general handling, but reserve assign
+		// //build init batch function ...
+		// initH := token.GeneralAdminTemplate(CC_NAME, tokencfg)
+		// handlers["init"] = &tx.ChaincodeTx{CC_NAME, tx.BatchTxHandler(initH), nil, nil}
+		// delete(handlers.Map(), token.Method_Init) //remove this method from general handling, but reserve assign
 
 		//TODO: add verifier for assign ...
 	}
+
+	//allow all methods use batch ...
+	handlers[CC_BATCH] = &tx.ChaincodeTx{CC_NAME, tx.BatchTxHandler(handlers.Map()), nil, nil}
 
 	ret.CollectiveTxs = handlers
 

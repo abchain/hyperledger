@@ -483,6 +483,56 @@ FORMAT:1A
                 }
             }
 
+
+# 多Token支持
+
+上述方法可以在Group名前添加token路径\[token.<Token Name>\]，此时方法将操作token Name对应的token，参数和输出格式不变，例如对名为VCTX的token执行转账，方法URL为：
+
+- **\[POST\] /api/v1/token.VCTX/fund**
+
+
+*Token名只能由字母和数字构成，长度为4-16字节之间*
+
+## Token创建 [/api/v1/adv/create]
+
+### 创建一个token，token将首先分配给创建者地址，再由创建者进行后续的分发
+
+- 请求参数说明
+
+    - accountID | account: 创建者的账号ID或账号地址
+        - 账号地址必须是已经记录在本地的地址，可以是根账号或者子账号
+    - \[index\]: 使用 accountID 的子账号
+    - to: token分配到的地址，如果指定账号，此参数被忽略
+    - total: 创建的token的总量
+
+- 响应参数说明
+
+    - txID: 创建事务 ID
+
++ Request (application/x-www-form-urlencoded;charset=utf-8)
+
+    + Body
+
+            total=100000000000000000000000&to=AZT1uordAf_qOrTeOPjfYkl4eSUUwEJT7Q&name=VCT1
+
++ Response 200 (application/json;charset=utf-8)
+
+    + Body
+
+            {
+                "jsonrpc": "2.0",
+                "result": {
+                    "txID": "2019-01-21 11:28:56.7305051 +0800 CST m=+640.183320601",
+                    "txNonce": "0VWmW8+oPRFzn8dYKIRiwr3eW4w=",
+                    "outputs": [
+                        {
+                            "FundNonce": "6nFcIGIEh9B_MUbkG4TytnP3_7ynAjedOMURhxpmZkQ=",
+                            "Nonce": "0VWmW8+oPRFzn8dYKIRiwr3eW4w="
+                        }
+                    ]
+                }
+            }
+
 # Group subscription
 
 ## 分润 [/api/v1/subscription/{subscriptionAddr}]
