@@ -58,6 +58,9 @@ type MockStub struct {
 
 	// store when is called from another chaincode
 	InvokedCCName string
+
+	// Extended plugin
+	EventHandler func(string, []byte) error
 }
 
 func (stub *MockStub) GetRawStub() interface{} {
@@ -291,6 +294,9 @@ func (stub *MockStub) GetTxTime() (time.Time, error) {
 
 // Not implemented
 func (stub *MockStub) SetEvent(name string, payload []byte) error {
+	if stub.EventHandler != nil {
+		return stub.EventHandler(name, payload)
+	}
 	return nil
 }
 

@@ -40,7 +40,7 @@ type ChainInfo interface {
 	GetChain() (*Chain, error)
 	GetBlock(int64) (*ChainBlock, error)
 	GetTransaction(string) (*ChainTransaction, error)
-	GetTxEvent(string) (*ChainTxEvents, error)
+	GetTxEvent(string) ([]*ChainTxEvents, error)
 }
 
 type ChainClient interface {

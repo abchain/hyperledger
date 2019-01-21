@@ -122,7 +122,7 @@ func (i *blockchainInterpreter) GetTransaction(txid string) (*client.ChainTransa
 	return ret, nil
 }
 
-func (i *blockchainInterpreter) GetTxEvent(txid string) (*client.ChainTxEvents, error) {
+func (i *blockchainInterpreter) GetTxEvent(txid string) ([]*client.ChainTxEvents, error) {
 	//no implement
 	return nil, fmt.Errorf("No implement")
 }

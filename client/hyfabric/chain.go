@@ -129,7 +129,7 @@ func (r *rPCBuilder) GetBlock(h int64) (*client.ChainBlock, error) {
 	return outblk, nil
 }
 
-func (r *rPCBuilder) GetTxEvent(tid string) (*client.ChainTxEvents, error) {
+func (r *rPCBuilder) GetTxEvent(tid string) ([]*client.ChainTxEvents, error) {
 	chainName := r.ChaincodeName
 	defer func() {
 		r.ChaincodeName = chainName
@@ -149,12 +149,12 @@ func (r *rPCBuilder) GetTxEvent(tid string) (*client.ChainTxEvents, error) {
 	if err != nil {
 		return nil, err
 	}
-	txEvents := &client.ChainTxEvents{}
+	txEvents := []*client.ChainTxEvents{}
 	chaincodeEvents := blockToChainCodeEvents(blk)
 
 	for _, et := range chaincodeEvents {
 		if et.TxId == tid {
-			txEvents = eventConvert(et)
+			txEvents = append(txEvents, eventConvert(et))
 		}
 	}
 	return txEvents, nil
