@@ -1,14 +1,17 @@
 package service
 
 import (
+	"encoding/base64"
+	"errors"
+	"math/big"
+	"strings"
+
 	"github.com/gocraft/web"
 	"hyperledger.abchain.org/applications/util"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	mtoken "hyperledger.abchain.org/chaincode/modules/generaltoken/multitoken"
 	tokenNonce "hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	tx "hyperledger.abchain.org/core/tx"
-	"math/big"
-	"strings"
 )
 
 const (
@@ -109,6 +112,10 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 	}
 	if err != nil {
 		s.NormalError(rw, err)
+		return
+	}
+	if base64.RawURLEncoding.EncodeToString(fromAddr.Hash) == base64.RawURLEncoding.EncodeToString(toAddr.Hash) {
+		s.NormalError(rw, errors.New("不能给同一地址转账"))
 		return
 	}
 
