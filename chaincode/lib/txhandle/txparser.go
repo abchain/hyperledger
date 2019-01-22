@@ -10,9 +10,16 @@ type genArgParser struct {
 	msgGen func() proto.Message
 }
 
+type intrinsicDetail interface {
+	MsgDetail() interface{}
+}
+
 func (g genArgParser) Msg() proto.Message { return g.msgGen() }
 
 func (g genArgParser) Detail(m proto.Message) interface{} {
+	if md, ok := m.(intrinsicDetail); ok {
+		return md.MsgDetail()
+	}
 	return m
 }
 
