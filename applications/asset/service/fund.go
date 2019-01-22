@@ -1,8 +1,7 @@
 package service
 
 import (
-	"encoding/base64"
-	"errors"
+	"bytes"
 	"math/big"
 	"strings"
 
@@ -114,11 +113,11 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 		s.NormalError(rw, err)
 		return
 	}
-	if base64.RawURLEncoding.EncodeToString(fromAddr.Hash) == base64.RawURLEncoding.EncodeToString(toAddr.Hash) {
-		s.NormalError(rw, errors.New("不能给同一地址转账"))
+
+	if bytes.Compare(fromAddr.Hash, toAddr.Hash) == 0 {
+		s.NormalErrorF(rw, 0, "can not transfer asset to the same address")
 		return
 	}
-
 	//s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 
 	nonceid, err := s.token.Transfer(fromAddr.Hash, toAddr.Hash, amount)
