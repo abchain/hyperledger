@@ -21,7 +21,7 @@ type ChainTransaction struct {
 
 type ChainTxEvents struct {
 	*client.ChainTxEvents
-	Detail interface{} `json:",omitempty"`
+	Detail, Data interface{} `json:",omitempty"`
 }
 
 type ChainBlock struct {
@@ -30,13 +30,7 @@ type ChainBlock struct {
 	TxEvents     []*ChainTxEvents    `json:",omitempty"`
 }
 
-//a parser which can handle the arguments of a transaction with purposed format in hyperledger project
-type TxArgParser interface {
-	Msg() proto.Message
-	Detail(proto.Message) interface{}
-}
-
-var registryParsers map[string]TxArgParser
+var registryParsers = map[string]abchainTx.TxArgParser{}
 
 func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 
@@ -66,6 +60,7 @@ func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 		ret.Data = msg
 		ret.Detail = addParser.Detail(msg)
 	} else {
+		ret.Data = tx.TxArgs[1]
 		ret.Detail = noParser
 	}
 	return ret
@@ -74,7 +69,7 @@ func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 
 func handleTxEvent(txe *client.ChainTxEvents) *ChainTxEvents {
 
-	ret := &ChainTxEvents{txe, nil}
+	ret := &ChainTxEvents{txe, nil, nil}
 
 	if addParser, ok := registryParsers[txe.Name]; ok {
 		//a hack: the message is always in args[2]
@@ -86,6 +81,7 @@ func handleTxEvent(txe *client.ChainTxEvents) *ChainTxEvents {
 		}
 		ret.Detail = addParser.Detail(msg)
 	} else {
+		ret.Data = fmt.Sprintf("%X", txe.Payload)
 		ret.Detail = noParser
 	}
 

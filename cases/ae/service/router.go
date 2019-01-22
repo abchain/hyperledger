@@ -30,24 +30,16 @@ func optionsHandler(rw web.ResponseWriter, r *web.Request, methods []string) {
 func buildRouter() *web.Router {
 
 	root := web.NewWithPrefix(util.FabricClientBase{}, URIPrefix)
-
 	root.OptionsHandler(optionsHandler)
-
-	rpcrouter := util.CreateRPCRouter(root).Init(defaultRpcConfig)
-	rpcrouter.BuildRoutes()
 
 	//account
 	mainsrv.CreateAccountRouter(root, "account").Init(defaultWallet).BuildRoutes()
 	//privkey
 	mainsrv.CreateAccountRouter(root, "privkey").Init(defaultWallet).BuildPrivkeyRoutes()
 
-	//blockchain
-	blockchain.CreateBlocChainRouter(rpcrouter, "chain").Init(defaultChainConfig).BuildRoutes()
+	buildBusiness := func(rpc util.RPCRouter) util.TxRouter {
 
-	apirouter := util.CreateTxRouter(rpcrouter, "").Init(defaultRpcConfig.GetCCName())
-	localrouter := util.CreateTxRouter(rpcrouter, "data").InitLocalCall(defaultRpcConfig.GetCCName())
-
-	buildBusiness := func(root util.TxRouter) {
+		root := util.CreateTxRouter(rpc).Init(chaincode.CC_NAME)
 
 		//assign
 		mainsrv.CreateFundRouter(root, "assign").Init().BuildGlobalRoutes()
@@ -71,11 +63,20 @@ func buildRouter() *web.Router {
 		//registrar
 		regsrv.CreatRegistrarRouter(root, "registrar").Init().BuildRoutes()
 
+		return root
 	}
 
-	mainsrv.InitTxRouterWithWallet(apirouter, defaultWallet)
-	buildBusiness(apirouter)
+	apirouter := util.CreateRPCRouter(root, "").Init(defaultRpcCaller)
+	localrouter := util.CreateRPCRouter(root, "data").Init(util.MakeDefaultLocalCaller)
+
+	//business
+	apirouter.BuildRoutes()
+
+	mainsrv.InitTxRouterWithWallet(buildBusiness(apirouter), defaultWallet)
 	buildBusiness(localrouter)
+
+	//blockchain
+	blockchain.CreateBlocChainRouter(apirouter, "chain").Init(defaultChain).BuildRoutes()
 
 	// NotFound
 	root.NotFound(notFound)

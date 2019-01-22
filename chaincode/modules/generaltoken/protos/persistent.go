@@ -20,7 +20,7 @@ func (n *FuncRecord_s) LoadFromPB(p *FuncRecord) {
 func (n *FuncRecord_s) ToPB() *FuncRecord {
 
 	if n == nil {
-		return nil
+		return &FuncRecord{}
 	}
 
 	return &FuncRecord{
@@ -67,7 +67,7 @@ func (n *NonceData_s) LoadFromPB(p *NonceData) {
 func (n *NonceData_s) ToPB() *NonceData {
 
 	if n == nil {
-		return nil
+		return &NonceData{}
 	}
 
 	return &NonceData{
@@ -95,7 +95,7 @@ func (n *AccountData_s) LoadFromPB(p *AccountData) {
 func (n *AccountData_s) ToPB() *AccountData {
 
 	if n == nil {
-		return nil
+		return &AccountData{}
 	}
 
 	return &AccountData{
@@ -120,7 +120,7 @@ func (n *TokenGlobalData_s) LoadFromPB(p *TokenGlobalData) {
 func (n *TokenGlobalData_s) ToPB() *TokenGlobalData {
 
 	if n == nil {
-		return nil
+		return &TokenGlobalData{}
 	}
 	return &TokenGlobalData{
 		TotalTokens:      n.TotalTokens.Bytes(),

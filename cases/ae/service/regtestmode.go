@@ -2,11 +2,9 @@ package service
 
 import (
 	"hyperledger.abchain.org/cases/ae/chaincode/cc"
-	"hyperledger.abchain.org/chaincode/lib/caller"
+	"hyperledger.abchain.org/client/local"
 )
 
-var ccCaller *rpc.ChaincodeAdapter
-
 func init() {
-	ccCaller = rpc.NewLocalChaincode(chaincode.NewChaincode(true))
+	client.AddChaincode("local", chaincode.NewChaincode(true))
 }

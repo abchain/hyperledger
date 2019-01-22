@@ -2,10 +2,14 @@ package rpc
 
 import (
 	_ "encoding/base64"
+	"errors"
 	"github.com/golang/protobuf/proto"
 )
 
 func EncodeRPCResult(msg proto.Message) ([]byte, error) {
+	if msg == nil {
+		return nil, errors.New("No result")
+	}
 	return proto.Marshal(msg)
 }
 

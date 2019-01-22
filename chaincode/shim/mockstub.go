@@ -292,9 +292,8 @@ func (stub *MockStub) GetTxTime() (time.Time, error) {
 	return time.Now(), nil
 }
 
-// Not implemented
 func (stub *MockStub) SetEvent(name string, payload []byte) error {
-	if stub.EventHandler != nil {
+	if stub.TxID != "" && stub.EventHandler != nil {
 		return stub.EventHandler(name, payload)
 	}
 	return nil

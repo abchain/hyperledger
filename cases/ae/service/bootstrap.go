@@ -1,14 +1,12 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"hyperledger.abchain.org/applications/asset/wallet"
-	"hyperledger.abchain.org/applications/blockchain"
 	apputil "hyperledger.abchain.org/applications/util"
 	"hyperledger.abchain.org/cases/ae/chaincode/cc"
 	"hyperledger.abchain.org/chaincode/lib/caller"
@@ -22,28 +20,10 @@ const (
 
 var logger = logging.MustGetLogger("server")
 
-type rpcCfg string
-
-func (s rpcCfg) GetCCName() string {
-	return string(s)
-}
-
-func (rpcCfg) Quit() {
-
-}
-
-func (rpcCfg) GetCaller() (rpc.Caller, error) {
-	return ccCaller, nil
-}
-
-func (rpcCfg) GetChain() (client.ChainInfo, error) {
-	return nil, errors.New("Not support")
-}
-
 var (
-	defaultWallet      wallet.Wallet
-	defaultRpcConfig   apputil.FabricRPCCfg
-	defaultChainConfig blockchain.FabricChainCfg
+	defaultWallet    wallet.Wallet
+	defaultRpcCaller func() (rpc.Caller, error)
+	defaultChain     func() (client.ChainInfo, error)
 
 	offlineMode bool
 )
@@ -69,34 +49,41 @@ func StartService() {
 		logger.Errorf("Load wallet file failed: %v", err)
 		return
 	}
+	defer defaultWallet.Persist()
+
+	cfg := client.NewFabricRPCConfig(chaincode.CC_NAME)
+	defaultRpcCaller = cfg.GetCaller
+	defaultChain = cfg.GetChain
+	var err error
 
 	offlineMode = viper.GetBool("offline")
 	fmt.Println("get offline:", offlineMode)
 	if offlineMode {
 		logger.Warning("Running offline mode")
-		cfg := rpcCfg(chaincode.CC_NAME)
-		defaultRpcConfig = cfg
-		defaultChainConfig = cfg
+		err = cfg.UseLocalCli()
 	} else {
 		// Init gRPC ClientConfig
-		cfg := client.NewFabricRPCConfig(chaincode.CC_NAME)
-		defaultRpcConfig = cfg
-		defaultChainConfig = cfg
-
 		rpcsetting := viper.Sub(conf_grpc)
 		fabricType := rpcsetting.GetString("fabric")
 		switch fabricType {
 		case "1.x":
 			// panic("No implement")
 			logger.Debug("use 1.x fabric")
-			cfg.UseHyFabricCli(rpcsetting)
+			err = cfg.UseHyFabricCli(rpcsetting)
 		case "0.6":
 			panic("No implement")
 		default:
 			cfg.UseYAFabricCli(rpcsetting)
-			cfg.UseYAFabricREST(viper.Sub(conf_rest))
+			err = cfg.UseYAFabricREST(viper.Sub(conf_rest))
 		}
 	}
+
+	if err != nil {
+		logger.Errorf("Use client fail: %v", err)
+		return
+	}
+
+	defer cfg.Quit()
 
 	// start server
 	apputil.StartHttpServer(viper.Sub(conf_service), buildRouter())
@@ -106,10 +93,4 @@ func StartService() {
 func StopService() {
 
 	apputil.StopHttpServer()
-
-	if defaultWallet != nil {
-		defaultWallet.Persist()
-	}
-
-	defaultRpcConfig.Quit()
 }

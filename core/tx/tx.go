@@ -33,6 +33,12 @@ func DecodeProto(arg []byte, m proto.Message) error {
 	return proto.Unmarshal(arg, m)
 }
 
+//a parser which can handle the arguments of a transaction with purposed format in hyperledger project
+type TxArgParser interface {
+	Msg() proto.Message
+	Detail(proto.Message) interface{}
+}
+
 // func (hasher *tx) GenHash(method string) []byte {
 
 // 	hh := msgToByte(hasher.header)

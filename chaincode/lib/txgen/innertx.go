@@ -15,6 +15,7 @@ type InnerTxGenerator struct {
 	callError     error
 }
 
+//the chaincodename is the name in fabric-level (not the framework's cc name)
 type InnerChaincode string
 
 func (s InnerChaincode) NewInnerTxInterface(stub shim.ChaincodeStubInterface, nonce []byte) *InnerTxGenerator {

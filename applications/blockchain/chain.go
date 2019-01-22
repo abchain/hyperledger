@@ -8,10 +8,6 @@ import (
 	"strconv"
 )
 
-type FabricChainCfg interface {
-	GetChain() (client.ChainInfo, error)
-}
-
 type FabricBlockChain struct {
 	*util.FabricRPCBase
 	cli client.ChainInfo
@@ -32,12 +28,12 @@ const (
 	FabricProxy_TransactionID = "txID"
 )
 
-func (r BlockChainRouter) Init(cfg FabricChainCfg) BlockChainRouter {
+func (r BlockChainRouter) Init(cf func() (client.ChainInfo, error)) BlockChainRouter {
 	r.Middleware(func(s *FabricBlockChain, rw web.ResponseWriter,
 		req *web.Request, next web.NextMiddlewareFunc) {
 
 		var err error
-		s.cli, err = cfg.GetChain()
+		s.cli, err = cf()
 		if err != nil {
 			http.Error(rw, err.Error(), http.StatusInternalServerError)
 			return

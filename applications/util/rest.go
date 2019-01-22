@@ -3,11 +3,10 @@ package util
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
+
 	"net/http"
 
 	"github.com/gocraft/web"
-	"hyperledger.abchain.org/chaincode/lib/caller"
 	"hyperledger.abchain.org/core/utils"
 )
 
@@ -15,55 +14,6 @@ import (
 type FabricClientBase struct {
 	debugData    interface{}
 	RespWrapping func(interface{}) interface{}
-}
-
-type FabricRPCBase struct {
-	*FabricClientBase
-	GetCaller func(string) (rpc.Caller, error)
-}
-
-type RPCRouter struct {
-	*web.Router
-}
-
-func CreateRPCRouter(root *web.Router) RPCRouter {
-	return RPCRouter{
-		root.Subrouter(FabricRPCBase{}, ""),
-	}
-}
-
-func (r RPCRouter) BuildRoutes() {
-	r.Post("/rawtransaction", (*FabricRPCBase).SendRawTx)
-	r.Post("/address", (*FabricRPCBase).GetAddress)
-}
-
-//so we can support both config in client and local adapter
-type FabricRPCCfg interface {
-	GetCaller() (rpc.Caller, error)
-	GetCCName() string
-	Quit()
-}
-
-func (r RPCRouter) Init(cfg FabricRPCCfg) RPCRouter {
-
-	ccn := cfg.GetCCName()
-	f := func(n string) (rpc.Caller, error) {
-		if n != "" && n != ccn {
-			return nil, fmt.Errorf("CC is not match (expect %s but has %s)", ccn, n)
-		}
-
-		return cfg.GetCaller()
-	}
-
-	initCall := func(s *FabricRPCBase, rw web.ResponseWriter,
-		req *web.Request, next web.NextMiddlewareFunc) {
-
-		s.GetCaller = f
-		next(rw, req)
-	}
-
-	r.Middleware(initCall)
-	return r
 }
 
 func (s *FabricClientBase) normalHeader(rw web.ResponseWriter) {

@@ -22,7 +22,7 @@ type RpcClient interface {
 	Quit()
 }
 
-var Client_Impls map[string]func() RpcClient
+var Client_Impls = map[string]func() RpcClient{}
 
 type fabricRPCCfg struct {
 	ccName string
@@ -42,6 +42,11 @@ func (c *fabricRPCCfg) UseCli(name string, vp *viper.Viper) error {
 
 	c.cli = cfg()
 	return c.cli.Load(vp)
+}
+
+func (c *fabricRPCCfg) UseLocalCli() error {
+
+	return c.UseCli("local", nil)
 }
 
 func (c *fabricRPCCfg) UseYAFabricCli(vp *viper.Viper) error {
