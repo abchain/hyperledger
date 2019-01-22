@@ -2,8 +2,9 @@ package generaltoken
 
 import (
 	"errors"
-	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"math/big"
+
+	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 )
 
 func (token *baseTokenTx) Transfer(from []byte, to []byte, amount *big.Int) ([]byte, error) {
@@ -16,6 +17,10 @@ func (token *baseTokenTx) Transfer(from []byte, to []byte, amount *big.Int) ([]b
 
 	if ret.From == nil {
 		return nil, errors.New("Fund sender is not exist")
+	}
+
+	if ret.FromKey == ret.ToKey {
+		return nil, errors.New("can not transfer asset to the same address")
 	}
 
 	var toLast *pb.FuncRecord

@@ -1,14 +1,16 @@
 package service
 
 import (
+	"bytes"
+	"math/big"
+	"strings"
+
 	"github.com/gocraft/web"
 	"hyperledger.abchain.org/applications/util"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	mtoken "hyperledger.abchain.org/chaincode/modules/generaltoken/multitoken"
 	tokenNonce "hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	tx "hyperledger.abchain.org/core/tx"
-	"math/big"
-	"strings"
 )
 
 const (
@@ -112,6 +114,10 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	if bytes.Compare(fromAddr.Hash, toAddr.Hash) == 0 {
+		s.NormalErrorF(rw, 0, "can not transfer asset to the same address")
+		return
+	}
 	//s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 
 	nonceid, err := s.token.Transfer(fromAddr.Hash, toAddr.Hash, amount)
