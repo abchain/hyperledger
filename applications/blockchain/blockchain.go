@@ -32,6 +32,8 @@ type ChainBlock struct {
 
 var registryParsers = map[string]abchainTx.TxArgParser{}
 
+func SetParsers(m map[string]abchainTx.TxArgParser) { registryParsers = m }
+
 func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 
 	ret := &ChainTransaction{tx, "", "", nil, nil}
@@ -48,6 +50,7 @@ func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 	}
 	ret.Nonce = fmt.Sprintf("%X", parser.GetNounce())
 	ret.ChaincodeModule = parser.GetCCname()
+	ret.Data = tx.TxArgs[1]
 
 	if addParser, ok := registryParsers[strings.Join([]string{ret.Method, ret.ChaincodeModule}, "@")]; ok {
 		//a hack: the message is always in args[1]
@@ -57,10 +60,9 @@ func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 			ret.Detail = fmt.Sprintf("Invalid message arguments (%s)", err)
 			return ret
 		}
-		ret.Data = msg
+		ret.Data = nil //set to nil so the output will not contain redundancy data
 		ret.Detail = addParser.Detail(msg)
 	} else {
-		ret.Data = tx.TxArgs[1]
 		ret.Detail = noParser
 	}
 	return ret
@@ -70,6 +72,7 @@ func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 func handleTxEvent(txe *client.ChainTxEvents) *ChainTxEvents {
 
 	ret := &ChainTxEvents{txe, nil, nil}
+	ret.Data = fmt.Sprintf("%X", txe.Payload)
 
 	if addParser, ok := registryParsers[txe.Name]; ok {
 		//a hack: the message is always in args[2]
@@ -79,9 +82,9 @@ func handleTxEvent(txe *client.ChainTxEvents) *ChainTxEvents {
 			ret.Detail = fmt.Sprintf("Invalid event payload (%s)", err)
 			return ret
 		}
+		ret.Data = nil
 		ret.Detail = addParser.Detail(msg)
 	} else {
-		ret.Data = fmt.Sprintf("%X", txe.Payload)
 		ret.Detail = noParser
 	}
 
