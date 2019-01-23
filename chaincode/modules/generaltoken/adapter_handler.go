@@ -2,72 +2,53 @@ package generaltoken
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/empty"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	ccpb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
 )
 
-type transferHandler struct {
-	msg ccpb.SimpleFund
-	TokenConfig
+type transferHandler struct{ TokenConfig }
+type assignHandler struct{ TokenConfig }
+type tokenQueryHandler struct{ TokenConfig }
+type touchHandler struct{}
+type globalQueryHandler struct{ TokenConfig }
+type initHandler struct{ TokenConfig }
+
+func TransferHandler(cfg TokenConfig) transferHandler {
+	return transferHandler{TokenConfig: cfg}
 }
 
-type assignHandler struct {
-	msg ccpb.SimpleFund
-	TokenConfig
-}
-type tokenQueryHandler struct {
-	msg ccpb.QueryToken
-	TokenConfig
+func AssignHandler(cfg TokenConfig) assignHandler {
+	return assignHandler{TokenConfig: cfg}
 }
 
-type touchHandler struct {
-	msg ccpb.QueryToken
+func TouchHandler() touchHandler {
+	return touchHandler{}
 }
 
-type globalQueryHandler struct {
-	msg ccpb.SimpleFund
-	TokenConfig
+func TokenQueryHandler(cfg TokenConfig) tokenQueryHandler {
+	return tokenQueryHandler{TokenConfig: cfg}
 }
 
-type initHandler struct {
-	msg ccpb.BaseToken
-	TokenConfig
+func GlobalQueryHandler(cfg TokenConfig) globalQueryHandler {
+	return globalQueryHandler{TokenConfig: cfg}
 }
 
-func TransferHandler(cfg TokenConfig) *transferHandler {
-	return &transferHandler{TokenConfig: cfg}
+func InitHandler(cfg TokenConfig) initHandler {
+	return initHandler{TokenConfig: cfg}
 }
 
-func AssignHandler(cfg TokenConfig) *assignHandler {
-	return &assignHandler{TokenConfig: cfg}
-}
+func (h transferHandler) Msg() proto.Message    { return new(ccpb.SimpleFund) }
+func (h assignHandler) Msg() proto.Message      { return new(ccpb.SimpleFund) }
+func (h touchHandler) Msg() proto.Message       { return new(ccpb.QueryToken) }
+func (h tokenQueryHandler) Msg() proto.Message  { return new(ccpb.QueryToken) }
+func (h globalQueryHandler) Msg() proto.Message { return new(empty.Empty) }
+func (h initHandler) Msg() proto.Message        { return new(ccpb.BaseToken) }
 
-func TouchHandler() *touchHandler {
-	return &touchHandler{}
-}
-
-func TokenQueryHandler(cfg TokenConfig) *tokenQueryHandler {
-	return &tokenQueryHandler{TokenConfig: cfg}
-}
-func GlobalQueryHandler(cfg TokenConfig) *globalQueryHandler {
-	return &globalQueryHandler{TokenConfig: cfg}
-}
-
-func InitHandler(cfg TokenConfig) *initHandler {
-	return &initHandler{TokenConfig: cfg}
-}
-
-func (h *transferHandler) Msg() proto.Message    { return &h.msg }
-func (h *assignHandler) Msg() proto.Message      { return &h.msg }
-func (h *touchHandler) Msg() proto.Message       { return &h.msg }
-func (h *tokenQueryHandler) Msg() proto.Message  { return &h.msg }
-func (h *globalQueryHandler) Msg() proto.Message { return &h.msg }
-func (h *initHandler) Msg() proto.Message        { return &h.msg }
-
-func (h *transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+func (h transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*ccpb.SimpleFund)
 	addrFrom, err := txutil.NewAddressFromPBMessage(msg.From)
 	if err != nil {
 		return nil, err
@@ -81,8 +62,8 @@ func (h *transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.P
 	return h.NewTx(stub, parser.GetNounce()).Transfer(addrFrom.Hash, addrTo.Hash, toAmount(msg.Amount))
 }
 
-func (h *assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+func (h assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*ccpb.SimpleFund)
 
 	addrTo, err := txutil.NewAddressFromPBMessage(msg.To)
 	if err != nil {
@@ -92,12 +73,12 @@ func (h *assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Par
 	return h.NewTx(stub, parser.GetNounce()).Assign(addrTo.Hash, toAmount(msg.Amount))
 }
 
-func (h *touchHandler) Call(shim.ChaincodeStubInterface, txutil.Parser) ([]byte, error) {
+func (h touchHandler) Call(shim.ChaincodeStubInterface, txutil.Parser) ([]byte, error) {
 	return []byte("Done"), nil
 }
 
-func (h *tokenQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+func (h tokenQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*ccpb.QueryToken)
 
 	addr, err := txutil.NewAddressFromPBMessage(msg.Addr)
 	if err != nil {
@@ -119,7 +100,7 @@ func (h *tokenQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil
 	}
 }
 
-func (h *globalQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h globalQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	err, data := h.NewTx(stub, parser.GetNounce()).Global()
 	if err != nil {
 		return nil, err
@@ -128,8 +109,8 @@ func (h *globalQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 	return rpc.EncodeRPCResult(data.ToPB())
 }
 
-func (h *initHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+func (h initHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*ccpb.BaseToken)
 
 	token := h.NewTx(stub, parser.GetNounce())
 

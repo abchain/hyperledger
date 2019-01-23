@@ -59,14 +59,11 @@ func (itxh CollectiveTxs_InnerSupport) Invoke(stub shim.ChaincodeStubInterface, 
 type InnerAddrBase struct {
 	Root string
 	*runtime.Config
-	//runtime: it catch information for manager to work as an addrverifier
-	callingccName string
-	rt            *runtime.ChaincodeRuntime
 }
 
-func (i *InnerAddrBase) getRT(stub shim.ChaincodeStubInterface) {
+func (i *InnerAddrBase) getRT(stub shim.ChaincodeStubInterface) *runtime.ChaincodeRuntime {
 	rrt := runtime.NewRuntime(i.Root, stub, i.Config)
-	i.rt = rrt.SubRuntime("inneraddr")
+	return rrt.SubRuntime("inneraddr")
 }
 
 type InnerAddrRegister struct {
@@ -84,17 +81,22 @@ func (v InnerAddrRegister) PostHandling(stub shim.ChaincodeStubInterface, functi
 		return nil, err
 	}
 
-	v.getRT(stub)
-	addrs := v.GetAddress().ToString()
+	rt := v.getRT(stub)
+	addr := v.GetAddress(p.GetMessage())
+	if addr == nil {
+		//we can skip this process, not consider as error
+		return retbt, nil
+	}
+	addrs := addr.ToString()
 
-	ret, err := v.rt.Storage.GetRaw(addrs)
+	ret, err := rt.Storage.GetRaw(addrs)
 	if err != nil {
 		return nil, err
 	} else if len(ret) > 0 {
 		return nil, fmt.Errorf("Registry duplicated address")
 	}
 
-	err = v.rt.Storage.SetRaw(addrs, []byte(ivf.GetCallingChaincodeName()))
+	err = rt.Storage.SetRaw(addrs, []byte(ivf.GetCallingChaincodeName()))
 	if err != nil {
 		return nil, err
 	}
@@ -104,9 +106,15 @@ func (v InnerAddrRegister) PostHandling(stub shim.ChaincodeStubInterface, functi
 
 type InnerAddrVerifier struct {
 	*InnerAddrBase
+	callingccName string
+	rt            *runtime.ChaincodeRuntime
 }
 
-func (v InnerAddrVerifier) Verify(addr *txutil.Address) error {
+func (v *InnerAddrVerifier) Clone() AddrVerifier {
+	return &InnerAddrVerifier{InnerAddrBase: v.InnerAddrBase}
+}
+
+func (v *InnerAddrVerifier) Verify(addr *txutil.Address) error {
 	if v.callingccName == "" {
 		return nil
 	}
@@ -123,7 +131,7 @@ func (v InnerAddrVerifier) Verify(addr *txutil.Address) error {
 	return nil
 }
 
-func (v InnerAddrVerifier) PreHandling(stub shim.ChaincodeStubInterface, function string, p txutil.Parser) error {
+func (v *InnerAddrVerifier) PreHandling(stub shim.ChaincodeStubInterface, function string, p txutil.Parser) error {
 	if !strings.HasPrefix(function, ".") {
 		v.callingccName = ""
 		return nil
@@ -135,7 +143,7 @@ func (v InnerAddrVerifier) PreHandling(stub shim.ChaincodeStubInterface, functio
 	}
 
 	v.callingccName = ivf.GetCallingChaincodeName()
-	v.getRT(stub)
+	v.rt = v.getRT(stub)
 
 	return nil
 }

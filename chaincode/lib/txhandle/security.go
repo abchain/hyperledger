@@ -2,9 +2,11 @@ package tx
 
 import (
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/impl"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
+	"reflect"
 	"strings"
 )
 
@@ -61,16 +63,25 @@ func (req TxMultiAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ s
 	return nil
 }
 
+//it is safe for interface to return nil for a mal-formed message
+//and ListAddress MUST return empty array if some expected addresses
+//is not available (that is, even there is still some address can be
+//returned, they MUST NOT shown)
 type ParseAddress interface {
-	GetAddress() *txutil.Address
+	GetAddress(proto.Message) *txutil.Address
 }
 
 type ListAddresses interface {
-	ListAddress() []*txutil.Address
+	ListAddress(proto.Message) []*txutil.Address
 }
 
 type AddrVerifier interface {
+	TxPreHandler
 	Verify(*txutil.Address) error
+}
+
+type ClonableAddrVerifier interface {
+	Clone() AddrVerifier
 }
 
 type AddrCredInspector interface {
@@ -97,6 +108,18 @@ func AttachAddrVerifier(phs []TxPreHandler, v AddrVerifier) {
 	}
 }
 
+func cloneAddrVerifier(prototype AddrVerifier) AddrVerifier {
+	if cl, ok := prototype.(ClonableAddrVerifier); ok {
+		return cl.Clone()
+	}
+
+	//the under-lying object of verifier is no way to be immutable
+	//(two method has to be called in sequence), so we has to prepare
+	//new instance for each calling, if there is not a clone interface,
+	//we use reflection to make new instance of the incoming prototype
+	return reflect.New(reflect.Indirect(reflect.ValueOf(prototype)).Type()).Interface().(AddrVerifier)
+}
+
 func (v *addrCredVerifier) AddVerifier(vv AddrVerifier) { v.inspectors = append(v.inspectors, vv) }
 
 func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
@@ -107,9 +130,13 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ strin
 
 	var addrs []*txutil.Address
 	if v.ParseAddress != nil {
-		addrs = append(addrs, v.GetAddress())
+		addrs = append(addrs, v.GetAddress(tx.GetMessage()))
 	} else {
-		addrs = v.ListAddress()
+		addrs = v.ListAddress(tx.GetMessage())
+	}
+
+	if len(addrs) == 0 {
+		return fmt.Errorf("No address is available")
 	}
 
 	cred := tx.GetAddrCredential()
@@ -119,6 +146,7 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ strin
 		done := false
 		//verified by inspectors, finnaly by incomming credential
 		for _, inp := range v.inspectors {
+			inp = cloneAddrVerifier(inp)
 			if inp.Verify(addr) == nil {
 				done = true
 				break
