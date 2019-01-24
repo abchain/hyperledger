@@ -504,6 +504,7 @@ FORMAT:1A
     - \[index\]: 使用 accountID 的子账号
     - to: token分配到的地址，如果指定账号，此参数被忽略
     - total: 创建的token的总量
+    - name: token名
 
 - 响应参数说明
 
