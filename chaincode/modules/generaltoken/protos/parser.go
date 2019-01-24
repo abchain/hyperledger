@@ -9,6 +9,7 @@ type simpleFundDetail struct {
 	Amount string `json:"amount,omitempty"`
 	From   string `json:"from,omitempty"`
 	To     string `json:"to,omitempty"`
+	Name   string `json:"token,omitempty"`
 }
 
 func (m *SimpleFund) MsgDetail() interface{} {
@@ -28,4 +29,23 @@ func (m *SimpleFund) MsgDetail() interface{} {
 	ret.Amount = big.NewInt(0).SetBytes(m.Amount).String()
 
 	return ret
+}
+
+//the default address extractor in message
+func (m *SimpleFund) GetAddresses() []*tx.Address {
+	addr, err := tx.NewAddressFromPBMessage(m.From)
+	if err != nil {
+		return nil
+	}
+
+	return []*tx.Address{addr}
+}
+
+func (m *QueryToken) GetAddresses() []*tx.Address {
+	addr, err := tx.NewAddressFromPBMessage(m.Addr)
+	if err != nil {
+		return nil
+	}
+
+	return []*tx.Address{addr}
 }

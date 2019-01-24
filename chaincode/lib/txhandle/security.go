@@ -63,16 +63,14 @@ func (req TxMultiAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ s
 	return nil
 }
 
-//it is safe for interface to return nil for a mal-formed message
-//and ListAddress MUST return empty array if some expected addresses
+//it is safe to return nil for a mal-formed message
+//and MUST return empty array if some expected addresses
 //is not available (that is, even there is still some address can be
 //returned, they MUST NOT shown)
-type ParseAddress interface {
-	GetAddress(proto.Message) *txutil.Address
-}
+type ListAddresses func(proto.Message) []*txutil.Address
 
-type ListAddresses interface {
-	ListAddress(proto.Message) []*txutil.Address
+type MsgAddresses interface {
+	GetAddresses() []*txutil.Address
 }
 
 type AddrVerifier interface {
@@ -91,13 +89,12 @@ type AddrCredInspector interface {
 //Verify addresses which the interface required
 //One of the interface is used, And interface is tried from top to bottom
 type addrCredVerifier struct {
-	ParseAddress
 	ListAddresses
 	inspectors []AddrVerifier
 }
 
-func NewAddrCredVerifier(pa ParseAddress, la ListAddresses) *addrCredVerifier {
-	return &addrCredVerifier{pa, la, nil}
+func NewAddrCredVerifier(la ListAddresses) *addrCredVerifier {
+	return &addrCredVerifier{la, nil}
 }
 
 func AttachAddrVerifier(phs []TxPreHandler, v AddrVerifier) {
@@ -124,15 +121,12 @@ func (v *addrCredVerifier) AddVerifier(vv AddrVerifier) { v.inspectors = append(
 
 func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
 
-	if v.ParseAddress == nil && v.ListAddresses == nil {
-		panic("Uninit interface")
-	}
-
 	var addrs []*txutil.Address
-	if v.ParseAddress != nil {
-		addrs = append(addrs, v.GetAddress(tx.GetMessage()))
-	} else {
-		addrs = v.ListAddress(tx.GetMessage())
+
+	if v.ListAddresses != nil {
+		addrs = v.ListAddresses(tx.GetMessage())
+	} else if maddr, ok := tx.GetMessage().(MsgAddresses); ok {
+		addrs = maddr.GetAddresses()
 	}
 
 	if len(addrs) == 0 {
