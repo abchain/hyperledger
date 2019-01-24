@@ -51,6 +51,7 @@ func (s *FundBatch) InitAndAssign(rw web.ResponseWriter, req *web.Request) {
 		}
 	} else {
 		s.NormalErrorF(rw, 0, "No token Name")
+		return
 	}
 
 	//token deployment

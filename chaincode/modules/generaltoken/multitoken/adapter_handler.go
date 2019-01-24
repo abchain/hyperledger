@@ -28,6 +28,7 @@ func (h *basehandler) Msg() proto.Message { return &h.msg }
 
 func (h *basehandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) (b []byte, e error) {
 	defer func() {
+		h.prehandled = nil
 		r := recover()
 		if r == nil {
 			return
