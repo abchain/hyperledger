@@ -275,12 +275,12 @@ func TestFund(t *testing.T) {
 	caller := bolt.GetCaller("transfer1", h)
 	spoutcore.Dispatcher = caller
 	spoutcore.Credgenerator = txgen.NewSingleKeyCred(privkey)
-	err := bolt.AppendPreHandler(txhandle.AddrCredVerifier{token.FundAddrCred(h.Msg()), nil})
+	err := bolt.AppendPreHandler(txhandle.NewAddrCredVerifier(nil))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = bolt.AppendPreHandler(RegistrarPreHandler(querycfg, token.FundAddrCred(h.Msg())))
+	err = bolt.AppendPreHandler(RegistrarPreHandler(querycfg, nil))
 	if err != nil {
 		t.Fatal(err)
 	}

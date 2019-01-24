@@ -83,27 +83,35 @@ func (v InnerAddrRegister) PostHandling(stub shim.ChaincodeStubInterface, functi
 
 	var addrs []string
 	if v.ListAddresses != nil {
+		for _, addr := range v.ListAddresses(p.GetMessage()) {
+			addrs = append(addrs, addr.ToString())
+		}
+	} else if maddr, ok := p.GetMessage().(MsgAddresses); ok {
+		for _, addr := range maddr.GetAddresses() {
+			addrs = append(addrs, addr.ToString())
+		}
+	}
 
+	if len(addrs) == 0 {
+		//not consider as error
+		return retbt, nil
 	}
 
 	rt := v.getRT(stub)
-	addr := v.GetAddress(p.GetMessage())
-	if addr == nil {
-		//we can skip this process, not consider as error
-		return retbt, nil
-	}
-	addrs := addr.ToString()
+	dataToSet := []byte(ivf.GetCallingChaincodeName())
 
-	ret, err := rt.Storage.GetRaw(addrs)
-	if err != nil {
-		return nil, err
-	} else if len(ret) > 0 {
-		return nil, fmt.Errorf("Registry duplicated address")
-	}
+	for _, addr := range addrs {
+		ret, err := rt.Storage.GetRaw(addr)
+		if err != nil {
+			return nil, err
+		} else if len(ret) > 0 {
+			return nil, fmt.Errorf("Registry duplicated address")
+		}
 
-	err = rt.Storage.SetRaw(addrs, []byte(ivf.GetCallingChaincodeName()))
-	if err != nil {
-		return nil, err
+		err = rt.Storage.SetRaw(addr, dataToSet)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return retbt, nil

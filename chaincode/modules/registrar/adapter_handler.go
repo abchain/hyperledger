@@ -10,71 +10,46 @@ import (
 )
 
 //wrap ccpb.RegPublicKey with ParseAddress interface
-type RegPkMsg struct {
-	msg ccpb.RegPublicKey
+
+type registrarHandler struct{ RegistrarConfig }
+type adminRegistrarHandler struct{ RegistrarConfig }
+type revokePkHandler struct{ RegistrarConfig }
+type activePkHandler struct{ RegistrarConfig }
+type queryPkHandler struct{ RegistrarConfig }
+type initHandler struct{ RegistrarConfig }
+
+func RegistrarHandler(cfg RegistrarConfig) registrarHandler {
+	return registrarHandler{RegistrarConfig: cfg}
 }
 
-type registrarHandler struct {
-	RegPkMsg
-	RegistrarConfig
+func AdminRegistrarHandler(cfg RegistrarConfig) adminRegistrarHandler {
+	return adminRegistrarHandler{RegistrarConfig: cfg}
 }
 
-type adminRegistrarHandler struct {
-	RegPkMsg
-	RegistrarConfig
+func RevokePkHandler(cfg RegistrarConfig) revokePkHandler {
+	return revokePkHandler{RegistrarConfig: cfg}
 }
-type revokePkHandler struct {
-	msg ccpb.RevokePublicKey
-	RegistrarConfig
+func ActivePkHandler(cfg RegistrarConfig) activePkHandler {
+	return activePkHandler{RegistrarConfig: cfg}
 }
 
-type activePkHandler struct {
-	msg ccpb.ActivePublicKey
-	RegistrarConfig
+func QueryPkHandler(cfg RegistrarConfig) queryPkHandler {
+	return queryPkHandler{RegistrarConfig: cfg}
 }
 
-type queryPkHandler struct {
-	msg ccpb.ActivePublicKey
-	RegistrarConfig
+func InitHandler(cfg RegistrarConfig) initHandler {
+	return initHandler{RegistrarConfig: cfg}
 }
 
-type initHandler struct {
-	msg ccpb.Settings
-	RegistrarConfig
-}
+func (h registrarHandler) Msg() proto.Message      { return new(ccpb.RegPublicKey) }
+func (h adminRegistrarHandler) Msg() proto.Message { return new(ccpb.RegPublicKey) }
+func (h revokePkHandler) Msg() proto.Message       { return new(ccpb.RevokePublicKey) }
+func (h activePkHandler) Msg() proto.Message       { return new(ccpb.ActivePublicKey) }
+func (h queryPkHandler) Msg() proto.Message        { return new(ccpb.ActivePublicKey) }
+func (h initHandler) Msg() proto.Message           { return new(ccpb.Settings) }
 
-func RegistrarHandler(cfg RegistrarConfig) *registrarHandler {
-	return &registrarHandler{RegistrarConfig: cfg}
-}
-
-func AdminRegistrarHandler(cfg RegistrarConfig) *adminRegistrarHandler {
-	return &adminRegistrarHandler{RegistrarConfig: cfg}
-}
-
-func RevokePkHandler(cfg RegistrarConfig) *revokePkHandler {
-	return &revokePkHandler{RegistrarConfig: cfg}
-}
-func ActivePkHandler(cfg RegistrarConfig) *activePkHandler {
-	return &activePkHandler{RegistrarConfig: cfg}
-}
-
-func QueryPkHandler(cfg RegistrarConfig) *queryPkHandler {
-	return &queryPkHandler{RegistrarConfig: cfg}
-}
-
-func InitHandler(cfg RegistrarConfig) *initHandler {
-	return &initHandler{RegistrarConfig: cfg}
-}
-
-func (h *registrarHandler) Msg() proto.Message      { return &h.msg }
-func (h *adminRegistrarHandler) Msg() proto.Message { return &h.msg }
-func (h *revokePkHandler) Msg() proto.Message       { return &h.msg }
-func (h *activePkHandler) Msg() proto.Message       { return &h.msg }
-func (h *queryPkHandler) Msg() proto.Message        { return &h.msg }
-func (h *initHandler) Msg() proto.Message           { return &h.msg }
-
-func (h *registrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+func (h registrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*ccpb.RegPublicKey)
 	err := h.NewTx(stub).Registrar(msg.PkBytes, msg.Region)
 	if err != nil {
 		return nil, err
@@ -83,8 +58,8 @@ func (h *registrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.
 	return []byte("OK"), nil
 }
 
-func (h *adminRegistrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+func (h adminRegistrarHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*ccpb.RegPublicKey)
 
 	err := h.NewTx(stub).AdminRegistrar(msg.PkBytes)
 	if err != nil {
@@ -93,8 +68,8 @@ func (h *adminRegistrarHandler) Call(stub shim.ChaincodeStubInterface, parser tx
 	return []byte("OK"), nil
 }
 
-func (h *revokePkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+func (h revokePkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*ccpb.RevokePublicKey)
 
 	pk, err := crypto.PublicKeyFromPBMessage(msg.Pk)
 	if err != nil {
@@ -108,9 +83,9 @@ func (h *revokePkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.P
 	return []byte("OK"), nil
 }
 
-func (h *activePkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h activePkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 
-	msg := &h.msg
+	msg := parser.GetMessage().(*ccpb.ActivePublicKey)
 
 	err := h.NewTx(stub).ActivePk(msg.Key)
 	if err != nil {
@@ -120,9 +95,9 @@ func (h *activePkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.P
 	return []byte("OK"), nil
 }
 
-func (h *queryPkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h queryPkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 
-	msg := &h.msg
+	msg := parser.GetMessage().(*ccpb.ActivePublicKey)
 
 	err, data := h.NewTx(stub).Pubkey(msg.Key)
 	if err != nil {
@@ -132,8 +107,8 @@ func (h *queryPkHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pa
 	return rpc.EncodeRPCResult(data)
 }
 
-func (h *initHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+func (h initHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*ccpb.Settings)
 
 	reg := h.NewTx(stub)
 
