@@ -68,7 +68,7 @@ func (i *InnerAddrBase) getRT(stub shim.ChaincodeStubInterface) *runtime.Chainco
 
 type InnerAddrRegister struct {
 	*InnerAddrBase
-	ParseAddress
+	ListAddresses
 }
 
 func (v InnerAddrRegister) PostHandling(stub shim.ChaincodeStubInterface, function string, p txutil.Parser, retbt []byte) ([]byte, error) {
@@ -79,6 +79,11 @@ func (v InnerAddrRegister) PostHandling(stub shim.ChaincodeStubInterface, functi
 	ivf, err := impl.GetInnerInvoke(stub)
 	if err != nil {
 		return nil, err
+	}
+
+	var addrs []string
+	if v.ListAddresses != nil {
+
 	}
 
 	rt := v.getRT(stub)
