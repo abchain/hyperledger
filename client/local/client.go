@@ -2,6 +2,8 @@ package client
 
 import (
 	"fmt"
+	"github.com/golang/protobuf/proto"
+	pbwrap "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/spf13/viper"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	"hyperledger.abchain.org/chaincode/shim"
@@ -78,6 +80,20 @@ func (c *LocalChain) Load(*viper.Viper) error {
 
 func (c *LocalChain) Quit() {}
 
+type TxErrorParser string
+
+func (TxErrorParser) Msg() proto.Message {
+	return new(pbwrap.StringValue)
+}
+
+func (s TxErrorParser) Detail(msg proto.Message) interface{} {
+	return string(s) + " " + msg.(*pbwrap.StringValue).GetValue()
+}
+
+const (
+	TxErrorEventName = "INVOKEERROR"
+)
+
 func (c *localCC) innerInvoke(method string, arg [][]byte, createFlag bool) (ret string, e error) {
 
 	c.Lock()
@@ -94,6 +110,18 @@ func (c *localCC) innerInvoke(method string, arg [][]byte, createFlag bool) (ret
 		c.txIndex[tx.TxID] = tx
 		if e == nil {
 			c.pendingTxs = append(c.pendingTxs, tx)
+		} else {
+			errevt := new(client.ChainTxEvents)
+			errevt.TxID = tx.TxID
+			errevt.Chaincode = tx.Chaincode
+			errevt.Name = TxErrorEventName
+			errevt.Status = 1
+			errevt.Payload, _ = proto.Marshal(&pbwrap.StringValue{Value: e.Error()})
+			//errevt.
+			c.pendingEvents = append(c.pendingEvents, errevt)
+
+			//clear error: we don not return error here, to simulate the condition of real blockchain
+			e = nil
 		}
 		c.checkBlock()
 	}()
@@ -103,7 +131,6 @@ func (c *localCC) innerInvoke(method string, arg [][]byte, createFlag bool) (ret
 	} else {
 		ret, e = c.adapter.Invoke(method, arg)
 	}
-
 	return
 }
 
@@ -129,7 +156,7 @@ func (c *localCC) Query(method string, arg [][]byte) ([]byte, error) {
 //now we just make one block - one tx
 func (c *LocalChain) checkBlock() {
 
-	if len(c.pendingTxs) == 0 {
+	if len(c.pendingTxs) == 0 && len(c.pendingEvents) == 0 {
 		return
 	}
 

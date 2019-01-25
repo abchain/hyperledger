@@ -23,7 +23,7 @@ func (mtoken *baseMultiTokenTx) GetToken(name string) (generaltoken.TokenTx, err
 		return nil, err
 	}
 
-	mtoken.ChaincodeRuntime.Core.SetEvent("TOKENNAME", []byte(name))
+	//mtoken.ChaincodeRuntime.Core.SetEvent("TOKENNAME", []byte(name))
 	subrt := mtoken.ChaincodeRuntime.SubRuntime(name)
 
 	return generaltoken.NewTokenTxImpl(subrt, mtoken.nonce, mtoken.tokenNonce), nil
