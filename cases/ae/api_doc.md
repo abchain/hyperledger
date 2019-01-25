@@ -911,6 +911,48 @@ time: 发起转账时间
             }
 
 
+## 解析一个事务 [/api/v1/chain/parseTx]
+
+### 解析事务 [POST]
+
+- 请求参数说明
+    - tx: 提交的事务内容，通常是生成的待签名事务
+
+- 响应参数说明
+
+    - result: 被解析的事务信息，具有和查询链上事务信息类似的数据结构，其中TxID将被显示为Unknown
+
++ Request (application/x-www-form-urlencoded;charset=utf-8)
+
+    + Body
+
+        tx=I::MTOKEN.TRANSFER:ChoKB0FCQ0hBSU4SD0F0b21pY0VuZXJneV92MRIGCITtq+IFGhS4tudQ90DdEcgcAt/AFKKXgs6QoQ==:CgRFT1NBGj0KC6VvpbmQGaXIAAAAEhYKFBJtq6Q46oTnxDwvVqMgDtZeNxs7GhYKFC6mOHOU3PKLpmHXinFgxK+3GhDb
+
++ Response 200 (application/json;charset=utf-8)
+
+    + Body
+
+        {
+            "jsonrpc": "2.0",
+            "result": {
+                "Height": "0",
+                "TxID": "Unknown",
+                "Chaincode": "Unknown",
+                "Method": "MTOKEN.TRANSFER",
+                "CreatedFlag": false,
+                "ChaincodeModule": "AtomicEnergy_v1",
+                "Nonce": "B8B6E750F740DD11C81C02DFC014A29782CE90A1",
+                "Detail": {
+                    "amount": "200000000000000000000000000",
+                    "from": "AS6mOHOU3PKLpmHXinFgxK-3GhDb9YuC2g",
+                    "to": "ARJtq6Q46oTnxDwvVqMgDtZeNxs7Ybt81A",
+                    "token": "EOSA"
+                },
+                "TxHash": "B3C9C3C99BC7DFF9466DDD4D494EC120AECAEF0EF6798583C5667D77DD7324DD"
+            }
+        }
+
+
 ## 查询地址信息 [/api/v1/address/{address}]
 
 ### 查询地址信息 [GET]

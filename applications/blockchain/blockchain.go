@@ -17,6 +17,7 @@ type ChainTransaction struct {
 	//Data for the original protobuf input (Message part) and Detail left for parser
 	ChaincodeModule, Nonce string
 	Detail, Data           interface{} `json:",omitempty"`
+	TxHash                 string      `json:",omitempty"`
 }
 
 type ChainTxEvents struct {
@@ -36,7 +37,7 @@ func SetParsers(m map[string]abchainTx.TxArgParser) { registryParsers = m }
 
 func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 
-	ret := &ChainTransaction{tx, "", "", nil, nil}
+	ret := &ChainTransaction{tx, "", "", nil, nil, ""}
 
 	if len(tx.TxArgs) < 2 {
 		ret.Detail = notHyperledgerTx
@@ -51,6 +52,8 @@ func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 	ret.Nonce = fmt.Sprintf("%X", parser.GetNounce())
 	ret.ChaincodeModule = parser.GetCCname()
 	ret.Data = tx.TxArgs[1]
+	//we also add the hash of tx, for convinient
+	ret.TxHash = fmt.Sprintf("%X", abchainTx.GetHashOfRawTx(tx.TxArgs[0], tx.TxArgs[1], tx.Method))
 
 	if addParser, ok := registryParsers[strings.Join([]string{ret.Method, ret.ChaincodeModule}, "@")]; ok {
 		//a hack: the message is always in args[1]

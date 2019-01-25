@@ -46,6 +46,25 @@ func decodeArguments(args []string) (r [][]byte, e error) {
 	return
 }
 
+func ParseCompactFormTx(ctxstr string) (e error, flag string, method string, cc string, args [][]byte) {
+	rawTx := strings.Split(ctxstr, ":")
+	if len(rawTx) < 5 {
+		e = fmt.Errorf("Invalid tx (only %d part)", len(rawTx))
+		return
+	}
+
+	args, e = decodeArguments(rawTx[3:])
+	if e != nil {
+		return
+	}
+
+	flag = rawTx[0]
+	cc = rawTx[1]
+	method = rawTx[2]
+
+	return
+}
+
 type LocalCaller interface {
 	Output() string
 }
@@ -110,15 +129,10 @@ func (s *FabricRPCBase) GetAddress(rw web.ResponseWriter, req *web.Request) {
 
 func (s *FabricRPCBase) SendRawTx(rw web.ResponseWriter, req *web.Request) {
 
-	rawTx := strings.Split(req.PostFormValue("tx"), ":")
-	if len(rawTx) < 5 {
-		s.NormalErrorF(rw, -100, "Invalid tx")
-		return
-	}
+	err, flag, method, _, args := ParseCompactFormTx(req.PostFormValue("tx"))
 
-	args, err := decodeArguments(rawTx[3:])
 	if err != nil {
-		s.NormalError(rw, fmt.Errorf("Decode arguments fail: %s", err))
+		s.NormalError(rw, err)
 		return
 	}
 
@@ -141,16 +155,16 @@ func (s *FabricRPCBase) SendRawTx(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	var retTx string
-	switch rawTx[0] {
+	switch flag {
 	case "I":
-		retTx, err = s.Caller.Invoke(rawTx[2], args)
+		retTx, err = s.Caller.Invoke(method, args)
 	case "D":
-		retTx, err = s.Caller.Deploy(rawTx[2], args)
+		retTx, err = s.Caller.Deploy(method, args)
 	case "Q":
 		s.NormalErrorF(rw, 500, "Not implied yet")
 		return
 	default:
-		s.NormalError(rw, fmt.Errorf("No such a tx type: %s", rawTx[0]))
+		s.NormalError(rw, fmt.Errorf("No such a tx type: %s", flag))
 		return
 	}
 

@@ -25,6 +25,10 @@ func genHash(header []byte, msg []byte, method string) []byte {
 	return r
 }
 
+func GetHashOfRawTx(header []byte, msg []byte, method string) []byte {
+	return genHash(header, msg, method)
+}
+
 func EncodeProto(m proto.Message) []byte {
 	return msgToByte(m)
 }

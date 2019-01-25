@@ -49,6 +49,7 @@ func (r BlockChainRouter) BuildRoutes() {
 	r.Get("/", (*FabricBlockChain).GetBlockchainInfo)
 	r.Get("/blocks/:"+FabricProxy_BlockHeight, (*FabricBlockChain).GetBlock)
 	r.Get("/transactions/:"+FabricProxy_TransactionID, (*FabricBlockChain).GetTransaction)
+	r.Post("/parseTx", (*FabricBlockChain).ParseTransaction)
 }
 
 var notHyperledgerTx = `Not a hyperledger project compatible transaction`
@@ -105,6 +106,29 @@ func (s *FabricBlockChain) GetTransaction(rw web.ResponseWriter, req *web.Reques
 	}
 
 	tx, err := s.cli.GetTransaction(transactionID)
+	if err != nil {
+		s.NormalError(rw, err)
+		return
+	}
+
+	s.Normal(rw, handleTransaction(tx))
+}
+
+func (s *FabricBlockChain) ParseTransaction(rw web.ResponseWriter, req *web.Request) {
+
+	var err error
+	var txflag string
+	tx := new(client.ChainTransaction)
+
+	err, txflag, tx.Method, tx.Chaincode, tx.TxArgs = util.ParseCompactFormTx(req.PostFormValue("tx"))
+
+	if txflag == "D" {
+		tx.CreatedFlag = true
+	}
+
+	tx.TxID = "Unknown"
+	tx.Chaincode = "Unknown"
+
 	if err != nil {
 		s.NormalError(rw, err)
 		return
