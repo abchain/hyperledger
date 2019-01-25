@@ -8,51 +8,28 @@ import (
 	txutil "hyperledger.abchain.org/core/tx"
 )
 
-type newContractAddrCred struct {
-	*pb.RegContract
-}
+type redeemContractAddrCred struct{}
 
-func NewContractAddrCred(msg proto.Message) newContractAddrCred {
+func NewRedeemContractAddrCred(msg proto.Message) redeemContractAddrCred {
 
-	m, ok := msg.(*pb.RegContract)
+	//just testing ...
+	_, ok := msg.(*pb.RedeemContract)
 	if !ok {
 		panic("Binding to wrong txhandler")
 	}
 
-	return newContractAddrCred{m}
-}
-
-func (h newContractAddrCred) GetAddress() *txutil.Address {
-
-	addr, err := txutil.NewAddressFromPBMessage(h.GetDelegatorAddr())
-	if err != nil {
-		return nil
-	}
-
-	return addr
-}
-
-type redeemContractAddrCred struct {
-	*pb.RedeemContract
-
-	constructMode  bool
-	specifiedAddrs map[string]bool
-	runtimeErr     error
-}
-
-func NewRedeemContractAddrCred(msg proto.Message) *redeemContractAddrCred {
-
-	m, ok := msg.(*pb.RedeemContract)
-	if !ok {
-		panic("Binding to wrong txhandler")
-	}
-
-	return &redeemContractAddrCred{RedeemContract: m}
+	return redeemContractAddrCred{}
 }
 
 //this module will first catch the runtime data (as prehandler) to collect redeem address (if required), then act as verifyer,
-func (h *redeemContractAddrCred) PreHandling(_ shim.ChaincodeStubInterface, _ string, parser txutil.Parser) error {
-	if len(h.GetRedeems()) == 0 {
+func (h redeemContractAddrCred) PreHandling(_ shim.ChaincodeStubInterface, _ string, parser txutil.Parser) error {
+
+	m, ok := parser.GetMessage().(*pb.RedeemContract)
+	if !ok {
+		return errors.New("Binding to wrong txhandler")
+	}
+
+	if len(m.GetRedeems()) == 0 {
 
 		cred := parser.GetAddrCredential()
 		if cred == nil {
@@ -65,20 +42,12 @@ func (h *redeemContractAddrCred) PreHandling(_ shim.ChaincodeStubInterface, _ st
 				return err
 			}
 
-			h.Redeems = append(h.Redeems, addr.PBMessage())
+			m.Redeems = append(m.Redeems, addr.PBMessage())
 		}
+
+		parser.UpdateMsg(m)
+
 	}
 
 	return nil
-}
-
-func (h *redeemContractAddrCred) ListAddress() (ret []*txutil.Address) {
-
-	for _, redeemAddr := range h.GetRedeems() {
-		if addr, err := txutil.NewAddressFromPBMessage(redeemAddr); err != nil {
-			ret = append(ret, addr)
-		}
-	}
-
-	return
 }

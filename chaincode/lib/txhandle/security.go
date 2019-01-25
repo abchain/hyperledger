@@ -117,9 +117,19 @@ func cloneAddrVerifier(prototype AddrVerifier) AddrVerifier {
 	return reflect.New(reflect.Indirect(reflect.ValueOf(prototype)).Type()).Interface().(AddrVerifier)
 }
 
+type failVerifier struct {
+	e error
+}
+
+func (failVerifier) PreHandling(shim.ChaincodeStubInterface, string, txutil.Parser) error {
+	return nil
+}
+
+func (v failVerifier) Verify(*txutil.Address) error { return v.e }
+
 func (v *addrCredVerifier) AddVerifier(vv AddrVerifier) { v.inspectors = append(v.inspectors, vv) }
 
-func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
+func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method string, tx txutil.Parser) error {
 
 	var addrs []*txutil.Address
 
@@ -134,13 +144,22 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ strin
 	}
 
 	cred := tx.GetAddrCredential()
+	inps := make([]AddrVerifier, len(v.inspectors))
 
 	for _, addr := range addrs {
 
 		done := false
 		//verified by inspectors, finnaly by incomming credential
-		for _, inp := range v.inspectors {
-			inp = cloneAddrVerifier(inp)
+		for i, inp := range inps {
+			if inp == nil {
+				inp = cloneAddrVerifier(v.inspectors[i])
+				if err := inp.PreHandling(stub, method, tx); err != nil {
+					inp = failVerifier{err}
+				}
+
+				inps[i] = inp
+			}
+
 			if inp.Verify(addr) == nil {
 				done = true
 				break

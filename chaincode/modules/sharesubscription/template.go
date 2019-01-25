@@ -9,7 +9,7 @@ func GeneralInvokingTemplate(ccname string, cfg ContractConfig) (ret tx.Collecti
 	ret = tx.NewCollectiveTxs()
 
 	cH := &tx.ChaincodeTx{ccname, NewContractHandler(cfg), nil, nil}
-	cH.PreHandlers = append(cH.PreHandlers, tx.NewAddrCredVerifier(NewContractAddrCred(cH.Handler.Msg()), nil))
+	cH.PreHandlers = append(cH.PreHandlers, tx.NewAddrCredVerifier(nil))
 	ret[Method_NewContract] = cH
 
 	rcH := &tx.ChaincodeTx{ccname, RedeemHandler(cfg), nil, nil}

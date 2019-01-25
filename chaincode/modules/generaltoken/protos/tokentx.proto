@@ -70,5 +70,10 @@ message TokenGlobalData{
 message MultiTokenMsg {
 
 	string tokenName = 1;
-	bytes tokenMsg = 2;
+//	bytes tokenMsg = 2;
+	oneof msg{
+		SimpleFund fund = 3;
+		QueryToken query = 4;
+		BaseToken  init = 5;
+	}	
 }

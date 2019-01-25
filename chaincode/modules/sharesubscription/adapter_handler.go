@@ -8,50 +8,37 @@ import (
 	txutil "hyperledger.abchain.org/core/tx"
 )
 
-type newContractHandler struct {
-	msg pb.RegContract
-	ContractConfig
+type newContractHandler struct{ ContractConfig }
+type redeemHandler struct{ ContractConfig }
+type queryHandler struct{ ContractConfig }
+type memberQueryHandler struct{ ContractConfig }
+
+func NewContractHandler(cfg ContractConfig) newContractHandler {
+	return newContractHandler{ContractConfig: cfg}
 }
 
-type redeemHandler struct {
-	msg pb.RedeemContract
-	ContractConfig
+func RedeemHandler(cfg ContractConfig) redeemHandler {
+	return redeemHandler{ContractConfig: cfg}
 }
 
-type queryHandler struct {
-	msg pb.QueryContract
-	ContractConfig
+func QueryHandler(cfg ContractConfig) queryHandler {
+	return queryHandler{ContractConfig: cfg}
+}
+func MemberQueryHandler(cfg ContractConfig) memberQueryHandler {
+	return memberQueryHandler{ContractConfig: cfg}
 }
 
-type memberQueryHandler struct {
-	msg pb.QueryContract
-	ContractConfig
-}
+func (h newContractHandler) Msg() proto.Message { return new(pb.RegContract) }
+func (h redeemHandler) Msg() proto.Message      { return new(pb.RedeemContract) }
+func (h queryHandler) Msg() proto.Message       { return new(pb.QueryContract) }
+func (h memberQueryHandler) Msg() proto.Message { return new(pb.QueryContract) }
 
-func NewContractHandler(cfg ContractConfig) *newContractHandler {
-	return &newContractHandler{ContractConfig: cfg}
-}
+func (h newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 
-func RedeemHandler(cfg ContractConfig) *redeemHandler {
-	return &redeemHandler{ContractConfig: cfg}
-}
-
-func QueryHandler(cfg ContractConfig) *queryHandler {
-	return &queryHandler{ContractConfig: cfg}
-}
-func MemberQueryHandler(cfg ContractConfig) *memberQueryHandler {
-	return &memberQueryHandler{ContractConfig: cfg}
-}
-
-func (h *newContractHandler) Msg() proto.Message { return &h.msg }
-func (h *redeemHandler) Msg() proto.Message      { return &h.msg }
-func (h *queryHandler) Msg() proto.Message       { return &h.msg }
-func (h *memberQueryHandler) Msg() proto.Message { return &h.msg }
-
-func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*pb.RegContract)
 
 	contract := make(map[string]int32)
-	for _, m := range h.msg.ContractBody {
+	for _, m := range msg.ContractBody {
 		addr, err := txutil.NewAddressFromPBMessage(m.Addr)
 		if err != nil {
 			return nil, err
@@ -59,12 +46,11 @@ func (h *newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txuti
 
 		contract[addr.ToString()] = m.Weight
 	}
-
-	return h.NewTx(stub, parser.GetNounce()).New(contract, h.msg.DelegatorAddr.GetHash())
+	return h.NewTx(stub, parser.GetNounce()).New(contract, msg.DelegatorAddr.GetHash())
 }
 
-func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+func (h redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*pb.RedeemContract)
 
 	contract, err := txutil.NewAddressFromPBMessage(msg.Contract)
 	if err != nil {
@@ -85,9 +71,9 @@ func (h *redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Par
 	return rpc.EncodeRPCResult(resp)
 }
 
-func (h *queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 
-	msg := &h.msg
+	msg := parser.GetMessage().(*pb.QueryContract)
 
 	contAddr, err := txutil.NewAddressFromPBMessage(msg.ContractAddr)
 	if err != nil {
@@ -103,8 +89,8 @@ func (h *queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pars
 
 }
 
-func (h *memberQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	msg := &h.msg
+func (h memberQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+	msg := parser.GetMessage().(*pb.QueryContract)
 
 	contAddr, err := txutil.NewAddressFromPBMessage(msg.ContractAddr)
 	if err != nil {

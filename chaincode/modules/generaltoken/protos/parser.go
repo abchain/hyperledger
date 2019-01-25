@@ -49,3 +49,34 @@ func (m *QueryToken) GetAddresses() []*tx.Address {
 
 	return []*tx.Address{addr}
 }
+
+func (m *MultiTokenMsg) GetAddresses() []*tx.Address {
+
+	if m.Msg == nil {
+		return nil
+	}
+
+	switch em := m.Msg.(type) {
+	case *MultiTokenMsg_Fund:
+		return em.Fund.GetAddresses()
+	case *MultiTokenMsg_Query:
+		return em.Query.GetAddresses()
+	default:
+		return nil
+	}
+
+}
+
+func (m *MultiTokenMsg) MsgDetail() interface{} {
+
+	if m.Msg != nil {
+		switch em := m.Msg.(type) {
+		case *MultiTokenMsg_Fund:
+			detail := em.Fund.MsgDetail().(*simpleFundDetail)
+			detail.Name = m.GetTokenName()
+			return detail
+		}
+	}
+
+	return m.GetTokenName() + ": Unknown message"
+}
