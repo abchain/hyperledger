@@ -34,7 +34,7 @@ func ExtendInvokingTemplate(cts tx.CollectiveTxs, ccname string, cfg *StandardTo
 		tx.AttachAddrVerifier(h.PreHandlers, &tx.InnerAddrVerifier{InnerAddrBase: ib})
 	}
 
-	touchH := &tx.ChaincodeTx{ccname, TouchHandler(), nil, nil}
+	touchH := &tx.ChaincodeTx{ccname, TouchHandler(cfg), nil, nil}
 	touchH.PostHandlers = append(touchH.PostHandlers, tx.InnerAddrRegister{ib, nil})
 	cts[Method_TouchAddr] = touchH
 

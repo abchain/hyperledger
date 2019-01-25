@@ -2,6 +2,7 @@ package multitoken
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/empty"
 	txh "hyperledger.abchain.org/chaincode/lib/txhandle"
 	"hyperledger.abchain.org/chaincode/modules/generaltoken"
 	ccpb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
@@ -10,25 +11,29 @@ import (
 )
 
 type basehandler struct {
-	msg        ccpb.MultiTokenMsg
-	inner      txh.TxHandler
-	prehandled error
+	innerH func(generaltoken.TokenConfig) txh.TxHandler
 	TokenConfig
 }
 
-type getTokenError struct {
-	e error
-}
+func (h basehandler) Msg() proto.Message { return new(ccpb.MultiTokenMsg) }
 
-type noError struct{}
+func (h basehandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) (rbt []byte, e error) {
 
-func (noError) Error() string { return "No error" }
+	msg := parser.GetMessage().(*ccpb.MultiTokenMsg)
+	defer parser.UpdateMsg(msg)
 
-func (h *basehandler) Msg() proto.Message { return &h.msg }
+	switch m := msg.GetMsg().(type) {
+	case *ccpb.MultiTokenMsg_Fund:
+		parser.UpdateMsg(m.Fund)
+	case *ccpb.MultiTokenMsg_Query:
+		parser.UpdateMsg(m.Query)
+	case *ccpb.MultiTokenMsg_Init:
+		parser.UpdateMsg(m.Init)
+	default:
+		parser.UpdateMsg(&empty.Empty{})
+	}
 
-func (h *basehandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) (b []byte, e error) {
 	defer func() {
-		h.prehandled = nil
 		r := recover()
 		if r == nil {
 			return
@@ -40,69 +45,46 @@ func (h *basehandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parse
 		}
 	}()
 
-	h.innerPrehandled()
-
-	if _, ok := h.prehandled.(noError); !ok {
-		return nil, h.prehandled
-	}
-
-	return h.inner.Call(stub, parser)
+	return h.innerH(subhandler{msg.GetTokenName(), h.TokenConfig}).Call(stub, parser)
 }
 
-func (h *basehandler) NewTx(stub shim.ChaincodeStubInterface, nc []byte) generaltoken.TokenTx {
-	r, err := h.TokenConfig.NewTx(stub, nc).GetToken(h.msg.GetTokenName())
+type getTokenError struct {
+	e error
+}
+
+type subhandler struct {
+	name string
+	TokenConfig
+}
+
+func (h subhandler) NewTx(stub shim.ChaincodeStubInterface, nc []byte) generaltoken.TokenTx {
+	r, err := h.TokenConfig.NewTx(stub, nc).GetToken(h.name)
 	if err != nil {
-		panic(getTokenError{err})
+		panic(err)
 	}
 
 	return r
 }
 
-func (h *basehandler) innerPrehandled() {
-	if h.prehandled != nil {
-		return
-	}
-
-	err := proto.Unmarshal(h.msg.GetTokenMsg(), h.inner.Msg())
-	if err != nil {
-		h.prehandled = err
-	} else {
-		h.prehandled = noError{}
-	}
+func TransferHandler(cfg TokenConfig) txh.TxHandler {
+	return basehandler{generaltoken.TransferHandler, cfg}
 }
 
-func TransferHandler(cfg TokenConfig) *basehandler {
-	bh := &basehandler{TokenConfig: cfg}
-	bh.inner = generaltoken.TransferHandler(bh)
-	return bh
+func AssignHandler(cfg TokenConfig) txh.TxHandler {
+	return basehandler{generaltoken.AssignHandler, cfg}
 }
 
-func AssignHandler(cfg TokenConfig) *basehandler {
-	bh := &basehandler{TokenConfig: cfg}
-	bh.inner = generaltoken.AssignHandler(bh)
-	return bh
-
+func TouchHandler(cfg TokenConfig) txh.TxHandler {
+	return basehandler{generaltoken.TouchHandler, cfg}
 }
 
-func TouchHandler(cfg TokenConfig) *basehandler {
-	bh := &basehandler{TokenConfig: cfg}
-	bh.inner = generaltoken.TouchHandler()
-	return bh
+func TokenQueryHandler(cfg TokenConfig) txh.TxHandler {
+	return basehandler{generaltoken.TokenQueryHandler, cfg}
+}
+func GlobalQueryHandler(cfg TokenConfig) txh.TxHandler {
+	return basehandler{generaltoken.GlobalQueryHandler, cfg}
 }
 
-func TokenQueryHandler(cfg TokenConfig) *basehandler {
-	bh := &basehandler{TokenConfig: cfg}
-	bh.inner = generaltoken.TokenQueryHandler(bh)
-	return bh
-}
-func GlobalQueryHandler(cfg TokenConfig) *basehandler {
-	bh := &basehandler{TokenConfig: cfg}
-	bh.inner = generaltoken.GlobalQueryHandler(bh)
-	return bh
-}
-
-func InitHandler(cfg TokenConfig) *basehandler {
-	bh := &basehandler{TokenConfig: cfg}
-	bh.inner = generaltoken.InitHandler(bh)
-	return bh
+func InitHandler(cfg TokenConfig) txh.TxHandler {
+	return basehandler{generaltoken.InitHandler, cfg}
 }

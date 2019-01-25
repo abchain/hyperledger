@@ -4,6 +4,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"hyperledger.abchain.org/chaincode/lib/caller"
+	txh "hyperledger.abchain.org/chaincode/lib/txhandle"
 	ccpb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
@@ -16,27 +17,27 @@ type touchHandler struct{}
 type globalQueryHandler struct{ TokenConfig }
 type initHandler struct{ TokenConfig }
 
-func TransferHandler(cfg TokenConfig) transferHandler {
+func TransferHandler(cfg TokenConfig) txh.TxHandler {
 	return transferHandler{TokenConfig: cfg}
 }
 
-func AssignHandler(cfg TokenConfig) assignHandler {
+func AssignHandler(cfg TokenConfig) txh.TxHandler {
 	return assignHandler{TokenConfig: cfg}
 }
 
-func TouchHandler() touchHandler {
+func TouchHandler(TokenConfig) txh.TxHandler {
 	return touchHandler{}
 }
 
-func TokenQueryHandler(cfg TokenConfig) tokenQueryHandler {
+func TokenQueryHandler(cfg TokenConfig) txh.TxHandler {
 	return tokenQueryHandler{TokenConfig: cfg}
 }
 
-func GlobalQueryHandler(cfg TokenConfig) globalQueryHandler {
+func GlobalQueryHandler(cfg TokenConfig) txh.TxHandler {
 	return globalQueryHandler{TokenConfig: cfg}
 }
 
-func InitHandler(cfg TokenConfig) initHandler {
+func InitHandler(cfg TokenConfig) txh.TxHandler {
 	return initHandler{TokenConfig: cfg}
 }
 

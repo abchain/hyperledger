@@ -26,25 +26,31 @@ type dummyCaller struct {
 	*GeneralCall
 }
 
-func (d dummyCaller) Invoke(method string, msg proto.Message) error {
+func (d dummyCaller) buildMsg(msg proto.Message) proto.Message {
+	mmsg := &pb.MultiTokenMsg{TokenName: d.name}
 
-	wrapmsg, err := proto.Marshal(msg)
-	if err != nil {
-		return err
+	switch wrapmsg := msg.(type) {
+	case *pb.SimpleFund:
+		mmsg.Msg = &pb.MultiTokenMsg_Fund{wrapmsg}
+	case *pb.QueryToken:
+		mmsg.Msg = &pb.MultiTokenMsg_Query{wrapmsg}
+	case *pb.BaseToken:
+		mmsg.Msg = &pb.MultiTokenMsg_Init{wrapmsg}
+	default:
 	}
 
-	return d.TxCaller.Invoke("M"+method, &pb.MultiTokenMsg{TokenName: d.name, TokenMsg: wrapmsg})
+	return mmsg
+}
+
+func (d dummyCaller) Invoke(method string, msg proto.Message) error {
+
+	return d.TxCaller.Invoke("M"+method, d.buildMsg(msg))
 
 }
 
 func (d dummyCaller) Query(method string, msg proto.Message) (chan txgen.QueryResp, error) {
 
-	wrapmsg, err := proto.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
-
-	return d.TxCaller.Query("M"+method, &pb.MultiTokenMsg{TokenName: d.name, TokenMsg: wrapmsg})
+	return d.TxCaller.Query("M"+method, d.buildMsg(msg))
 
 }
 
