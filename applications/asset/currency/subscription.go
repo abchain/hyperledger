@@ -1,4 +1,4 @@
-package service
+package currency
 
 import (
 	"github.com/gocraft/web"

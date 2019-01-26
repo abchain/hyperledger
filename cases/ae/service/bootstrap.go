@@ -7,6 +7,7 @@ import (
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"hyperledger.abchain.org/applications/asset/wallet"
+	simplewallet "hyperledger.abchain.org/applications/asset/wallet/simple"
 	apputil "hyperledger.abchain.org/applications/util"
 	"hyperledger.abchain.org/cases/ae/chaincode/cc"
 	"hyperledger.abchain.org/chaincode/lib/caller"
@@ -44,7 +45,7 @@ func StartService() {
 	config.LoggingInit(`%{color}%{time:15:04:05.000} %{level:.4s} [%{module:.6s}] %{shortfile} %{shortfunc} ▶ %{message}%{color:reset}`, os.Stdout)
 
 	// Init Wallet
-	defaultWallet = wallet.LoadWallet(viper.Sub(conf_wallet))
+	defaultWallet = simplewallet.LoadWallet(viper.Sub(conf_wallet))
 	if err := defaultWallet.Load(); err != nil {
 		logger.Errorf("Load wallet file failed: %v", err)
 		return

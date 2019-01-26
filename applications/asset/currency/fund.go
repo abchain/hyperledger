@@ -1,4 +1,4 @@
-package service
+package currency
 
 import (
 	"bytes"
@@ -50,7 +50,7 @@ func (r FundRouter) BuildFundRoutes() {
 func (r FundRouter) BuildAddressRoutes() {
 
 	r.Get("/:"+AddressFlag, (*Fund).QueryAddress)
-	r.Get("/:"+AccountID+"/:"+AccountIndex, (*Fund).Query)
+	//r.Get("/:"+AccountID+"/:"+AccountIndex, (*Fund).Query)
 }
 
 func (r FundRouter) BuildGlobalRoutes() {

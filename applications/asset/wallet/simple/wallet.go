@@ -1,4 +1,4 @@
-package wallet
+package simplewallet
 
 import (
 	"bytes"
@@ -16,8 +16,9 @@ import (
 	"hyperledger.abchain.org/core/crypto/ecdsa"
 )
 
-var logger = log.MustGetLogger("WALLET")
+var logger = log.MustGetLogger("SIMPLEWALLET")
 var DefaultKeySource = func() (abcrypto.Signer, error) { return ecdsa.NewDefaultPrivatekey() }
+var debugMode = true
 
 const (
 	defaultWalletFileName = "simplewallet.dat"
@@ -39,14 +40,18 @@ type persistElem struct {
 //we add a debug signer
 
 func NewWallet(fpath string) *simpleWallet {
+
+	kdata := map[string]abcrypto.Signer{}
+	if debugMode {
+		kdata["example"] = ecdsa.NewSECP256K1Privkey("0C28FCA386C7A227600B2FE50B7CAE11EC86D3BF1FBE471BE89827E19D72AA1D")
+		kdata["example01"] = ecdsa.NewSECP256K1Privkey("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD")
+	}
+
 	return &simpleWallet{
 		PersistFile: fpath,
 		KeySource:   DefaultKeySource,
 		// keyData:     map[string]*abcrypto.PrivateKey{}}
-		keyData: map[string]abcrypto.Signer{
-			"example":   ecdsa.NewSECP256K1Privkey("0C28FCA386C7A227600B2FE50B7CAE11EC86D3BF1FBE471BE89827E19D72AA1D"),
-			"example01": ecdsa.NewSECP256K1Privkey("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"),
-		},
+		keyData: kdata,
 	}
 }
 

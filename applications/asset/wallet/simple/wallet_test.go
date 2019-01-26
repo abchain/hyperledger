@@ -1,8 +1,9 @@
-package wallet
+package simplewallet
 
 import (
 	"crypto/rand"
 	"fmt"
+	"hyperledger.abchain.org/applications/asset/wallet"
 	abcrypto "hyperledger.abchain.org/core/crypto"
 	"math/big"
 	"os"
@@ -12,8 +13,8 @@ import (
 
 type sampleSets struct {
 	sampleCnt     int
-	existGroup    Wallet
-	nonexistGroup Wallet
+	existGroup    wallet.Wallet
+	nonexistGroup wallet.Wallet
 }
 
 func (s *sampleSets) prepare() error {
@@ -50,7 +51,7 @@ func (s *sampleSets) prepare() error {
 	return nil
 }
 
-func testChargeProcess(t *testing.T, target Wallet, sample *sampleSets) {
+func testChargeProcess(t *testing.T, target wallet.Wallet, sample *sampleSets) {
 	vm, err := sample.existGroup.ListAll()
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +68,7 @@ func testChargeProcess(t *testing.T, target Wallet, sample *sampleSets) {
 	}
 }
 
-func testStandardProcess(t *testing.T, target Wallet, sample *sampleSets) {
+func testStandardProcess(t *testing.T, target wallet.Wallet, sample *sampleSets) {
 
 	vm, err := sample.existGroup.ListAll()
 	if err != nil {
@@ -93,13 +94,14 @@ func testStandardProcess(t *testing.T, target Wallet, sample *sampleSets) {
 	for k, _ := range nvm {
 		_, err := target.LoadPrivKey(k)
 		if err == nil {
-			t.Fatal("Load key should not exist")
+			t.Fatalf("Load key [%s] should not exist", k)
 		}
 	}
 }
 
 func TestSimpleWallet(t *testing.T) {
 
+	debugMode = false
 	walletFile := filepath.Join(os.TempDir(), "WalletTest.dat")
 	t.Logf("Use wallet file: %v", walletFile)
 

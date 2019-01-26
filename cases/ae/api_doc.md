@@ -668,9 +668,7 @@ FORMAT:1A
                 }
             }
 
-## 基础地址服务 [/api/v1/address]
-
-### 转换公钥到地址 [POST]
+## 转换公钥到地址 [POST /api/v1/account/frompublickey]
 
 - 请求参数说明
 
@@ -684,7 +682,7 @@ FORMAT:1A
 
     + Body
 
-            tx=EC:01,d0de0aaeaefad02b8bdc8a01a1b8b11c696bd3d66a2c5f10780d95b7df42645cd85228a6fb29940e858e7e55842ae2bd115d1ed7cc0e82d934e929c97648cb0a
+            pubkeybuffer=EC:01,d0de0aaeaefad02b8bdc8a01a1b8b11c696bd3d66a2c5f10780d95b7df42645cd85228a6fb29940e858e7e55842ae2bd115d1ed7cc0e82d934e929c97648cb0a
 
 + Response 200 (application/json;charset=utf-8)
 
@@ -696,15 +694,16 @@ FORMAT:1A
             }
 
 
-## 基础事务 [/api/v1/rawtransaction]
-
-### 提交基础事务 [POST]
+## 提交事务 [POST /api/v1/rawtransaction]]
 
 - 请求参数说明
 
     - tx: 提交的事务内容，编码方案和生成待签名事务时相同
     - \[sig\]: 编码为字符串的签名值，生成的格式可以参考 application/util/signhelper 中的node.js示例
         - 一次请求可携带0 ~ 多个 sig 参数
+    - \[accountID | account\]: 账号 ID 或账号地址，系统会使用此账号向事务中追加一个签名
+        - 账号地址必须是已经记录在本地的地址，可以是根账号或者子账号
+    - \[index\]: 使用 accountID 的子账号        
 
 - 响应参数说明
 
@@ -717,7 +716,34 @@ FORMAT:1A
 
             tx=I::TOKEN.TRANSFER:ChoKB0FCQ0hBSU4SD0F0b21pY0VuZXJneV92MRIGCKKw8OEFGhRiXies8Zp97ktRv1lyR4mZtZV8Vw==:CgoVLQLH4Ur2gAAAEhYKFJT1uordAf/qOrTeOPjfYkl4eSUUGhYKFBJtq6Q46oTnxDwvVqMgDtZeNxs7&sig=EC:01,d0de0aaeaefad02b8bdc8a01a1b8b11c696bd3d66a2c5f10780d95b7df42645cd85228a6fb29940e858e7e55842ae2bd115d1ed7cc0e82d934e929c97648cb0a,5f27d831cfe37e7542a1a5d9c687d935f0fd10dc60c2605be7a07ae26b77e22e23ebcbeed6ca7a1c9873009bc060ece0930d3013221efc87e9a4b1b1bb654b6c:
 
+## 执行签名 [POST /api/v1/signature]]
 
+- 请求参数说明
+
+    - hash: 需要签名的hash，用16进制表示
+    - accountID | account: 账号 ID 或账号地址
+        - 账号地址必须是已经记录在本地的地址，可以是根账号或者子账号
+    - \[index\]: 使用 accountID 的子账号
+
+- 响应参数说明
+
+    - result: 生成的签名数据，编码为可在事务提交中使用的格式
+
++ Request (application/x-www-form-urlencoded;charset=utf-8)
+
+    + Body
+
+        hash=A0C248E68881CA5D00B4CCCD0CDD3CEF0747674CC13F6559825C9393FF8089ED
+        &accountID=aaa
+
++ Response 200 (application/json;charset=utf-8)
+
+    + Body
+
+        {
+            "jsonrpc": "2.0",
+            "result": "EC:02,D7B150F1A79153F8CF8755E42154B58F194D9A6A0E7805A1BBAA528107DA25AC18466D511E2706D8B4E1D00B3C0533D6637ED3D050547B01FD24D3C9E9F6D673,EBAD9654E5A5BA6D56EBEC4DC2B15444AE6ACF49CF2BD4844E09EF269EEA65E34A6D0600C92BAC7FE97465F37B5A88E2E233ADBE54BD547CF01872DB3DE454A9:"
+        }
 
 # Group Blockchain
 

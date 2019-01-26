@@ -5,10 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gocraft/web"
-	mainsrv "hyperledger.abchain.org/applications/asset/service"
-	"hyperledger.abchain.org/applications/blockchain"
-	regsrv "hyperledger.abchain.org/applications/supervise/service"
+	"hyperledger.abchain.org/applications/asset/currency"
+	"hyperledger.abchain.org/applications/asset/wallet"
+	"hyperledger.abchain.org/applications/supervise/registar"
 	"hyperledger.abchain.org/applications/util"
+	"hyperledger.abchain.org/applications/util/blockchain"
 	"hyperledger.abchain.org/cases/ae/chaincode/cc"
 	"strings"
 )
@@ -33,35 +34,39 @@ func buildRouter() *web.Router {
 	root.OptionsHandler(optionsHandler)
 
 	//account
-	mainsrv.CreateAccountRouter(root, "account").Init(defaultWallet).BuildRoutes()
+	wallet.CreateAccountRouter(root, "account").Init(defaultWallet).BuildRoutes()
+
+	//a temprouter, remove later
+	wallet.CreateAccountRouter(root, "").Post("/address", (*wallet.Account).PublicKeyToAddress)
 	//privkey
-	mainsrv.CreateAccountRouter(root, "privkey").Init(defaultWallet).BuildPrivkeyRoutes()
+	wallet.CreateAccountRouter(root, "privkey").Init(defaultWallet).BuildPrivkeyRoutes()
 
 	buildBusiness := func(rpc util.RPCRouter) util.TxRouter {
 
 		root := util.CreateTxRouter(rpc).Init(chaincode.CC_NAME)
+		root.BuildRoutes()
 
 		//assign
-		mainsrv.CreateFundRouter(root, "assign").Init().BuildGlobalRoutes()
-		mainsrv.CreateFundRouter(root, mainsrv.TokenNamePath+"/assign").Init().BuildGlobalRoutes()
+		currency.CreateFundRouter(root, "assign").Init().BuildGlobalRoutes()
+		currency.CreateFundRouter(root, currency.TokenNamePath+"/assign").Init().BuildGlobalRoutes()
 
 		//fund
-		mainsrv.CreateFundRouter(root, "fund").Init().BuildFundRoutes()
-		mainsrv.CreateFundRouter(root, mainsrv.TokenNamePath+"/fund").Init().BuildFundRoutes()
+		currency.CreateFundRouter(root, "fund").Init().BuildFundRoutes()
+		currency.CreateFundRouter(root, currency.TokenNamePath+"/fund").Init().BuildFundRoutes()
+
+		//address
+		currency.CreateFundRouter(root, "address").Init().BuildAddressRoutes()
+		currency.CreateFundRouter(root, currency.TokenNamePath+"/address").Init().BuildAddressRoutes()
+
+		//share
+		currency.CreatSubscriptionRouter(root, "subscription").Init().BuildRoutes()
 
 		//fundbatch
 		batchroot := util.CreateBatchRouter(root, "adv").Init(chaincode.CC_BATCH)
-		mainsrv.CreateFundBatchRouter(batchroot, "").BuildRoutes()
-
-		//address
-		mainsrv.CreateFundRouter(root, "address").Init().BuildAddressRoutes()
-		mainsrv.CreateFundRouter(root, mainsrv.TokenNamePath+"/address").Init().BuildAddressRoutes()
-
-		//share
-		mainsrv.CreatSubscriptionRouter(root, "subscription").Init().BuildRoutes()
+		currency.CreateFundBatchRouter(batchroot, "").BuildRoutes()
 
 		//registrar
-		regsrv.CreatRegistrarRouter(root, "registrar").Init().BuildRoutes()
+		registar.CreatRegistrarRouter(root, "registrar").Init().BuildRoutes()
 
 		return root
 	}
@@ -70,10 +75,8 @@ func buildRouter() *web.Router {
 	localrouter := util.CreateRPCRouter(root, "data").Init(util.MakeDefaultLocalCaller)
 
 	//business
-	apirouter.BuildRoutes()
-
-	mainsrv.InitTxRouterWithWallet(buildBusiness(apirouter), defaultWallet)
-	buildBusiness(localrouter)
+	wallet.InitTxRouterWithWallet(buildBusiness(apirouter), defaultWallet)
+	wallet.InitTxRouterWithWallet(buildBusiness(localrouter), defaultWallet)
 
 	//blockchain
 	blockchain.CreateBlocChainRouter(apirouter, "chain").Init(defaultChain).BuildRoutes()

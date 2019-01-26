@@ -14,6 +14,7 @@ type TxMaker interface {
 	GetCredBuilder() AddrCredentialBuilder
 	GenArguments() ([][]byte, error)
 	GenArgumentsWithoutCred() ([][]byte, error)
+	GenHash(string) []byte
 }
 
 type baseMaker struct {
@@ -23,6 +24,11 @@ type baseMaker struct {
 
 func NewTxMaker(args [][]byte) TxMaker {
 	return &baseMaker{args, NewAddrCredentialBuilder()}
+}
+
+func (b *baseMaker) GenHash(method string) []byte {
+
+	return genHash(b.txArgs[0], b.txArgs[1], method)
 }
 
 func (b *baseMaker) GetCredBuilder() AddrCredentialBuilder {

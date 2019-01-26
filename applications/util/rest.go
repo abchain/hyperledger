@@ -1,7 +1,6 @@
 package util
 
 import (
-	"encoding/base64"
 	"encoding/json"
 
 	"net/http"
@@ -16,7 +15,7 @@ type FabricClientBase struct {
 	RespWrapping func(interface{}) interface{}
 }
 
-func (s *FabricClientBase) normalHeader(rw web.ResponseWriter) {
+func normalHeader(rw web.ResponseWriter) {
 
 	// Set response content type
 	rw.Header().Set("Content-Type", "application/json")
@@ -32,33 +31,43 @@ func (s *FabricClientBase) normalHeader(rw web.ResponseWriter) {
 
 func (s *FabricClientBase) Normal(rw web.ResponseWriter, v interface{}) {
 
-	s.normalHeader(rw)
+	normalHeader(rw)
 	// Create response encoder
 	if s.RespWrapping != nil {
 		v = s.RespWrapping(v)
 	}
 
-	logger.Debugf("Normal finish, output %v", v)
+	// logger.Debugf("Normal finish, output %v", v)
 
 	json.NewEncoder(rw).Encode(utils.JRPCSuccess(v))
 }
 
 func (s *FabricClientBase) NormalError(rw web.ResponseWriter, e error) {
 
-	s.normalHeader(rw)
+	normalHeader(rw)
 	json.NewEncoder(rw).Encode(utils.JRPCError(e, s.debugData))
 }
 
 func (s *FabricClientBase) NormalErrorF(rw web.ResponseWriter, code int, message string) {
 
-	s.normalHeader(rw)
+	normalHeader(rw)
 	json.NewEncoder(rw).Encode(utils.JRPCErrorF(code, message, s.debugData))
 }
 
-func (s *FabricClientBase) EncodeEntry(nonce []byte) string {
-	return base64.URLEncoding.EncodeToString(nonce)
+func NormalEnd(rw web.ResponseWriter, v interface{}) {
+
+	normalHeader(rw)
+	json.NewEncoder(rw).Encode(utils.JRPCSuccess(v))
 }
 
-func (s *FabricClientBase) DecodeEntry(nonce string) ([]byte, error) {
-	return base64.URLEncoding.DecodeString(nonce)
+func NormalError(rw web.ResponseWriter, e error) {
+
+	normalHeader(rw)
+	json.NewEncoder(rw).Encode(utils.JRPCError(e, nil))
+}
+
+func NormalErrorF(rw web.ResponseWriter, code int, message string) {
+
+	normalHeader(rw)
+	json.NewEncoder(rw).Encode(utils.JRPCErrorF(code, message, nil))
 }

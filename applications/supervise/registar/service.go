@@ -1,4 +1,4 @@
-package service
+package registar
 
 import (
 	log "github.com/op/go-logging"

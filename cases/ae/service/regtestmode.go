@@ -1,7 +1,7 @@
 package service
 
 import (
-	"hyperledger.abchain.org/applications/blockchain"
+	"hyperledger.abchain.org/applications/util/blockchain"
 	"hyperledger.abchain.org/cases/ae/chaincode/cc"
 	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
 	"hyperledger.abchain.org/client/local"

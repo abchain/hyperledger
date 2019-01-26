@@ -7,8 +7,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	"hyperledger.abchain.org/chaincode/lib/caller"
-	"hyperledger.abchain.org/core/crypto"
-	txutil "hyperledger.abchain.org/core/tx"
 	"strings"
 )
 
@@ -109,73 +107,6 @@ type FabricRPCBase struct {
 	Caller rpc.Caller
 }
 
-func (s *FabricRPCBase) GetAddress(rw web.ResponseWriter, req *web.Request) {
-	pkstr := req.PostFormValue("pubkeybuffer")
-
-	pk, err := crypto.DecodeCompactPublicKey(pkstr)
-	if err != nil {
-		s.NormalError(rw, fmt.Errorf("decode public key fail: %s", err))
-		return
-	}
-
-	addr, err := txutil.NewAddress(pk)
-	if err != nil {
-		s.NormalError(rw, fmt.Errorf("create addr fail: %s", err))
-		return
-	}
-
-	s.Normal(rw, addr.ToString())
-}
-
-func (s *FabricRPCBase) SendRawTx(rw web.ResponseWriter, req *web.Request) {
-
-	err, flag, method, _, args := ParseCompactFormTx(req.PostFormValue("tx"))
-
-	if err != nil {
-		s.NormalError(rw, err)
-		return
-	}
-
-	txMaker := txutil.NewTxMaker(args)
-	sigs := req.PostForm["sig"]
-
-	for i, sig := range sigs {
-		sigpb, err := crypto.DecodeCompactSignature(sig)
-		if err != nil {
-			s.NormalError(rw, fmt.Errorf("Decode signature %d fail: %s", i, err))
-			return
-		}
-		txMaker.GetCredBuilder().AddSignature(sigpb)
-	}
-
-	args, err = txMaker.GenArguments()
-	if err != nil {
-		s.NormalError(rw, fmt.Errorf("Gen signed args fail: %s", err))
-		return
-	}
-
-	var retTx string
-	switch flag {
-	case "I":
-		retTx, err = s.Caller.Invoke(method, args)
-	case "D":
-		retTx, err = s.Caller.Deploy(method, args)
-	case "Q":
-		s.NormalErrorF(rw, 500, "Not implied yet")
-		return
-	default:
-		s.NormalError(rw, fmt.Errorf("No such a tx type: %s", flag))
-		return
-	}
-
-	if err != nil {
-		s.NormalError(rw, err)
-	} else {
-		s.Normal(rw, retTx)
-	}
-
-}
-
 type RPCRouter struct {
 	*web.Router
 }
@@ -184,11 +115,6 @@ func CreateRPCRouter(root *web.Router, path string) RPCRouter {
 	return RPCRouter{
 		root.Subrouter(FabricRPCBase{}, path),
 	}
-}
-
-func (r RPCRouter) BuildRoutes() {
-	r.Post("/rawtransaction", (*FabricRPCBase).SendRawTx)
-	r.Post("/address", (*FabricRPCBase).GetAddress)
 }
 
 func (r RPCRouter) Init(cf func() (rpc.Caller, error)) RPCRouter {

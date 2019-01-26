@@ -1,11 +1,12 @@
-package service
+package wallet
 
 import (
 	"errors"
 	"fmt"
 	"github.com/gocraft/web"
-	"hyperledger.abchain.org/applications/asset/wallet"
+	log "github.com/op/go-logging"
 	"hyperledger.abchain.org/applications/util"
+	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	"hyperledger.abchain.org/core/crypto"
 	"hyperledger.abchain.org/core/tx"
 	"math/big"
@@ -17,10 +18,12 @@ const (
 	AccountIndex = "index"
 )
 
+var logger = log.MustGetLogger("WALLET")
+
 type Account struct {
 	*util.FabricClientBase
 	accountID     string
-	wallet        wallet.Wallet
+	wallet        Wallet
 	shouldPersist bool
 }
 
@@ -34,7 +37,35 @@ func CreateAccountRouter(root *web.Router, path string) AccountRouter {
 	}
 }
 
-func (r AccountRouter) Init(wallet wallet.Wallet) AccountRouter {
+func InitTxRouterWithWallet(r util.TxRouter, wallet Wallet) {
+
+	Initcall := func(s *util.FabricRPCCore, rw web.ResponseWriter,
+		req *web.Request, next web.NextMiddlewareFunc) {
+
+		//should allow error or ID is not provided
+		privk, err := wallet.LoadPrivKey(req.FormValue(AccountID))
+		if err == nil {
+			if indstr := req.FormValue(AccountIndex); indstr != "" {
+				index, ok := big.NewInt(0).SetString(indstr, 0)
+				if ok {
+					privk, err = crypto.GetChildPrivateKey(privk, index)
+					if err != nil {
+						s.NormalError(rw, err)
+						return
+					}
+				}
+			}
+			s.Credgenerator = txgen.NewSingleKeyCred(privk)
+			s.ActivePrivk = privk
+		}
+
+		next(rw, req)
+	}
+
+	r.Middleware(Initcall)
+}
+
+func (r AccountRouter) Init(wallet Wallet) AccountRouter {
 
 	Initcall := func(s *Account, rw web.ResponseWriter,
 		req *web.Request, next web.NextMiddlewareFunc) {
@@ -63,6 +94,7 @@ func (r AccountRouter) BuildRoutes() {
 	r.Patch("/:"+AccountID, (*Account).Update)
 	r.Delete("/:"+AccountID, (*Account).Delete)
 	r.Get("/:"+AccountID+"/:"+AccountIndex, (*Account).QueryChild)
+	r.Post("/frompublickey", (*Account).PublicKeyToAddress)
 }
 
 func (r AccountRouter) BuildPrivkeyRoutes() {
@@ -90,6 +122,24 @@ func (s *Account) ParseParameters(rw web.ResponseWriter,
 	}
 
 	next(rw, req)
+}
+
+func (s *Account) PublicKeyToAddress(rw web.ResponseWriter, req *web.Request) {
+	pkstr := req.PostFormValue("pubkeybuffer")
+
+	pk, err := crypto.DecodeCompactPublicKey(pkstr)
+	if err != nil {
+		s.NormalError(rw, fmt.Errorf("decode public key fail: %s", err))
+		return
+	}
+
+	addr, err := abchainTx.NewAddress(pk)
+	if err != nil {
+		s.NormalError(rw, fmt.Errorf("create addr fail: %s", err))
+		return
+	}
+
+	s.Normal(rw, addr.ToString())
 }
 
 func (s *Account) Create(rw web.ResponseWriter, req *web.Request) {

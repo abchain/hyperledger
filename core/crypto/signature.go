@@ -57,6 +57,37 @@ func decodeECDSASig(sig string) (*protos.Signature_ECDSA, error) {
 	return ret, nil
 }
 
+func EncodeCompactSignature(sig *protos.Signature) (string, error) {
+
+	var scheme, sigdata, derv string
+
+	switch ssig := sig.Data.(type) {
+	case *protos.Signature_Ec:
+		scheme = "EC"
+		ecsig := ssig.Ec
+		var pkorv string
+		if ecp := ecsig.GetP(); ecp != nil {
+			pkorv = fmt.Sprintf("%X%X", ecp.GetX(), ecp.GetY())
+		} else {
+			pkorv = fmt.Sprintf("%d", ecsig.GetV())
+		}
+		sigdata = fmt.Sprintf("%02d,%s,%X%X", ecsig.GetCurvetype(), pkorv, ecsig.GetR(), ecsig.GetS())
+	default:
+		return "", fmt.Errorf("No signature data")
+	}
+
+	if kd := sig.Kd; kd != nil {
+		indstr := big.NewInt(0).SetBytes(kd.GetIndex()).String()
+		if cc := kd.GetChaincode(); cc != nil {
+			derv = fmt.Sprintf("%s,%X,%X", indstr, kd.GetRootFingerprint(), cc)
+		} else {
+			derv = fmt.Sprintf("%s,%X", indstr, kd.GetRootFingerprint())
+		}
+	}
+
+	return strings.Join([]string{scheme, sigdata, derv}, ":"), nil
+}
+
 //we define a compact, simple encoding for the protbuf signature before our SDK for other language is mature...
 //which has such a form: <crypto scheme mark>:<encoded sig>:[derived part := <index>,<finger print>,[cc]]
 func DecodeCompactSignature(sig string) (*protos.Signature, error) {
