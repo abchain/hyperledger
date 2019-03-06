@@ -3,16 +3,29 @@ package main
 import (
 	node "github.com/abchain/fabric/node/start"
 	"hyperledger.abchain.org/cases/ae/chaincode/cc"
+	"hyperledger.abchain.org/chaincode/impl/yafabric"
 
 	"github.com/abchain/fabric/core/embedded_chaincode/api"
+	"github.com/abchain/fabric/node/legacy"
 )
 
 func main() {
 
+	adapter := &legacynode.LegacyEngineAdapter{}
+
 	reg := func() error {
-		return api.RegisterECC(&api.EmbeddedChaincode{"aecc", new(chaincode.AECC)})
+		cc := fabric_impl.GenYAfabricCC(new(chaincode.AECC))
+		if err := api.RegisterECC(&api.EmbeddedChaincode{"aecc", cc}); err != nil {
+			return err
+		}
+
+		if err := adapter.Init(); err != nil {
+			return err
+		}
+
+		return nil
 	}
 
-	node.RunNode(&node.NodeConfig{PostRun: reg})
+	node.RunNode(&node.NodeConfig{PostRun: reg, Schemes: adapter.Scheme})
 
 }
