@@ -47,7 +47,7 @@ type ChainClient interface {
 	ViaWeb(*viper.Viper) ChainInfo
 }
 
-var ChainProxy_Impls map[string]func() ChainClient
+var ChainProxy_Impls = map[string]func() ChainClient{}
 
 func (c *fabricRPCCfg) UseChainREST(name string, vp *viper.Viper) error {
 

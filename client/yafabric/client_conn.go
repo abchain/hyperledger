@@ -35,6 +35,8 @@ func (conn *ClientConn) Dial(conf map[string]string) error {
 		}
 
 		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
 	}
 
 	//Todo: set timeout?

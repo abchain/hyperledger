@@ -14,7 +14,7 @@ func main() {
 	adapter := &legacynode.LegacyEngineAdapter{}
 
 	reg := func() error {
-		cc := fabric_impl.GenYAfabricCC(new(chaincode.AECC))
+		cc := fabric_impl.GenYAfabricCC(chaincode.NewChaincode(true))
 		if err := api.RegisterECC(&api.EmbeddedChaincode{"aecc", cc}); err != nil {
 			return err
 		}

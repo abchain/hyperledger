@@ -20,8 +20,12 @@ func obtainByteArgs(stub shim.ChaincodeStubInterface) [][]byte {
 	}
 }
 
+var logger = shim.NewLogger("aecc")
+
+//we provide a DO-NOTHING deployment entry
 func (a adapter) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	return a.Chaincode.Invoke(stubAdapter{stub}, function, obtainByteArgs(stub), false)
+	logger.Infof("A chaincode [%v] is deployed", a.Chaincode)
+	return []byte("ok"), nil
 }
 
 func (a adapter) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
