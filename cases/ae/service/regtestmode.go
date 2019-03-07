@@ -14,6 +14,6 @@ func init() {
 	//also build txparser from chaincode ...
 	parser := txhandle.GenerateTxArgParser(aecc.CollectiveTxs.Map())
 	parser[chaincode.CC_BATCH+"@"+chaincode.CC_NAME] = txhandle.BatchArgParser(chaincode.CC_NAME, parser)
-	parser[client.TxErrorEventName] = client.TxErrorParser("Local invoke error:")
+	parser[client.TxErrorEventName] = client.TxErrorParser("<Parser> ")
 	blockchain.SetParsers(parser)
 }

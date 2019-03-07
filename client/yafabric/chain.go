@@ -3,7 +3,9 @@ package client
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	pbwrap "github.com/golang/protobuf/ptypes/wrappers"
 	"hyperledger.abchain.org/client"
+	local_cli "hyperledger.abchain.org/client/local"
 	"hyperledger.abchain.org/client/yafabric/protos"
 )
 
@@ -47,8 +49,27 @@ func (i *blockchainInterpreter) resolveTxEvent(txe *protos.ChaincodeEvent) *clie
 
 	ret.TxID = txe.GetTxID()
 	ret.Chaincode = txe.GetChaincodeID()
-	ret.Name = txe.GetEventName()
-	ret.Payload = txe.GetPayload()
+
+	if eName := txe.GetEventName(); eName == protos.EventName_TxError {
+		txR := new(protos.TransactionResult)
+		if err := proto.Unmarshal(txe.GetPayload(), txR); err == nil {
+
+			//change into the name of local module, keep some consistents
+			ret.Name = local_cli.TxErrorEventName
+			ret.Status = int(txR.GetErrorCode())
+			//and we can also use the event parser for local module
+			ret.Payload, _ = proto.Marshal(&pbwrap.StringValue{Value: txR.GetError()})
+
+		} else {
+			//we can not handle this payload ...
+			ret.Name = eName
+			ret.Status = -1
+		}
+
+	} else {
+		ret.Name = eName
+		ret.Payload = txe.GetPayload()
+	}
 
 	return ret
 }

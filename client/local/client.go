@@ -116,7 +116,7 @@ func (c *localCC) innerInvoke(method string, arg [][]byte, createFlag bool) (ret
 			errevt.Chaincode = tx.Chaincode
 			errevt.Name = TxErrorEventName
 			errevt.Status = 1
-			errevt.Payload, _ = proto.Marshal(&pbwrap.StringValue{Value: e.Error()})
+			errevt.Payload, _ = proto.Marshal(&pbwrap.StringValue{Value: "Local invoke error:" + e.Error()})
 			//errevt.
 			c.pendingEvents = append(c.pendingEvents, errevt)
 
