@@ -2,9 +2,9 @@ package client
 
 import (
 	"fmt"
-	protos "github.com/abchain/fabric/protos"
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/client"
+	"hyperledger.abchain.org/client/yafabric/protos"
 )
 
 type chainAcquire interface {
@@ -115,10 +115,8 @@ func (i *blockchainInterpreter) GetTransaction(txid string) (*client.ChainTransa
 		return nil, err
 	}
 	ret := i.resolveTx(tx)
-	ret.Height, err = i.chainAcquire.GetTxIndex(txid)
-	if err != nil {
-		return nil, err
-	}
+	//not consider as fatal error even fail
+	ret.Height, _ = i.chainAcquire.GetTxIndex(txid)
 	return ret, nil
 }
 
@@ -128,5 +126,20 @@ func (i *blockchainInterpreter) GetTxEvent(txid string) ([]*client.ChainTxEvents
 }
 
 func (c *RpcClientConfig) Chain() (client.ChainInfo, error) {
-	return nil, fmt.Errorf("No implement")
+	conn, err := c.conn.obtainConn(c.connManager.Context())
+	if conn == nil {
+		return nil, err
+	}
+
+	builder := &RpcBuilder{
+		Conn:        *conn,
+		ConnManager: c.connManager,
+		TxTimeout:   c.TxTimeout,
+	}
+
+	if err := builder.VerifyConn(); err != nil {
+		return nil, err
+	}
+
+	return &blockchainInterpreter{builder}, nil
 }

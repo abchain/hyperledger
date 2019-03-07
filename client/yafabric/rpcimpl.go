@@ -3,8 +3,10 @@ package client
 import (
 	"context"
 	"fmt"
-	pb "github.com/abchain/fabric/protos"
+	pb_empty "github.com/golang/protobuf/ptypes/empty"
+	pb_wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	grpc_conn "google.golang.org/grpc/connectivity"
+	pb "hyperledger.abchain.org/client/yafabric/protos"
 	"time"
 )
 
@@ -174,4 +176,48 @@ func (b *RpcBuilder) Query(args [][]byte) ([]byte, error) {
 	}
 
 	return resp.Msg, nil
+}
+
+//also imply the chainAcquire
+func (b *RpcBuilder) GetCurrentBlock() (int64, error) {
+
+	ctx, cancel := b.context()
+	defer cancel()
+	resp, err := pb.NewOpenchainClient(b.Conn.C).GetBlockCount(ctx, new(pb_empty.Empty))
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(resp.GetCount()), nil
+}
+
+func (b *RpcBuilder) GetBlock(blknum int64) (*pb.Block, error) {
+
+	ctx, cancel := b.context()
+	defer cancel()
+	resp, err := pb.NewOpenchainClient(b.Conn.C).GetBlockByNumber(ctx, &pb.BlockNumber{Number: uint64(blknum)})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (b *RpcBuilder) GetTransaction(txid string) (*pb.Transaction, error) {
+
+	ctx, cancel := b.context()
+	defer cancel()
+	resp, err := pb.NewOpenchainClient(b.Conn.C).GetTransactionByID(ctx, &pb_wrappers.StringValue{Value: txid})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (b *RpcBuilder) GetTxIndex(string) (int64, error) {
+	return 0, fmt.Errorf("No implement")
 }

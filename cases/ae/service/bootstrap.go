@@ -75,7 +75,10 @@ func StartService() {
 			panic("No implement")
 		default:
 			cfg.UseYAFabricCli(rpcsetting)
-			err = cfg.UseYAFabricREST(viper.Sub(conf_rest))
+			if viper.IsSet(conf_rest) {
+				logger.Infof("Use REST setting [%v] for client", viper.GetStringMap(conf_rest))
+				cfg.UseYAFabricREST(viper.Sub(conf_rest))
+			}
 		}
 	}
 

@@ -3,9 +3,9 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	protos "github.com/abchain/fabric/protos"
 	"github.com/spf13/viper"
 	"hyperledger.abchain.org/client"
+	"hyperledger.abchain.org/client/yafabric/protos"
 	"io/ioutil"
 	"net/http"
 )
