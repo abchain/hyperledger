@@ -8,6 +8,7 @@ import (
 	tokenNc "hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	_ "hyperledger.abchain.org/chaincode/modules/registrar"
 	share "hyperledger.abchain.org/chaincode/modules/sharesubscription"
+	_ "hyperledger.abchain.org/core/crypto/ecdsa" //important
 )
 
 type AECC struct {

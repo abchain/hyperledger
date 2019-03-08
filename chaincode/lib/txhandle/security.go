@@ -166,14 +166,15 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method 
 			}
 		}
 
-		if !done && cred != nil {
-			if cred.Verify(*addr) == nil {
-				done = true
-			}
-		}
-
 		if !done {
-			return fmt.Errorf("Addr [%s] has no credential", addr.ToString())
+			if cred != nil {
+				//last chance
+				if err := cred.Verify(*addr); err != nil {
+					return fmt.Errorf("Addr [%s] has wrong credential: %s", addr.ToString(), err)
+				}
+			} else {
+				return fmt.Errorf("Addr [%s] has no credential", addr.ToString())
+			}
 		}
 	}
 
