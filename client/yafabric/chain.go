@@ -2,11 +2,13 @@ package client
 
 import (
 	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	pbwrap "github.com/golang/protobuf/ptypes/wrappers"
 	"hyperledger.abchain.org/client"
 	local_cli "hyperledger.abchain.org/client/local"
 	"hyperledger.abchain.org/client/yafabric/protos"
+	"hyperledger.abchain.org/core/utils"
 )
 
 type chainAcquire interface {
@@ -115,6 +117,9 @@ func (i *blockchainInterpreter) GetBlock(h int64) (*client.ChainBlock, error) {
 	}
 
 	outblk := new(client.ChainBlock)
+	outblk.Height = h
+	outblk.Hash = fmt.Sprintf("%X", blk.GetStateHash())
+	outblk.TimeStamp = utils.ConvertPBTimestamp(blk.GetTimestamp()).String()
 
 	for _, tx := range blk.GetTransactions() {
 		ret := i.resolveTx(tx)
