@@ -56,11 +56,11 @@ func (h *regPreHandler) Verify(addr *txutil.Address) error {
 		}
 	}
 
-	return nil
+	return txhandle.Verifier_CheckCred
 
 }
 
-func (h regPreHandler) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
+func (h *regPreHandler) PreHandling(stub shim.ChaincodeStubInterface, _ string, tx txutil.Parser) error {
 
 	h.AddrCredentials = tx.GetAddrCredential()
 	if h.AddrCredentials == nil {
