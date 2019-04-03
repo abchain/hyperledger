@@ -86,6 +86,8 @@ type AddrCredInspector interface {
 	AddVerifier(AddrVerifier)
 }
 
+var Verifier_CheckCred = fmt.Errorf("Pass if credential can be verified")
+
 //Verify addresses which the interface required
 //One of the interface is used, And interface is tried from top to bottom
 type addrCredVerifier struct {
@@ -129,6 +131,9 @@ func (v failVerifier) Verify(*txutil.Address) error { return v.e }
 
 func (v *addrCredVerifier) AddVerifier(vv AddrVerifier) { v.inspectors = append(v.inspectors, vv) }
 
+var defaultVerifier = []AddrVerifier{failVerifier{Verifier_CheckCred}}
+var noCredential = fmt.Errorf("No credential")
+
 func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method string, tx txutil.Parser) error {
 
 	var addrs []*txutil.Address
@@ -145,10 +150,14 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method 
 
 	cred := tx.GetAddrCredential()
 	inps := make([]AddrVerifier, len(v.inspectors))
+	if len(inps) == 0 {
+		inps = defaultVerifier
+	}
 
+	traceLog := []string{}
 	for _, addr := range addrs {
 
-		done := false
+		verifyErr := noCredential
 		//verified by inspectors, finnaly by incomming credential
 		for i, inp := range inps {
 			if inp == nil {
@@ -160,23 +169,23 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method 
 				inps[i] = inp
 			}
 
-			if inp.Verify(addr) == nil {
-				done = true
+			verifyErr = inp.Verify(addr)
+			if verifyErr == nil || verifyErr == Verifier_CheckCred {
 				break
 			}
 		}
 
-		if !done {
-			if cred != nil {
-				//last chance
-				if err := cred.Verify(*addr); err != nil {
-					return fmt.Errorf("Addr [%s] has wrong credential: %s", addr.ToString(), err)
-				}
-			} else {
-				return fmt.Errorf("Addr [%s] has no credential", addr.ToString())
-			}
+		if verifyErr == Verifier_CheckCred && cred != nil {
+			verifyErr = cred.Verify(*addr)
 		}
+
+		if verifyErr == nil {
+			//DONE
+			return nil
+		}
+
+		traceLog = append(traceLog, fmt.Sprintf("addr [%s]: %s", addr.ToString(), verifyErr))
 	}
 
-	return nil
+	return fmt.Errorf("Tx [%s] has no credential: %v", stub.GetTxID(), traceLog)
 }

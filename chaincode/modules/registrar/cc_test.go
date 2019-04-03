@@ -280,10 +280,7 @@ func TestFund(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = bolt.AppendPreHandler(RegistrarPreHandler(querycfg, nil))
-	if err != nil {
-		t.Fatal(err)
-	}
+	txhandle.AttachAddrVerifier(bolt.PreHandlers, RegistrarPreHandler(querycfg))
 
 	transt1, ok := big.NewInt(0).SetString(trans1, 10)
 	if !ok {
