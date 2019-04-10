@@ -203,7 +203,7 @@ func (m *simpleWallet) Load() error {
 		return nil
 	}
 
-	buf := bytes.NewBuffer(data)
+	buf := bytes.NewReader(data)
 	dec := gob.NewDecoder(buf)
 
 	v := &persistElem{}
@@ -232,7 +232,7 @@ func (m *simpleWallet) Persist() error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	buf := bytes.NewBuffer(make([]byte, 0, 4096))
+	buf := new(bytes.Buffer)
 	enc := gob.NewEncoder(buf)
 
 	var saveSize = 0
