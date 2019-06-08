@@ -46,7 +46,7 @@ func decodeTransactionPayload(deployFlag bool, payload []byte) (*protos.Chaincod
 	return spec, nil
 }
 
-func (i *blockchainInterpreter) resolveTxEvent(txe *protos.ChaincodeEvent) *client.ChainTxEvents {
+func (i blockchainInterpreter) resolveTxEvent(txe *protos.ChaincodeEvent) *client.ChainTxEvents {
 	ret := new(client.ChainTxEvents)
 
 	ret.TxID = txe.GetTxID()
@@ -76,7 +76,7 @@ func (i *blockchainInterpreter) resolveTxEvent(txe *protos.ChaincodeEvent) *clie
 	return ret
 }
 
-func (i *blockchainInterpreter) resolveTx(tx *protos.Transaction) *client.ChainTransaction {
+func (i blockchainInterpreter) resolveTx(tx *protos.Transaction) *client.ChainTransaction {
 	ret := new(client.ChainTransaction)
 
 	ret.TxID = tx.GetTxid()
@@ -100,7 +100,7 @@ func (i *blockchainInterpreter) resolveTx(tx *protos.Transaction) *client.ChainT
 	return ret
 }
 
-func (i *blockchainInterpreter) GetChain() (*client.Chain, error) {
+func (i blockchainInterpreter) GetChain() (*client.Chain, error) {
 
 	if h, err := i.chainAcquire.GetCurrentBlock(); err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (i *blockchainInterpreter) GetChain() (*client.Chain, error) {
 
 }
 
-func (i *blockchainInterpreter) GetBlock(h int64) (*client.ChainBlock, error) {
+func (i blockchainInterpreter) GetBlock(h int64) (*client.ChainBlock, error) {
 	blk, err := i.chainAcquire.GetBlock(h)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func (i *blockchainInterpreter) GetBlock(h int64) (*client.ChainBlock, error) {
 	return outblk, nil
 }
 
-func (i *blockchainInterpreter) GetTransaction(txid string) (*client.ChainTransaction, error) {
+func (i blockchainInterpreter) GetTransaction(txid string) (*client.ChainTransaction, error) {
 	tx, err := i.chainAcquire.GetTransaction(txid)
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func (i *blockchainInterpreter) GetTransaction(txid string) (*client.ChainTransa
 	return ret, nil
 }
 
-func (i *blockchainInterpreter) GetTxEvent(txid string) ([]*client.ChainTxEvents, error) {
+func (i blockchainInterpreter) GetTxEvent(txid string) ([]*client.ChainTxEvents, error) {
 	//no implement
 	return nil, fmt.Errorf("No implement")
 }
@@ -167,5 +167,5 @@ func (c *RpcClientConfig) Chain() (client.ChainInfo, error) {
 		return nil, err
 	}
 
-	return &blockchainInterpreter{builder}, nil
+	return blockchainInterpreter{builder}, nil
 }

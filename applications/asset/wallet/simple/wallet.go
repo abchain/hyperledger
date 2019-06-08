@@ -150,6 +150,10 @@ func (w *simpleWallet) RemovePrivKey(accountID string) error {
 
 func (w *simpleWallet) Rename(old string, new string) error {
 
+	if len(new) == 0 {
+		return errors.New("Empty new account name")
+	}
+
 	priv, err := w.LoadPrivKey(old)
 	if err != nil {
 		return err

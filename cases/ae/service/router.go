@@ -79,7 +79,7 @@ func buildRouter() *web.Router {
 	wallet.InitTxRouterWithWallet(buildBusiness(localrouter), defaultWallet)
 
 	//blockchain
-	blockchain.CreateBlocChainRouter(apirouter, "chain").Init(defaultChain).BuildRoutes()
+	blockchain.CreateBlockChainRouter(apirouter, "chain").Init(defaultChain).BuildRoutes()
 
 	// NotFound
 	root.NotFound(notFound)

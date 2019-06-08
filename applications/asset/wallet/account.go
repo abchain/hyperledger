@@ -142,6 +142,16 @@ func (s *Account) PublicKeyToAddress(rw web.ResponseWriter, req *web.Request) {
 	s.Normal(rw, addr.ToString())
 }
 
+func isReservedChar(c byte) bool {
+
+	switch c {
+	case '#', '@', '*', '&', '%', '$':
+		return true
+	default:
+		return false
+	}
+}
+
 func (s *Account) Create(rw web.ResponseWriter, req *web.Request) {
 
 	logger.Debug("Received create account request")
@@ -149,6 +159,9 @@ func (s *Account) Create(rw web.ResponseWriter, req *web.Request) {
 	// Check accountID
 	if s.accountID == "" {
 		s.NormalError(rw, errors.New("Must provide accountID"))
+		return
+	} else if isReservedChar(s.accountID[0]) {
+		s.NormalError(rw, errors.New(`Do not used reserved char (@ # $ % & *) at the beginning`))
 		return
 	}
 

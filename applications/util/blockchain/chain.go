@@ -17,7 +17,7 @@ type BlockChainRouter struct {
 	*web.Router
 }
 
-func CreateBlocChainRouter(root util.RPCRouter, path string) BlockChainRouter {
+func CreateBlockChainRouter(root util.RPCRouter, path string) BlockChainRouter {
 	return BlockChainRouter{
 		root.Subrouter(FabricBlockChain{}, path),
 	}
