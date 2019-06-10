@@ -53,7 +53,7 @@ func StopHttpServer() error {
 		defer func() {
 			srv = nil
 		}()
-		err := srv.Shutdown(nil)
+		err := srv.Close()
 		if err != nil {
 			return err
 		}
