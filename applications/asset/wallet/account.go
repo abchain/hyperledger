@@ -102,6 +102,9 @@ func (r AccountRouter) BuildPrivkeyRoutes() {
 	r.Get("/:"+AccountID, (*Account).ExportKey)
 }
 
+func (s *Account) SetPersistFlag(f bool)               { s.shouldPersist = f }
+func (s *Account) LoadPrivKey() (crypto.Signer, error) { return s.wallet.LoadPrivKey(s.accountID) }
+
 func (s *Account) ParseParameters(rw web.ResponseWriter,
 	req *web.Request, next web.NextMiddlewareFunc) {
 
