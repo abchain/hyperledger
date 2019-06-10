@@ -118,7 +118,8 @@ func (i blockchainInterpreter) GetBlock(h int64) (*client.ChainBlock, error) {
 
 	outblk := new(client.ChainBlock)
 	outblk.Height = h
-	outblk.Hash = fmt.Sprintf("%X", blk.GetStateHash())
+	outblk.Hash = fmt.Sprintf("%.64X...", blk.GetStateHash())
+	outblk.PreviousHash = fmt.Sprintf("%.64X", blk.GetPreviousBlockHash())
 	outblk.TimeStamp = utils.ConvertPBTimestamp(blk.GetTimestamp()).String()
 
 	for _, tx := range blk.GetTransactions() {

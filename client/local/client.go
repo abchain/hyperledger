@@ -170,7 +170,12 @@ func (c *LocalChain) BuildBlock() {
 
 	blk := new(client.ChainBlock)
 	blk.Height = int64(len(c.blocks))
-	blk.Hash = "Local"
+	if blk.Height > 0 {
+		blk.PreviousHash = fmt.Sprintf("LocalBlockNextOf%d", blk.Height-1)
+	} else {
+		blk.PreviousHash = "Genesis"
+	}
+
 	blk.TimeStamp = time.Now().String()
 	//update indexs
 	for _, tx := range c.pendingTxs {

@@ -29,8 +29,9 @@ type ChainTxEvents struct {
 }
 
 type ChainBlock struct {
-	Height       int64 `json:",string"`
-	Hash         string
+	Height       int64  `json:",string"`
+	Hash         string `json:",omitempty"`
+	PreviousHash string
 	TimeStamp    string              `json:",omitempty"`
 	Transactions []*ChainTransaction `json:"-"`
 	TxEvents     []*ChainTxEvents    `json:"-"`
