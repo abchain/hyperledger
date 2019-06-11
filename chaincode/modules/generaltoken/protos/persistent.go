@@ -35,11 +35,11 @@ type accountData_Store struct {
 }
 
 type nonceData_Store struct {
-	Txid      string
+	Txid      string `asn1:"printable"`
 	Amount    *big.Int
 	FromLast  FuncRecord_s
 	ToLast    FuncRecord_s
-	NonceTime time.Time
+	NonceTime time.Time `asn1:"utc"`
 }
 
 type tokenGlobalData_Store struct {

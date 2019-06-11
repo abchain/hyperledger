@@ -9,8 +9,8 @@ import (
 )
 
 type globalData_Store struct {
-	RegPrivilege   string
-	AdminPrivilege string
+	RegPrivilege   string `asn1:"printable"`
+	AdminPrivilege string `asn1:"printable"`
 	DeployFlag     []byte
 }
 
@@ -31,10 +31,10 @@ func (n *RegGlobalData_s) ToPB() *RegGlobalData {
 
 type regData_Store struct {
 	PkBytes   []byte
-	RegTxid   string
-	Region    string
+	RegTxid   string `asn1:"printable"`
+	Region    string `asn1:"utf8"`
 	Enabled   bool
-	RegTs     time.Time
+	RegTs     time.Time `asn1:"utc"`
 	AuthCodes []int32
 }
 

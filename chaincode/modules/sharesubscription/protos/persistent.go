@@ -10,7 +10,7 @@ import (
 type Contract_MemberStatus_s struct {
 	Weight      int32
 	TotalRedeem *big.Int
-	MemberID    string
+	MemberID    string `asn1:"utf8"`
 }
 
 func (n *Contract_MemberStatus_s) LoadFromPB(p *Contract_MemberStatus) {
@@ -31,8 +31,8 @@ type contract_Store struct {
 	DelegatorPkFingerPrint []byte
 	TotalRedeem            *big.Int
 	Status                 []Contract_MemberStatus_s
-	ContractTs             time.Time
-	FrozenTo               time.Time
+	ContractTs             time.Time `asn1:"utc"`
+	FrozenTo               time.Time `asn1:"utc"`
 	IsFrozen               bool
 	NextAddrHash           []byte
 }
