@@ -13,10 +13,10 @@ type stubAdapter struct {
 func (s stubAdapter) GetTxTime() (time.Time, error) {
 	ts, err := s.GetTxTimestamp()
 	if err != nil {
-		return time.Time{}, err
+		return time.Unix(0, 0).UTC(), err
 	}
 
-	return time.Unix(ts.Seconds, int64(ts.Nanos)), nil
+	return time.Unix(ts.Seconds, int64(ts.Nanos)).UTC(), nil
 }
 
 func (s stubAdapter) GetRawStub() interface{} {

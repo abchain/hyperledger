@@ -39,7 +39,7 @@ type nonceData_Store struct {
 	Amount    *big.Int
 	FromLast  FuncRecord_s
 	ToLast    FuncRecord_s
-	NonceTime time.Time `asn1:"utc"`
+	NonceTime time.Time `asn1:"generalized"`
 }
 
 type tokenGlobalData_Store struct {

@@ -34,7 +34,7 @@ type regData_Store struct {
 	RegTxid   string `asn1:"printable"`
 	Region    string `asn1:"utf8"`
 	Enabled   bool
-	RegTs     time.Time `asn1:"utc"`
+	RegTs     time.Time `asn1:"generalized"`
 	AuthCodes []int32
 }
 

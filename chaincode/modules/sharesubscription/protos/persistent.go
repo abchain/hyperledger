@@ -31,8 +31,8 @@ type contract_Store struct {
 	DelegatorPkFingerPrint []byte
 	TotalRedeem            *big.Int
 	Status                 []Contract_MemberStatus_s
-	ContractTs             time.Time `asn1:"utc"`
-	FrozenTo               time.Time `asn1:"utc"`
+	ContractTs             time.Time `asn1:"generalized"`
+	FrozenTo               time.Time `asn1:"generalized"`
 	IsFrozen               bool
 	NextAddrHash           []byte
 }
