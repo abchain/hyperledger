@@ -11,14 +11,16 @@ var logger = log.MustGetLogger("server/http")
 
 var srv *http.Server
 
+//deprecated
 func StartHttpServer(vp *viper.Viper, h http.Handler) error {
 
+	return StartHttpServerCustom(vp.GetString("host"), vp.GetInt("port"), h)
+}
+
+func StartHttpServerCustom(host string, port int, h http.Handler) error {
 	if srv != nil {
 		return fmt.Errorf("Server is running")
 	}
-
-	host := vp.GetString("host")
-	port := vp.GetInt("port")
 
 	if port > 65535 {
 		return fmt.Errorf("Invalid port: %d", port)
@@ -41,6 +43,7 @@ func StartHttpServer(vp *viper.Viper, h http.Handler) error {
 
 	logger.Infof("Http Server is stopped: %v", err)
 	return err
+
 }
 
 func IsHttpServerRunning() bool { return srv != nil }
