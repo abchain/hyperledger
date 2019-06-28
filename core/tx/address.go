@@ -34,7 +34,10 @@ var addrimpl = addrimplv1
 
 type AddressHelper map[uint8]string
 
-var AddrHelper AddressHelper = map[uint8]string{1: "ABCHAIN"}
+var AddrHelper AddressHelper = map[uint8]string{
+	1: "ABCHAIN",
+	4: "VCTMAINNET",
+}
 
 var networkId uint8 = 1
 
@@ -45,6 +48,16 @@ func getNetwork(nId uint8) string {
 	}
 
 	return n
+}
+
+func UseNetwork(i uint8) {
+
+	_, existed := AddrHelper[i]
+	if !existed {
+		panic(fmt.Sprintf("Network id %d is not register yet", i))
+	}
+
+	networkId = i
 }
 
 func DefaultNetworkName() string { return getNetwork(networkId) }
