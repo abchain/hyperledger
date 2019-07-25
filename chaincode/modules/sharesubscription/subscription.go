@@ -89,11 +89,7 @@ func newContract(contract map[string]int32, addr []byte) (*pb.Contract_s, error)
 	return pcon, nil
 }
 
-//if subscription is working within a chaincode along with the token, it should use
-//local mode so the contract address will not be a collision with external chaincode
-var LocalContractMode = false
-
-func hashContract(contract *pb.Contract_s, nonce []byte) (*tx.Address, error) {
+func hashContract(contract *pb.Contract_s, nonce []byte) ([]byte, error) {
 
 	var maphash []byte
 	for _, v := range contract.Status {
@@ -121,16 +117,17 @@ func hashContract(contract *pb.Contract_s, nonce []byte) (*tx.Address, error) {
 		}
 	}
 
-	hash, err := utils.DoubleSHA256(bytes.Join([][]byte{maphash, nonce}, nil))
+	hash, err := utils.DoubleSHA256(bytes.Join([][]byte{maphash,
+		nonce, []byte("MAGICCODE_SUBSCRIPTION")}, nil))
 	if err != nil {
 		return nil, err
 	}
 
-	if !LocalContractMode {
-		hash = tx.NormalizeExternalHash(hash)
+	if len(hash) > tx.ADDRESS_HASH_LEN {
+		hash = hash[:tx.ADDRESS_HASH_LEN]
 	}
 
-	return tx.NewAddressFromHash(hash), nil
+	return hash, nil
 
 }
 
@@ -141,25 +138,27 @@ func (cn *baseContractTx) New(contract map[string]int32, addr []byte) ([]byte, e
 		return nil, err
 	}
 
-	conAddr, err := hashContract(pcon, cn.nonce)
+	conHash, err := hashContract(pcon, cn.nonce)
 	if err != nil {
 		return nil, err
 	}
+
+	conAddrHash, err := cn.addrutil.NormalizeAddress(conHash)
+	if err != nil {
+		return nil, err
+	}
+
+	conAddr := tx.NewAddressFromHash(conAddrHash)
 
 	t, _ := cn.Tx.GetTxTime()
 	pcon.ContractTs = t
-
-	err = cn.token.TouchAddr(conAddr.Hash)
-	if err != nil {
-		return nil, err
-	}
 
 	err = cn.Storage.Set(conAddr.ToString(), pcon)
 	if err != nil {
 		return nil, err
 	}
 
-	return conAddr.Hash, nil
+	return conHash, nil
 }
 
 func (cn *baseContractTx) Query(addr []byte) (error, *pb.Contract_s) {

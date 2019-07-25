@@ -1,0 +1,22 @@
+
+syntax = "proto3";
+
+package ccprotos;
+
+import "protos/txaddr.proto";
+
+message AddrByWeight {
+	protos.TxAddr addr = 1;
+	int32  weight = 2;
+}
+
+message Contract {
+	int32   threshold = 1;
+	repeated AddrByWeight addrs = 2;
+}
+
+message Update {
+	protos.TxAddr addr = 1;
+	protos.TxAddr from = 2;
+	protos.TxAddr to = 3;
+}

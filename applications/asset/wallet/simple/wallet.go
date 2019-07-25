@@ -55,17 +55,19 @@ func NewWallet(fpath string) *simpleWallet {
 	}
 }
 
-//read path setting from viper with var "filePath"
-func LoadWallet(vp *viper.Viper) *simpleWallet {
+func LoadWalletByPath(ph, fname string) *simpleWallet {
 
-	ph := config.CanonicalizePath(vp.GetString("path"))
-
-	fname := vp.GetString("filename")
+	ph = config.CanonicalizePath(ph)
 	if fname == "" {
 		fname = defaultWalletFileName
 	}
 
 	return NewWallet(filepath.Join(ph, fname))
+}
+
+//read path setting from viper with var "filePath"
+func LoadWallet(vp *viper.Viper) *simpleWallet {
+	return LoadWalletByPath(vp.GetString("path"), vp.GetString("filename"))
 }
 
 func (w *simpleWallet) NewPrivKey(accountID string) (abcrypto.Signer, error) {

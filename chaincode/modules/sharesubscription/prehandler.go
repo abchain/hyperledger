@@ -2,31 +2,31 @@ package subscription
 
 import (
 	"errors"
-	"github.com/golang/protobuf/proto"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
 )
 
-type redeemContractAddrCred struct{}
-
-func NewRedeemContractAddrCred(msg proto.Message) redeemContractAddrCred {
-
-	//just testing ...
-	_, ok := msg.(*pb.RedeemContract)
-	if !ok {
-		panic("Binding to wrong txhandler")
-	}
-
-	return redeemContractAddrCred{}
+type redeemContractAddrCred struct {
+	ContractConfig
 }
 
-//this module will first catch the runtime data (as prehandler) to collect redeem address (if required), then act as verifyer,
-func (h redeemContractAddrCred) PreHandling(_ shim.ChaincodeStubInterface, _ string, parser txutil.Parser) error {
+func NewRedeemContractAddrCred(cfg ContractConfig) redeemContractAddrCred {
+	return redeemContractAddrCred{cfg}
+}
+
+//this module will first catch the runtime data (as prehandler) to collect redeem address (if required)
+func (v redeemContractAddrCred) PreHandling(stub shim.ChaincodeStubInterface, _ string, parser txutil.Parser) error {
 
 	m, ok := parser.GetMessage().(*pb.RedeemContract)
 	if !ok {
 		return errors.New("Binding to wrong txhandler")
+	}
+
+	rt := v.NewTx(stub, parser.GetNonce())
+	err, ct := rt.Query(m.GetContract().GetHash())
+	if err != nil {
+		return err
 	}
 
 	if len(m.GetRedeems()) == 0 {
@@ -42,11 +42,25 @@ func (h redeemContractAddrCred) PreHandling(_ shim.ChaincodeStubInterface, _ str
 				return err
 			}
 
-			m.Redeems = append(m.Redeems, addr.PBMessage())
+			if _, ok := ct.Find(addr.ToString()); ok {
+				m.Redeems = append(m.Redeems, addr.PBMessage())
+			}
 		}
 
 		parser.UpdateMsg(m)
 
+	} else {
+		//match
+		for _, addr := range m.GetRedeems() {
+			caddr, err := txutil.NewAddressFromPBMessage(addr)
+			if err == nil {
+				if _, ok := ct.Find(caddr.ToString()); !ok {
+					return errors.New("Invalid redeem addr (not in contract)")
+				}
+			} else {
+				return err
+			}
+		}
 	}
 
 	return nil

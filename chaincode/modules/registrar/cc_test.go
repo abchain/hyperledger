@@ -275,7 +275,9 @@ func TestFund(t *testing.T) {
 	caller := bolt.GetCaller("transfer1", h)
 	spoutcore.Dispatcher = caller
 	spoutcore.Credgenerator = txgen.NewSingleKeyCred(privkey)
-	err := bolt.AppendPreHandler(txhandle.NewAddrCredVerifier(nil))
+	//notice we MUST use empty verifier, so the default verifier (check external cred)
+	//is not used
+	err := bolt.AppendPreHandler(txhandle.EmptyAddrCredVerifier(nil))
 	if err != nil {
 		t.Fatal(err)
 	}

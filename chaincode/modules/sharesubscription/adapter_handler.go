@@ -46,7 +46,7 @@ func (h newContractHandler) Call(stub shim.ChaincodeStubInterface, parser txutil
 
 		contract[addr.ToString()] = m.Weight
 	}
-	return h.NewTx(stub, parser.GetNounce()).New(contract, msg.DelegatorAddr.GetHash())
+	return h.NewTx(stub, parser.GetNonce()).New(contract, msg.DelegatorAddr.GetHash())
 }
 
 func (h redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
@@ -63,7 +63,7 @@ func (h redeemHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pars
 		redeemTo = append(redeemTo, addr.GetHash())
 	}
 
-	resp, err := h.NewTx(stub, parser.GetNounce()).Redeem(contract.Hash, toAmount(msg.Amount), redeemTo)
+	resp, err := h.NewTx(stub, parser.GetNonce()).Redeem(contract.Hash, toAmount(msg.Amount), redeemTo)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (h queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parse
 		return nil, err
 	}
 
-	err, data := h.NewTx(stub, parser.GetNounce()).Query(contAddr.Hash)
+	err, data := h.NewTx(stub, parser.GetNonce()).Query(contAddr.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (h memberQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil
 		return nil, err
 	}
 
-	err, data := h.NewTx(stub, parser.GetNounce()).QueryOne(contAddr.Hash, member.Hash)
+	err, data := h.NewTx(stub, parser.GetNonce()).QueryOne(contAddr.Hash, member.Hash)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/gocraft/web"
 	"hyperledger.abchain.org/applications/asset/currency"
 	"hyperledger.abchain.org/applications/asset/wallet"
+	"hyperledger.abchain.org/applications/supervise/multisig"
 	"hyperledger.abchain.org/applications/supervise/registar"
 	"hyperledger.abchain.org/applications/util"
 	"hyperledger.abchain.org/applications/util/blockchain"
@@ -67,6 +68,9 @@ func buildRouter() *web.Router {
 
 		//registrar
 		registar.CreatRegistrarRouter(root, "registrar").Init().BuildRoutes()
+
+		//mauth
+		multisig.CreatMultisignRouter(root, "mauth").Init().BuildRoutes()
 
 		return root
 	}

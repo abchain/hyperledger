@@ -50,12 +50,7 @@ func (i *GeneralCall) New(contract map[string]int32, addr []byte) ([]byte, error
 		return nil, err
 	}
 
-	conaddr, err := hashContract(data, i.GetNonce())
-	if err != nil {
-		return nil, err
-	}
-
-	return conaddr.Hash, err
+	return hashContract(data, i.GetNonce())
 }
 
 func (i *GeneralCall) Redeem(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) (*pb.RedeemResponse, error) {

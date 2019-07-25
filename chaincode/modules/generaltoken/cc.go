@@ -18,6 +18,7 @@ type TokenTx interface {
 	Global() (error, *pb.TokenGlobalData_s)
 	//this is only used for inner call to register their address, have
 	//no effect on the status of module
+	//--------------- DEPRECATED, see addrspace module--------------
 	TouchAddr([]byte) error
 }
 

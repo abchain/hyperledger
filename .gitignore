@@ -14,3 +14,6 @@ package-lock.json
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+.idea
+ae
+built-in-stubs.jar

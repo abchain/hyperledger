@@ -30,6 +30,10 @@ func NewRuntime(root string, stub shim.ChaincodeStubInterface, cfg *Config) *Cha
 
 }
 
+func (r *ChaincodeRuntime) Stub() shim.ChaincodeStubInterface {
+	return r.Core.(shim.ChaincodeStubInterface)
+}
+
 func (r *ChaincodeRuntime) SubRuntime(node string) *ChaincodeRuntime {
 	return &ChaincodeRuntime{r.Storage.SubMap(node), r.Tx, r.Core}
 

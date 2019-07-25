@@ -1,5 +1,5 @@
 {
-	"id": "35fbbcd1-461e-2353-9a69-214f99f234c7",
+	"id": "46667fa9-366f-752a-8c98-24f579099c3b",
 	"name": "AE Test API",
 	"description": "",
 	"order": [],
@@ -7,285 +7,50 @@
 		{
 			"name": "Init",
 			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
 			"order": [
-				"1f2d2857-7c11-6bd6-1636-1031bd5ce559",
-				"5a3f2800-4618-ba6f-f71b-79fd056e2068",
-				"5d7ea5c1-ebb3-97d6-f234-2d69151ed9d6",
-				"690d7ebe-d195-acfe-43e8-b0c23b5c1e4c",
-				"97aec935-3010-08bb-16ed-620fdf8c118b"
+				"27f5165c-a6ac-ec4e-0258-c81e59ebb337",
+				"48c917cc-04e5-43da-3c6a-20b67cba5064",
+				"5e75af2c-a33a-0f03-1d4e-c40ab4fe2548",
+				"d3011a95-c6dd-be92-e0ae-40c47926e185",
+				"e1b701e2-1def-32f9-9715-5a2f5483b25f",
+				"9db05d1b-b55b-a624-923e-19a65f04b95f",
+				"0de7220f-6972-f8d6-69fe-588647203dc9",
+				"22378699-cae0-b345-5e7a-b266d30e9411",
+				"c5690d34-74b5-e2a5-2f23-9512e5214603"
 			],
 			"owner": 0,
 			"folders_order": [],
-			"id": "741e6fa1-eccb-6e78-9435-dedb85723484"
+			"id": "3040eeed-d0eb-5251-c5a8-91fce5e474ae"
 		},
 		{
 			"name": "VerifyGlobal",
 			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
 			"order": [
-				"fc963c29-7ed6-c62f-95cf-6b027b402abf",
-				"ed159673-dcb2-783b-ed21-b41bfd690446",
-				"9d5dbc41-a0a0-5289-4935-04658000f240",
-				"dc8d0f9d-c9ed-117e-2869-c3bb03fd4ba6",
-				"047dc5ab-2366-9316-8ee1-74cefb2177a9",
-				"9a75ca70-b5e6-d626-ee53-82e9fe9a88f9",
-				"ddc59707-2275-bd75-88bc-ad049d2a4ff5"
+				"7794a6db-eb90-702e-8a4a-87769604ebd3",
+				"6d6e0a5a-fecc-c898-9eb9-9a72f9470ce2",
+				"cec00129-c9fa-b5e8-e372-0f3c2ffe507f",
+				"bb48e3bf-f2e2-2926-5d1d-b9d811190647",
+				"c0b1c36f-9dfb-22e9-3e2b-d9620a88f232",
+				"47955ea6-29fc-ea2c-e966-e9282ed1d9e3",
+				"17b2f05d-202d-b3c8-7ed3-e6f5e054fccc"
 			],
 			"owner": 0,
 			"folders_order": [],
-			"id": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef"
+			"id": "17408373-dbaf-a051-3743-d50343b62966"
 		}
 	],
 	"folders_order": [
-		"741e6fa1-eccb-6e78-9435-dedb85723484",
-		"5d39cd00-da23-fe70-9cd0-d3d13dc8ebef"
+		"3040eeed-d0eb-5251-c5a8-91fce5e474ae",
+		"17408373-dbaf-a051-3743-d50343b62966"
 	],
 	"timestamp": 1521626234777,
 	"owner": 0,
 	"public": false,
 	"requests": [
 		{
-			"id": "047dc5ab-2366-9316-8ee1-74cefb2177a9",
-			"headers": "Content-Type: application/x-www-form-urlencoded\n",
-			"headerData": [
-				{
-					"key": "Content-Type",
-					"value": "application/x-www-form-urlencoded",
-					"description": "",
-					"enabled": true
-				}
-			],
-			"url": "http://{{url}}/api/v1/address/ARJtq6Q46oTnxDwvVqMgDtZeNxs7Ybt81A",
-			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef",
-			"queryParams": [],
-			"preRequestScript": null,
-			"pathVariables": {},
-			"pathVariableData": [],
-			"method": "GET",
-			"data": [
-				{
-					"key": "accountID",
-					"value": "aaaa",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "contract",
-					"value": "AfRGinm5Wzqisnl7HBeGmAs8vZ0NGp5uMQ:40",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "contract",
-					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:30",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "nonce",
-					"value": "1111",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				}
-			],
-			"dataMode": "urlencoded",
-			"version": 2,
-			"tests": null,
-			"currentHelper": "normal",
-			"helperAttributes": {},
-			"time": 1547453794743,
-			"name": "VerifyMainAccount",
-			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
-			"responses": []
-		},
-		{
-			"id": "1f2d2857-7c11-6bd6-1636-1031bd5ce559",
-			"headers": "Content-Type: application/x-www-form-urlencoded\n",
-			"headerData": [
-				{
-					"key": "Content-Type",
-					"value": "application/x-www-form-urlencoded",
-					"description": "",
-					"enabled": true
-				}
-			],
-			"url": "http://{{url}}/api/v1/assign/init",
-			"folder": "741e6fa1-eccb-6e78-9435-dedb85723484",
-			"queryParams": [],
-			"preRequestScript": null,
-			"pathVariables": {},
-			"pathVariableData": [],
-			"method": "POST",
-			"data": [
-				{
-					"key": "total",
-					"value": "100000000000000000000000000",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				}
-			],
-			"dataMode": "urlencoded",
-			"version": 2,
-			"tests": null,
-			"currentHelper": "normal",
-			"helperAttributes": {},
-			"time": 1542179646188,
-			"name": "Deploy",
-			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
-			"responses": []
-		},
-		{
-			"id": "5a3f2800-4618-ba6f-f71b-79fd056e2068",
-			"headers": "Content-Type: application/x-www-form-urlencoded\n",
-			"headerData": [
-				{
-					"key": "Content-Type",
-					"value": "application/x-www-form-urlencoded",
-					"description": "",
-					"enabled": true
-				}
-			],
-			"url": "http://{{url}}/api/v1/assign",
-			"folder": "741e6fa1-eccb-6e78-9435-dedb85723484",
-			"queryParams": [],
-			"preRequestScript": null,
-			"pathVariables": {},
-			"pathVariableData": [],
-			"method": "POST",
-			"data": [
-				{
-					"key": "to",
-					"value": "ARJtq6Q46oTnxDwvVqMgDtZeNxs7Ybt81A",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "amount",
-					"value": "40000000000000000000000000",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				}
-			],
-			"dataMode": "urlencoded",
-			"version": 2,
-			"tests": null,
-			"currentHelper": "normal",
-			"helperAttributes": {},
-			"time": 1547453704972,
-			"name": "Assign",
-			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
-			"responses": []
-		},
-		{
-			"id": "5d7ea5c1-ebb3-97d6-f234-2d69151ed9d6",
-			"headers": "Content-Type: application/x-www-form-urlencoded\n",
-			"headerData": [
-				{
-					"key": "Content-Type",
-					"value": "application/x-www-form-urlencoded",
-					"description": "",
-					"enabled": true
-				}
-			],
-			"url": "http://{{url}}/api/v1/registrar",
-			"folder": "741e6fa1-eccb-6e78-9435-dedb85723484",
-			"queryParams": [],
-			"preRequestScript": null,
-			"pathVariables": {},
-			"pathVariableData": [],
-			"method": "POST",
-			"data": [
-				{
-					"key": "accountID",
-					"value": "example",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				}
-			],
-			"dataMode": "urlencoded",
-			"version": 2,
-			"tests": null,
-			"currentHelper": "normal",
-			"helperAttributes": {},
-			"time": 1547453893415,
-			"name": "Reg",
-			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
-			"responses": []
-		},
-		{
-			"id": "690d7ebe-d195-acfe-43e8-b0c23b5c1e4c",
-			"headers": "Content-Type: application/x-www-form-urlencoded\n",
-			"headerData": [
-				{
-					"key": "Content-Type",
-					"value": "application/x-www-form-urlencoded",
-					"description": "",
-					"enabled": true
-				}
-			],
-			"url": "http://{{url}}/api/v1/subscription",
-			"folder": "741e6fa1-eccb-6e78-9435-dedb85723484",
-			"queryParams": [],
-			"preRequestScript": null,
-			"pathVariables": {},
-			"pathVariableData": [],
-			"method": "POST",
-			"data": [
-				{
-					"key": "accountID",
-					"value": "example",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "contract",
-					"value": "AfRGinm5Wzqisnl7HBeGmAs8vZ0NGp5uMQ:40",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "contract",
-					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:30",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "nonce",
-					"value": "1111",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				}
-			],
-			"dataMode": "urlencoded",
-			"version": 2,
-			"tests": null,
-			"currentHelper": "normal",
-			"helperAttributes": {},
-			"time": 1547453913270,
-			"name": "Subscription",
-			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
-			"responses": []
-		},
-		{
-			"id": "97aec935-3010-08bb-16ed-620fdf8c118b",
+			"id": "0de7220f-6972-f8d6-69fe-588647203dc9",
 			"headers": "Content-Type: application/x-www-form-urlencoded\n",
 			"headerData": [
 				{
@@ -296,7 +61,7 @@
 				}
 			],
 			"url": "http://{{url}}/api/v1/fund",
-			"folder": "741e6fa1-eccb-6e78-9435-dedb85723484",
+			"folder": "3040eeed-d0eb-5251-c5a8-91fce5e474ae",
 			"queryParams": [],
 			"preRequestScript": null,
 			"pathVariables": {},
@@ -329,15 +94,164 @@
 			"version": 2,
 			"tests": null,
 			"currentHelper": "normal",
-			"helperAttributes": {},
+			"helperAttributes": "{}",
 			"time": 1547453768379,
-			"name": "Fund",
+			"name": "Fund_mauth",
 			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
-			"responses": []
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"isFromCollection": true,
+			"collectionRequestId": "9db05d1b-b55b-a624-923e-19a65f04b95f"
 		},
 		{
-			"id": "9a75ca70-b5e6-d626-ee53-82e9fe9a88f9",
+			"id": "17b2f05d-202d-b3c8-7ed3-e6f5e054fccc",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/data/fund",
+			"queryParams": [],
+			"pathVariables": {},
+			"pathVariableData": [],
+			"preRequestScript": null,
+			"method": "POST",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"data": [
+				{
+					"key": "to",
+					"value": "AfmAE1K-T8V-y4ObshuwV2faNMOdNMYW0Q",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "amount",
+					"value": "5000000000000000000000000",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "from",
+					"value": "ARJtq6Q46oTnxDwvVqMgDtZeNxs7Ybt81A",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"name": "Fund_Data",
+			"description": "",
+			"descriptionFormat": "html",
+			"time": 1547453864745,
+			"version": 2,
+			"responses": [],
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"folder": "17408373-dbaf-a051-3743-d50343b62966",
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
+		},
+		{
+			"id": "22378699-cae0-b345-5e7a-b266d30e9411",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/mauth",
+			"queryParams": [],
+			"pathVariables": {},
+			"pathVariableData": [],
+			"preRequestScript": null,
+			"method": "POST",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"data": [
+				{
+					"key": "contract",
+					"value": "ARJtq6Q46oTnxDwvVqMgDtZeNxs7Ybt81A:100",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:100",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "nonce",
+					"value": "1111",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"name": "Mauth",
+			"description": "",
+			"descriptionFormat": "html",
+			"time": 1564036370740,
+			"version": 2,
+			"responses": [],
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"folder": "3040eeed-d0eb-5251-c5a8-91fce5e474ae"
+		},
+		{
+			"id": "27f5165c-a6ac-ec4e-0258-c81e59ebb337",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/assign/init",
+			"folder": "3040eeed-d0eb-5251-c5a8-91fce5e474ae",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [
+				{
+					"key": "total",
+					"value": "100000000000000000000000000",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1542179646188,
+			"name": "Deploy",
+			"description": "",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
+		},
+		{
+			"id": "47955ea6-29fc-ea2c-e966-e9282ed1d9e3",
 			"headers": "Content-Type: application/x-www-form-urlencoded\n",
 			"headerData": [
 				{
@@ -348,7 +262,7 @@
 				}
 			],
 			"url": "http://{{url}}/api/v1/address/AfmAE1K-T8V-y4ObshuwV2faNMOdNMYW0Q",
-			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef",
+			"folder": "17408373-dbaf-a051-3743-d50343b62966",
 			"queryParams": [],
 			"preRequestScript": null,
 			"pathVariables": {},
@@ -392,11 +306,12 @@
 			"time": 1547453812370,
 			"name": "VerifySubAccount",
 			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
-			"responses": []
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
 		},
 		{
-			"id": "9d5dbc41-a0a0-5289-4935-04658000f240",
+			"id": "48c917cc-04e5-43da-3c6a-20b67cba5064",
 			"headers": "Content-Type: application/x-www-form-urlencoded\n",
 			"headerData": [
 				{
@@ -407,167 +322,88 @@
 				}
 			],
 			"url": "http://{{url}}/api/v1/assign",
-			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef",
+			"folder": "3040eeed-d0eb-5251-c5a8-91fce5e474ae",
 			"queryParams": [],
 			"preRequestScript": null,
 			"pathVariables": {},
 			"pathVariableData": [],
-			"method": "GET",
-			"data": [
-				{
-					"key": "accountID",
-					"value": "aaaa",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "contract",
-					"value": "AfRGinm5Wzqisnl7HBeGmAs8vZ0NGp5uMQ:40",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "contract",
-					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:30",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "nonce",
-					"value": "1111",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				}
-			],
-			"dataMode": "urlencoded",
-			"version": 2,
-			"tests": null,
-			"currentHelper": "normal",
-			"helperAttributes": {},
-			"time": 1542179640564,
-			"name": "VerifyGlobal",
-			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
-			"responses": []
-		},
-		{
-			"id": "dc8d0f9d-c9ed-117e-2869-c3bb03fd4ba6",
-			"headers": "Content-Type: application/x-www-form-urlencoded\n",
-			"headerData": [
-				{
-					"key": "Content-Type",
-					"value": "application/x-www-form-urlencoded",
-					"description": "",
-					"enabled": true
-				}
-			],
-			"url": "http://{{url}}/api/v1/address/ASzJoF5rbrT_7cr8LJtWscaEM8mQYJjyBw",
-			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef",
-			"queryParams": [],
-			"preRequestScript": null,
-			"pathVariables": {},
-			"pathVariableData": [],
-			"method": "GET",
-			"data": [
-				{
-					"key": "accountID",
-					"value": "aaaa",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "contract",
-					"value": "AfRGinm5Wzqisnl7HBeGmAs8vZ0NGp5uMQ:40",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "contract",
-					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:30",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "nonce",
-					"value": "1111",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				}
-			],
-			"dataMode": "urlencoded",
-			"version": 2,
-			"tests": null,
-			"currentHelper": "normal",
-			"helperAttributes": {},
-			"time": 1547453935417,
-			"name": "VerifyByContractAddr",
-			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
-			"responses": []
-		},
-		{
-			"id": "ddc59707-2275-bd75-88bc-ad049d2a4ff5",
-			"headers": "Content-Type: application/x-www-form-urlencoded\n",
-			"headerData": [
-				{
-					"key": "Content-Type",
-					"value": "application/x-www-form-urlencoded",
-					"description": "",
-					"enabled": true
-				}
-			],
-			"url": "http://{{url}}/api/v1/data/fund",
-			"queryParams": [],
-			"pathVariables": {},
-			"pathVariableData": [],
-			"preRequestScript": null,
 			"method": "POST",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
 			"data": [
 				{
 					"key": "to",
-					"value": "AfmAE1K-T8V-y4ObshuwV2faNMOdNMYW0Q",
+					"value": "ARJtq6Q46oTnxDwvVqMgDtZeNxs7Ybt81A",
 					"description": "",
 					"type": "text",
 					"enabled": true
 				},
 				{
 					"key": "amount",
-					"value": "5000000000000000000000000",
-					"description": "",
-					"type": "text",
-					"enabled": true
-				},
-				{
-					"key": "from",
-					"value": "ARJtq6Q46oTnxDwvVqMgDtZeNxs7Ybt81A",
+					"value": "40000000000000000000000000",
 					"description": "",
 					"type": "text",
 					"enabled": true
 				}
 			],
 			"dataMode": "urlencoded",
-			"name": "Fund_Data",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1547453704972,
+			"name": "Assign",
+			"description": "",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
+		},
+		{
+			"id": "5e75af2c-a33a-0f03-1d4e-c40ab4fe2548",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/assign_mauth",
+			"queryParams": [],
+			"pathVariables": {},
+			"pathVariableData": [],
+			"preRequestScript": null,
+			"method": "POST",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"data": [
+				{
+					"key": "to",
+					"value": "AZ9YX8HruakjGTBTbMES_iK0yxD4GJYlyw",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "amount",
+					"value": "40000000000000000000000000",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"name": "Assign_mauth",
 			"description": "",
 			"descriptionFormat": "html",
-			"time": 1547453864745,
+			"time": 1564036404841,
 			"version": 2,
 			"responses": [],
 			"tests": null,
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef"
+			"folder": "3040eeed-d0eb-5251-c5a8-91fce5e474ae"
 		},
 		{
-			"id": "ed159673-dcb2-783b-ed21-b41bfd690446",
+			"id": "6d6e0a5a-fecc-c898-9eb9-9a72f9470ce2",
 			"headers": "Content-Type: application/x-www-form-urlencoded\n",
 			"headerData": [
 				{
@@ -583,7 +419,7 @@
 			"pathVariableData": [],
 			"preRequestScript": null,
 			"method": "GET",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
 			"data": [
 				{
 					"key": "accountID",
@@ -624,12 +460,12 @@
 			"tests": null,
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef",
+			"folder": "17408373-dbaf-a051-3743-d50343b62966",
 			"isFromCollection": true,
-			"collectionRequestId": "fc963c29-7ed6-c62f-95cf-6b027b402abf"
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
 		},
 		{
-			"id": "fc963c29-7ed6-c62f-95cf-6b027b402abf",
+			"id": "7794a6db-eb90-702e-8a4a-87769604ebd3",
 			"headers": "Content-Type: application/x-www-form-urlencoded\n",
 			"headerData": [
 				{
@@ -640,7 +476,7 @@
 				}
 			],
 			"url": "http://{{url}}/api/v1/subscription/ASzJoF5rbrT_7cr8LJtWscaEM8mQYJjyBw",
-			"folder": "5d39cd00-da23-fe70-9cd0-d3d13dc8ebef",
+			"folder": "17408373-dbaf-a051-3743-d50343b62966",
 			"queryParams": [],
 			"preRequestScript": null,
 			"pathVariables": {},
@@ -684,8 +520,401 @@
 			"time": 1547453946422,
 			"name": "VerifySubscription",
 			"description": "",
-			"collectionId": "35fbbcd1-461e-2353-9a69-214f99f234c7",
-			"responses": []
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
+		},
+		{
+			"id": "9db05d1b-b55b-a624-923e-19a65f04b95f",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/fund",
+			"folder": "3040eeed-d0eb-5251-c5a8-91fce5e474ae",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [
+				{
+					"key": "to",
+					"value": "AfmAE1K-T8V-y4ObshuwV2faNMOdNMYW0Q",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "amount",
+					"value": "5000000000000000000000000",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "accountID",
+					"value": "example",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1547453768379,
+			"name": "Fund",
+			"description": "",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
+		},
+		{
+			"id": "bb48e3bf-f2e2-2926-5d1d-b9d811190647",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/address/ASzJoF5rbrT_7cr8LJtWscaEM8mQYJjyBw",
+			"folder": "17408373-dbaf-a051-3743-d50343b62966",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "GET",
+			"data": [
+				{
+					"key": "accountID",
+					"value": "aaaa",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "AfRGinm5Wzqisnl7HBeGmAs8vZ0NGp5uMQ:40",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:30",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "nonce",
+					"value": "1111",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1547453935417,
+			"name": "VerifyByContractAddr",
+			"description": "",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
+		},
+		{
+			"id": "c0b1c36f-9dfb-22e9-3e2b-d9620a88f232",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/address/ARJtq6Q46oTnxDwvVqMgDtZeNxs7Ybt81A",
+			"folder": "17408373-dbaf-a051-3743-d50343b62966",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "GET",
+			"data": [
+				{
+					"key": "accountID",
+					"value": "aaaa",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "AfRGinm5Wzqisnl7HBeGmAs8vZ0NGp5uMQ:40",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:30",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "nonce",
+					"value": "1111",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1547453794743,
+			"name": "VerifyMainAccount",
+			"description": "",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
+		},
+		{
+			"id": "c5690d34-74b5-e2a5-2f23-9512e5214603",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/fund",
+			"queryParams": [],
+			"pathVariables": {},
+			"pathVariableData": [],
+			"preRequestScript": null,
+			"method": "POST",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"data": [
+				{
+					"key": "to",
+					"value": "AfmAE1K-T8V-y4ObshuwV2faNMOdNMYW0Q",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "amount",
+					"value": "5000000000000000000000000",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "accountID",
+					"value": "example",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "from",
+					"value": "AZ9YX8HruakjGTBTbMES_iK0yxD4GJYlyw",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"name": "Fund_mauth",
+			"description": "",
+			"descriptionFormat": "html",
+			"time": 1564036462333,
+			"version": 2,
+			"responses": [],
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"folder": "3040eeed-d0eb-5251-c5a8-91fce5e474ae"
+		},
+		{
+			"id": "cec00129-c9fa-b5e8-e372-0f3c2ffe507f",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/assign",
+			"folder": "17408373-dbaf-a051-3743-d50343b62966",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "GET",
+			"data": [
+				{
+					"key": "accountID",
+					"value": "aaaa",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "AfRGinm5Wzqisnl7HBeGmAs8vZ0NGp5uMQ:40",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:30",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "nonce",
+					"value": "1111",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1542179640564,
+			"name": "VerifyGlobal",
+			"description": "",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
+		},
+		{
+			"id": "d3011a95-c6dd-be92-e0ae-40c47926e185",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/registrar",
+			"folder": "3040eeed-d0eb-5251-c5a8-91fce5e474ae",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [
+				{
+					"key": "accountID",
+					"value": "example",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1547453893415,
+			"name": "Reg",
+			"description": "",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
+		},
+		{
+			"id": "e1b701e2-1def-32f9-9715-5a2f5483b25f",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/x-www-form-urlencoded",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{url}}/api/v1/subscription",
+			"folder": "3040eeed-d0eb-5251-c5a8-91fce5e474ae",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [
+				{
+					"key": "accountID",
+					"value": "example",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "AfRGinm5Wzqisnl7HBeGmAs8vZ0NGp5uMQ:40",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "contract",
+					"value": "ARdWH602KUZHSaeAHH3LjAMwjKgyJRGtUQ:30",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "nonce",
+					"value": "1111",
+					"description": "",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1547453913270,
+			"name": "Subscription",
+			"description": "",
+			"collectionId": "46667fa9-366f-752a-8c98-24f579099c3b",
+			"responses": [],
+			"collection_id": "46667fa9-366f-752a-8c98-24f579099c3b"
 		}
 	]
 }

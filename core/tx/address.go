@@ -79,14 +79,6 @@ func NormalizeHash(h []byte) []byte {
 	return h[:ADDRESS_HASH_LEN]
 }
 
-// we need to define another type of address used for inter-chaincode calling,
-// such an address must be distinguished from the general addr built from
-// private key so any chaincode can not make collision with the user address
-
-func NormalizeExternalHash(h []byte) []byte {
-	return append([]byte{69}, NormalizeHash(h)...)
-}
-
 func NewAddressFromHash(h []byte) *Address {
 
 	if len(h) < ADDRESS_HASH_LEN {

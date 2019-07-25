@@ -4,7 +4,7 @@
 @echo off
 for %%i in (*.proto) do call :setlist %%i
 
-protoc -I=%1\src -I=. --go_out=plugins=grpc:. %LIST%
+protoc -I=. --go_out=plugins=grpc:%1\src %LIST%
 
 echo DONE: %LIST%
 

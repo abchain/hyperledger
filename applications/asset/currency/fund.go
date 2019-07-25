@@ -104,10 +104,13 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	var fromAddr *tx.Address
-	if s.ActivePrivk == nil {
-		fromAddr, err = tx.NewAddressFromString(req.PostFormValue("from"))
-	} else {
+	if addrs := req.PostFormValue("from"); addrs != "" {
+		fromAddr, err = tx.NewAddressFromString(addrs)
+	} else if s.ActivePrivk != nil {
 		fromAddr, err = tx.NewAddressFromPrivateKey(s.ActivePrivk)
+	} else {
+		s.NormalErrorF(rw, 400, "Unknown source address")
+		return
 	}
 	if err != nil {
 		s.NormalError(rw, err)

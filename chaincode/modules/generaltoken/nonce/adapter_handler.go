@@ -27,7 +27,7 @@ func (h nonceQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.
 
 	msg := parser.GetMessage().(*ccpb.QueryTransfer)
 
-	err, data := h.NewTx(stub, parser.GetNounce()).Nonce(msg.Nonce)
+	err, data := h.NewTx(stub, parser.GetNonce()).Nonce(msg.Nonce)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (h nonceAddHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pa
 
 	msg := parser.GetMessage().(*ccpb.NonceData)
 
-	if err := h.NewTx(stub, parser.GetNounce()).Add(msg.GetNoncekey(), big.NewInt(0).SetBytes(msg.GetAmount()),
+	if err := h.NewTx(stub, parser.GetNonce()).Add(msg.GetNoncekey(), big.NewInt(0).SetBytes(msg.GetAmount()),
 		msg.GetFromLast(), msg.GetToLast()); err != nil {
 		return nil, err
 	}

@@ -25,17 +25,11 @@ func GeneralInvokingTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveT
 	return
 }
 
-func ExtendInvokingTemplate(cts tx.CollectiveTxs, ccname string, cfg *StandardTokenConfig) tx.CollectiveTxs {
-
-	ib := &tx.InnerAddrBase{Root: cfg.Root, Config: cfg.Config}
+func ExtendInvokingTemplate(cts tx.CollectiveTxs, verifier tx.AddrVerifier) tx.CollectiveTxs {
 
 	if h, ok := cts[Method_Transfer]; ok {
-		tx.AttachAddrVerifier(h.PreHandlers, &tx.InnerAddrVerifier{InnerAddrBase: ib})
+		tx.AttachAddrVerifier(h.PreHandlers, verifier)
 	}
-
-	touchH := &tx.ChaincodeTx{ccname, TouchHandler(cfg), nil, nil}
-	touchH.PostHandlers = append(touchH.PostHandlers, tx.InnerAddrRegister{ib, nil})
-	cts[Method_TouchAddr] = touchH
 
 	return cts
 }

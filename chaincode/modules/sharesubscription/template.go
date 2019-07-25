@@ -13,7 +13,7 @@ func GeneralInvokingTemplate(ccname string, cfg ContractConfig) (ret tx.Collecti
 	ret[Method_NewContract] = cH
 
 	rcH := &tx.ChaincodeTx{ccname, RedeemHandler(cfg), nil, nil}
-	//rcH.PreHandlers = append(rcH.PreHandlers, NewRedeemContractAddrCred(rcH.Handler.Msg()))
+	rcH.PreHandlers = append(rcH.PreHandlers, NewRedeemContractAddrCred(cfg))
 
 	ret[Method_Redeem] = rcH
 

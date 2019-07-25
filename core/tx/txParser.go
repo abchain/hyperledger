@@ -10,9 +10,10 @@ import (
 
 type Parser interface {
 	GetCCname() string
-	GetNounce() []byte
+	GetNonce() []byte
 	GetTxTime() time.Time
 	GetAddrCredential() AddrCredentials
+	GetDataCredential() DataCredentials
 	GetMessage() proto.Message
 	UpdateMsg(proto.Message)
 }
@@ -21,7 +22,7 @@ type txParser struct {
 	nonce  []byte
 	ccname string
 	txts   time.Time
-	cred   AddrCredentials
+	cred   txCredentials
 	msg    proto.Message
 }
 
@@ -29,7 +30,7 @@ func (t *txParser) GetCCname() string {
 	return t.ccname
 }
 
-func (t *txParser) GetNounce() []byte {
+func (t *txParser) GetNonce() []byte {
 	return t.nonce
 }
 
@@ -41,6 +42,10 @@ func (t *txParser) GetAddrCredential() AddrCredentials {
 	return t.cred
 }
 
+func (t *txParser) GetDataCredential() DataCredentials {
+	return t.cred
+}
+
 func (t *txParser) GetMessage() proto.Message {
 	return t.msg
 }
@@ -49,8 +54,8 @@ func (t *txParser) UpdateMsg(m proto.Message) {
 	t.msg = m
 }
 
-func parseBase(header proto.Message, msg proto.Message, method string, args [][]byte) (e error,
-	cred AddrCredentials) {
+func parseBase(header proto.Message, msg proto.Message,
+	method string, args [][]byte) (e error, cred txCredentials) {
 
 	if len(args) < 2 {
 		e = errors.New("No enough arguments")
@@ -102,10 +107,10 @@ func parseBase(header proto.Message, msg proto.Message, method string, args [][]
 			return
 		}
 
-		cred, e = NewAddrCredential(hash, credData.Addrc)
+		cred, e = newTxCredential(hash, credData.Addrc)
 
 	} else {
-		cred, e = NewAddrCredential(hash, nil)
+		cred, e = newTxCredential(hash, nil)
 	}
 
 	return

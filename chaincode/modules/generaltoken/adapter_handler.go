@@ -60,7 +60,7 @@ func (h transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pa
 		return nil, err
 	}
 
-	return h.NewTx(stub, parser.GetNounce()).Transfer(addrFrom.Hash, addrTo.Hash, toAmount(msg.Amount))
+	return h.NewTx(stub, parser.GetNonce()).Transfer(addrFrom.Hash, addrTo.Hash, toAmount(msg.Amount))
 }
 
 func (h assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
@@ -71,7 +71,7 @@ func (h assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pars
 		return nil, err
 	}
 
-	return h.NewTx(stub, parser.GetNounce()).Assign(addrTo.Hash, toAmount(msg.Amount))
+	return h.NewTx(stub, parser.GetNonce()).Assign(addrTo.Hash, toAmount(msg.Amount))
 }
 
 func (h touchHandler) Call(shim.ChaincodeStubInterface, txutil.Parser) ([]byte, error) {
@@ -86,7 +86,7 @@ func (h tokenQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.
 		return nil, err
 	}
 
-	err, data := h.NewTx(stub, parser.GetNounce()).Account(addr.Hash)
+	err, data := h.NewTx(stub, parser.GetNonce()).Account(addr.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (h tokenQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.
 }
 
 func (h globalQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
-	err, data := h.NewTx(stub, parser.GetNounce()).Global()
+	err, data := h.NewTx(stub, parser.GetNonce()).Global()
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (h globalQueryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil
 func (h initHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	msg := parser.GetMessage().(*ccpb.BaseToken)
 
-	token := h.NewTx(stub, parser.GetNounce())
+	token := h.NewTx(stub, parser.GetNonce())
 
 	if err := token.Init(toAmount(msg.TotalTokens)); err != nil {
 		return nil, err

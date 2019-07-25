@@ -49,7 +49,7 @@ func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 		ret.Detail = notHyperledgerTx
 		return ret
 	}
-	ret.Nonce = fmt.Sprintf("%X", parser.GetNounce())
+	ret.Nonce = fmt.Sprintf("%X", parser.GetNonce())
 	ret.ChaincodeModule = parser.GetCCname()
 	ret.Data = tx.TxArgs[1]
 	//we also add the hash of tx, for convinient

@@ -12,6 +12,7 @@ import (
 
 type TxMaker interface {
 	GetCredBuilder() AddrCredentialBuilder
+	GetDataCredBuilder() DataCredentialsBuilder
 	GenArguments() ([][]byte, error)
 	GenArgumentsWithoutCred() ([][]byte, error)
 	GenHash(string) []byte
@@ -19,11 +20,11 @@ type TxMaker interface {
 
 type baseMaker struct {
 	txArgs      [][]byte
-	credBuilder AddrCredentialBuilder
+	credBuilder *builder
 }
 
 func NewTxMaker(args [][]byte) TxMaker {
-	return &baseMaker{args, NewAddrCredentialBuilder()}
+	return &baseMaker{args, newTxCredentialBuilder()}
 }
 
 func (b *baseMaker) GenHash(method string) []byte {
@@ -36,13 +37,18 @@ func (b *baseMaker) GetCredBuilder() AddrCredentialBuilder {
 	return b.credBuilder
 }
 
+func (b *baseMaker) GetDataCredBuilder() DataCredentialsBuilder {
+
+	return b.credBuilder
+}
+
 func (b *baseMaker) GenArguments() ([][]byte, error) {
 	if b.credBuilder == nil {
 		return nil, errors.New("No cred yet")
 	}
 
 	cred := &pb.TxCredential{}
-	err := b.credBuilder.Update(cred)
+	err := b.credBuilder.update(cred)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +138,7 @@ func NewTxBuilder(ccname string, nonce []byte, method string, msg proto.Message)
 	}
 
 	b := &baseBuilder{
-		baseMaker{[][]byte{hh, hm}, NewAddrCredentialBuilder()},
+		baseMaker{[][]byte{hh, hm}, newTxCredentialBuilder()},
 		genHash(hh, hm, method),
 		nonce}
 

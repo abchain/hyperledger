@@ -56,11 +56,28 @@ func (w *shimStateMap) Get(key string, m StorageObject) error {
 		return nil
 	}
 	obj := m.GetObject()
-	_, err = asn1.Unmarshal(raw, obj)
+	rest, err := asn1.Unmarshal(raw, obj)
 	if err != nil {
 		return err
 	}
-	return m.Load(obj)
+	err = m.Load(obj)
+	for extObj, ok := err.(ExtendedObject); ok; extObj, ok = err.(ExtendedObject) {
+		if len(rest) == 0 {
+			return m.Load(extObj.Ext)
+		}
+		obj = extObj.Ext
+		rest, err = asn1.Unmarshal(rest, obj)
+		if err != nil {
+			return err
+		}
+		err = m.Load(obj)
+	}
+
+	return err
+}
+
+func SeralizeObject(m StorageObject) ([]byte, error) {
+	return asn1.Marshal(m.Save())
 }
 
 func (w *shimStateMap) Set(key string, m StorageObject) error {
@@ -69,7 +86,7 @@ func (w *shimStateMap) Set(key string, m StorageObject) error {
 		return errors.New("Empty key is not allowed")
 	}
 
-	raw, err := asn1.Marshal(m.Save())
+	raw, err := SeralizeObject(m)
 	if err != nil {
 		return err
 	}
@@ -77,7 +94,10 @@ func (w *shimStateMap) Set(key string, m StorageObject) error {
 	return w.SetRaw(key, raw)
 }
 
-func (w *shimStateMapRO) Set(string, StorageObject) error {
+func (w *shimStateMapRO) Set(key string, _ StorageObject) error {
+	if key == "" {
+		return errors.New("Empty key is not allowed")
+	}
 	return nil
 }
 

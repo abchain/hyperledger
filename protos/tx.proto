@@ -5,6 +5,7 @@ package protos;
 
 import "crypto.proto";
 import "google/protobuf/timestamp.proto";
+option go_package = "hyperledger.abchain.org/protos";
 
 message TxBase {
     string      network         = 1;
@@ -24,15 +25,20 @@ message TxCredential {
         Signature signature     = 3;
     }
 
-    message     InnerCredential{
-        string   ccname         = 1;
-        bytes    fingerprint    = 2;
+    message     DataCredential{
+        string   key         = 1;
+        oneof    data {
+            bytes bts = 2;
+            int32 int = 3;
+            string str = 4;
+        }
     }
 
     message     AddrCredentials{
         oneof cred{
             UserCredential user = 1;
-            InnerCredential cc  = 2;
+            //the old "innercredential" (id=2) has been erased
+            DataCredential data = 3;
         }
     }
 

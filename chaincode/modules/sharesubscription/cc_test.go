@@ -5,6 +5,7 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
 	txhandle "hyperledger.abchain.org/chaincode/lib/txhandle"
+	addrspace "hyperledger.abchain.org/chaincode/modules/addrspace"
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	"hyperledger.abchain.org/core/crypto/ecdsa"
 	tx "hyperledger.abchain.org/core/tx"
@@ -78,18 +79,25 @@ func initCond(mutilcc bool) {
 
 		tokenCfg := token.NewConfig(test_tag)
 		tokenCC = tokenCC.MustMerge(token.GeneralInvokingTemplate(test_ccname, tokenCfg))
-		tokenCC = token.ExtendInvokingTemplate(tokenCC, test_ccname, tokenCfg)
+		addrspaceCfg := addrspace.NewConfig(test_tag)
+		tokenCC = tokenCC.MustMerge(addrspace.GeneralTemplate(test_ccname, addrspaceCfg))
+		tokenCC = token.ExtendInvokingTemplate(tokenCC, addrspace.Verifier(addrspaceCfg))
 
 		tokenbolt = rpc.NewLocalChaincode(txhandle.CollectiveTxs_InnerSupport(tokenCC))
 		tokenbolt.Name = "tokenCC"
 		cfg.TokenCfg = token.InnerInvokeConfig{txgen.InnerChaincode(tokenbolt.Name)}
+		cfg.AddrCfg = addrspace.InnerinvokeImpl(txgen.InnerChaincode(tokenbolt.Name))
 		querycfg.TokenCfg = cfg.TokenCfg
+		querycfg.AddrCfg = cfg.AddrCfg
 
+		shareCC = shareCC.MustMerge(addrspace.GeneralTemplate(test_ccname, cfg.AddrCfg))
 		bolt = rpc.NewLocalChaincode(shareCC)
 		bolt.Name = "contractCC"
 		bolt.Invokables[tokenbolt.Name] = tokenbolt.MockStub
 
 	} else {
+
+		tokenCC = tokenCC.MustMerge(addrspace.DummyTemplate(test_ccname))
 
 		bolt = rpc.NewLocalChaincode(shareCC.MustMerge(tokenCC))
 		tokenbolt = bolt
@@ -97,7 +105,7 @@ func initCond(mutilcc bool) {
 
 }
 
-func initTest(t *testing.T) {
+func initTest(t *testing.T, mutilcc bool) {
 
 	spoutcore := txgen.SimpleTxGen(test_ccname)
 	tokenSpout := &token.GeneralCall{spoutcore}
@@ -119,16 +127,43 @@ func initTest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	if mutilcc {
+		spoutcore.Dispatcher = bolt
+		spoutcore.BeginTx(nil)
+		addrSpout := &addrspace.GeneralCall{spoutcore}
+		err = addrSpout.RegisterCC()
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = addrSpout.Result().TxID()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+}
+
+func normalizeContractHash(h []byte) []byte {
+	spoutcore := txgen.SimpleTxGen(test_ccname)
+	spoutcore.Dispatcher = bolt
+	addrSpout := &addrspace.GeneralCall{spoutcore}
+	var err error
+	h, err = addrSpout.NormalizeAddress(h)
+	if err != nil {
+		panic(err)
+	}
+	return h
 }
 
 func TestInit(t *testing.T) {
 	initCond(false)
-	initTest(t)
+	initTest(t, false)
 }
 
 func TestInitMutliCC(t *testing.T) {
 	initCond(true)
-	initTest(t)
+	initTest(t, true)
 }
 
 func testContractBase(t *testing.T) {
@@ -156,7 +191,7 @@ func testContractBase(t *testing.T) {
 	spoutcore.BeginTx(nil)
 	bolt.SpecifyTxID("contract")
 
-	addr, err := spout.New(contract, privAddr.Hash)
+	ctaddr, err := spout.New(contract, privAddr.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,6 +200,9 @@ func testContractBase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	addr := normalizeContractHash(ctaddr)
+	t.Logf("contract hash (original vs Normalized): [%X] vs [%X]", ctaddr, addr)
 
 	err, cont := spout.Query(addr)
 	if err != nil {

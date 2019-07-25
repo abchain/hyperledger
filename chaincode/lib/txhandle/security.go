@@ -83,7 +83,7 @@ type ClonableAddrVerifier interface {
 }
 
 type AddrCredInspector interface {
-	AddVerifier(AddrVerifier)
+	AddVerifier(AddrVerifier) bool
 }
 
 var Verifier_CheckCred = fmt.Errorf("Pass if credential can be verified")
@@ -95,8 +95,22 @@ type addrCredVerifier struct {
 	inspectors []AddrVerifier
 }
 
-func NewAddrCredVerifier(la ListAddresses) *addrCredVerifier {
+func EmptyAddrCredVerifier(la ListAddresses) *addrCredVerifier {
 	return &addrCredVerifier{la, nil}
+}
+
+//create default verifier
+func NewAddrCredVerifier(la ListAddresses) *addrCredVerifier {
+	return &addrCredVerifier{la, []AddrVerifier{defaultVerifier}}
+}
+
+func NewAddrCredVerifierFromTemplate(la ListAddresses, tp TxPreHandler) *addrCredVerifier {
+
+	tpV := tp.(*addrCredVerifier)
+	inspCpy := make([]AddrVerifier, len(tpV.inspectors))
+	copy(inspCpy, tpV.inspectors)
+
+	return &addrCredVerifier{la, inspCpy}
 }
 
 func AttachAddrVerifier(phs []TxPreHandler, v AddrVerifier) {
@@ -115,8 +129,13 @@ func cloneAddrVerifier(prototype AddrVerifier) AddrVerifier {
 	//the under-lying object of verifier is no way to be immutable
 	//(two method has to be called in sequence), so we has to prepare
 	//new instance for each calling, if there is not a clone interface,
-	//we use reflection to make new instance of the incoming prototype
-	return reflect.New(reflect.Indirect(reflect.ValueOf(prototype)).Type()).Interface().(AddrVerifier)
+	//we use reflection to make new instance of the incoming prototype,
+	//the prototype is assigned to the created one
+	protoV := reflect.Indirect(reflect.ValueOf(prototype))
+	newV := reflect.New(protoV.Type())
+	reflect.Indirect(newV).Set(protoV)
+
+	return newV.Interface().(AddrVerifier)
 }
 
 type failVerifier struct {
@@ -129,10 +148,25 @@ func (failVerifier) PreHandling(shim.ChaincodeStubInterface, string, txutil.Pars
 
 func (v failVerifier) Verify(*txutil.Address) error { return v.e }
 
-func (v *addrCredVerifier) AddVerifier(vv AddrVerifier) { v.inspectors = append(v.inspectors, vv) }
+func (v *addrCredVerifier) AddDefaultVerifier() {
+	v.AddVerifier(defaultVerifier)
+}
 
-var defaultVerifier = []AddrVerifier{failVerifier{Verifier_CheckCred}}
-var noCredential = fmt.Errorf("No credential")
+func (v *addrCredVerifier) AddVerifier(vv AddrVerifier) bool {
+
+	//verify ...
+	for _, inp := range v.inspectors {
+		if inp == vv {
+			return false
+		}
+	}
+
+	v.inspectors = append(v.inspectors, vv)
+	return true
+}
+
+var defaultVerifier = failVerifier{Verifier_CheckCred}
+var noCredential = fmt.Errorf("No credential inspector")
 
 func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method string, tx txutil.Parser) error {
 
@@ -150,15 +184,13 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method 
 
 	cred := tx.GetAddrCredential()
 	inps := make([]AddrVerifier, len(v.inspectors))
-	if len(inps) == 0 {
-		inps = defaultVerifier
-	}
 
-	traceLog := []string{}
 	for _, addr := range addrs {
 
 		verifyErr := noCredential
 		//verified by inspectors, finnaly by incomming credential
+
+		traceLog := []string{}
 		for i, inp := range inps {
 			if inp == nil {
 				inp = cloneAddrVerifier(v.inspectors[i])
@@ -170,22 +202,21 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method 
 			}
 
 			verifyErr = inp.Verify(addr)
-			if verifyErr == nil || verifyErr == Verifier_CheckCred {
+			if verifyErr == Verifier_CheckCred && cred != nil {
+				verifyErr = cred.Verify(*addr)
+			}
+
+			if verifyErr == nil {
 				break
+			} else {
+				traceLog = append(traceLog, verifyErr.Error()+"\n")
 			}
 		}
 
-		if verifyErr == Verifier_CheckCred && cred != nil {
-			verifyErr = cred.Verify(*addr)
+		if verifyErr != nil {
+			return fmt.Errorf("addr [%s] verify failure: \n%v", addr.ToString(), traceLog)
 		}
-
-		if verifyErr == nil {
-			//DONE
-			return nil
-		}
-
-		traceLog = append(traceLog, fmt.Sprintf("addr [%s]: %s", addr.ToString(), verifyErr))
 	}
 
-	return fmt.Errorf("Tx [%s] has no credential: %v", stub.GetTxID(), traceLog)
+	return nil
 }

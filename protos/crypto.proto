@@ -3,6 +3,7 @@
 syntax = "proto3";
 
 package protos;
+option go_package = "hyperledger.abchain.org/protos";
 
 message KeyDerived {
     bytes   rootFingerprint = 1;

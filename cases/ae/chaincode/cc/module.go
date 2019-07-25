@@ -6,6 +6,7 @@ import (
 	token "hyperledger.abchain.org/chaincode/modules/generaltoken"
 	mtoken "hyperledger.abchain.org/chaincode/modules/generaltoken/multitoken"
 	tokenNc "hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
+	multisign "hyperledger.abchain.org/chaincode/modules/multisign"
 	_ "hyperledger.abchain.org/chaincode/modules/registrar"
 	share "hyperledger.abchain.org/chaincode/modules/sharesubscription"
 	_ "hyperledger.abchain.org/core/crypto/ecdsa" //important
@@ -32,8 +33,14 @@ func NewChaincode(debugMode bool) *AECC {
 	tokenNccfg.Config = ret.runtimeCfg
 
 	handlers := token.GeneralAdminTemplate(CC_NAME, tokencfg)
+
+	mauthcfg := multisign.NewConfig(CC_TAG)
+	handlers = handlers.MustMerge(multisign.GeneralInvokingTemplate(CC_NAME, mauthcfg),
+		multisign.GeneralQueryTemplate(CC_NAME, mauthcfg))
+
 	handlers = handlers.MustMerge(
-		token.GeneralInvokingTemplate(CC_NAME, tokencfg),
+		token.ExtendInvokingTemplate(token.GeneralInvokingTemplate(CC_NAME, tokencfg),
+			multisign.MultiSignAddrPreHandler(mauthcfg)),
 		token.GeneralQueryTemplate(CC_NAME, tokencfg),
 		tokenNc.GeneralTemplate(CC_NAME, tokenNccfg),
 	)
@@ -41,7 +48,8 @@ func NewChaincode(debugMode bool) *AECC {
 	mtokencfg := mtoken.ConfigFromToken(tokencfg)
 	handlers = handlers.MustMerge(
 		mtoken.GeneralAdminTemplate(CC_NAME, mtokencfg),
-		mtoken.GeneralInvokingTemplate(CC_NAME, mtokencfg),
+		mtoken.ExtendInvokingTemplate(mtoken.GeneralInvokingTemplate(CC_NAME, mtokencfg),
+			multisign.MultiSignAddrPreHandler(mauthcfg)),
 		mtoken.GeneralQueryTemplate(CC_NAME, mtokencfg),
 	)
 

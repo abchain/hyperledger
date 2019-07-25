@@ -79,19 +79,19 @@ func TestSoleCred(t *testing.T) {
 		t.Fatal("Generate sig1 fail: ", err)
 	}
 
-	builder := NewAddrCredentialBuilder()
+	builder := newTxCredentialBuilder()
 
 	builder.AddSignature(sig1)
 
 	msg := &pb.TxCredential{}
 
-	err = builder.Update(msg)
+	err = builder.update(msg)
 
 	if err != nil {
 		t.Fatal("Create builder fail: ", err)
 	}
 
-	cred, err := NewAddrCredential(msghash, msg.Addrc)
+	cred, err := newTxCredential(msghash, msg.Addrc)
 
 	if err != nil {
 		t.Fatal("Create verifier fail: ", err)
@@ -156,20 +156,20 @@ func TestMutipleCred(t *testing.T) {
 		t.Fatal("Generate sig3 fail: ", err)
 	}
 
-	builder := NewAddrCredentialBuilder()
+	builder := newTxCredentialBuilder()
 
 	builder.AddSignature(sig1)
 	builder.AddSignature(sig3)
 
 	msg := &pb.TxCredential{}
 
-	err = builder.Update(msg)
+	err = builder.update(msg)
 
 	if err != nil {
 		t.Fatal("Create builder fail: ", err)
 	}
 
-	cred, err := NewAddrCredential(msghash, msg.Addrc)
+	cred, err := newTxCredential(msghash, msg.Addrc)
 
 	if err != nil {
 		t.Fatal("Create verifier fail: ", err)
@@ -204,61 +204,6 @@ func TestMutipleCred(t *testing.T) {
 		t.Fatal("Obtain pk is not identical ")
 	}
 
-}
-
-func TestCcCred(t *testing.T) {
-	tinit(t)
-
-	pk1 := privkey1.Public()
-
-	var err error
-	//	addr1, err := NewAddress(pk1)
-	// if err != nil {
-	// 	t.Fatal("Generate addr1 fail: ", err)
-	// }
-
-	builder := NewAddrCredentialBuilder()
-
-	builder.AddCc("test1", *ccAddr1, pk1)
-
-	msg := &pb.TxCredential{}
-
-	err = builder.Update(msg)
-
-	if err == nil {
-		t.Fatal("Expected cc credential fail but passed")
-	}
-
-	// cred, err := NewAddrCredential(msghash, msg.Addrc)
-
-	// if err != nil {
-	// 	t.Fatal("Create verifier fail: ", err)
-	// }
-
-	// err = cred.Verify(*ccAddr1)
-	// if err != nil {
-	// 	//Notice: verify should be wrong
-	// 	t.Log("verify addr1 fail: ", err)
-	// }
-
-	// err = cred.Verify(*addr1)
-	// if err == nil {
-	// 	t.Fatal("error verify for pk addr1")
-	// }
-
-	// pkget := cred.GetCredPubkey(*ccAddr1)
-
-	// if pkget == nil {
-	// 	t.Fatal("Get cred pk fail ")
-	// }
-
-	// if !pkget.IsEqual(pk1) {
-	// 	t.Fatal("Obtain pk is not identical ")
-	// }
-
-	// if cred.GetCredPubkey(*addr1) != nil {
-	// 	t.Fatal("Get cred pk from wrong addr ")
-	// }
 }
 
 func TestMixedCred(t *testing.T) {

@@ -15,7 +15,7 @@ func (m *RegContract) GetAddresses() []*tx.Address {
 
 func (m *RedeemContract) GetAddresses() (addrs []*tx.Address) {
 	for _, redeemAddr := range m.GetRedeems() {
-		if addr, err := tx.NewAddressFromPBMessage(redeemAddr); err != nil {
+		if addr, err := tx.NewAddressFromPBMessage(redeemAddr); err == nil {
 			addrs = append(addrs, addr)
 		}
 	}

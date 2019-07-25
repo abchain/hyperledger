@@ -10,6 +10,32 @@ type StorageObject interface {
 	Load(interface{}) error
 }
 
+//allowing one or more "extended object" can be persisted
+//When load return this error, the rest bytes is unmarshalled
+//with the object in Ext field, and Load will be called again
+//NOTICE: if there is no any rest bytes, Load is just called
+//with the provided Ext field (without any change), and any
+//failure in Unmarshalling just caused the whole Get process
+//return failure
+//NOTICE: Load return more ExtendedObject when there is
+//no more bytes left will cause Get returun ExtendedObject as
+//an error
+type ExtendedObject struct {
+	Ext interface{}
+}
+
+func (ExtendedObject) Error() string { return "More object" }
+
+type wrappingObject struct {
+	obj interface{}
+}
+
+func WrapObject(v interface{}) wrappingObject { return wrappingObject{v} }
+
+func (w wrappingObject) GetObject() interface{} { return w.obj }
+func (w wrappingObject) Save() interface{}      { return w.obj }
+func (w wrappingObject) Load(interface{}) error { return nil }
+
 type StateMap interface {
 	SubMap(string) StateMap
 	StoragePath() string

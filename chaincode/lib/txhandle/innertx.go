@@ -3,8 +3,6 @@ package tx
 import (
 	"fmt"
 	protos "github.com/golang/protobuf/ptypes/empty"
-	"hyperledger.abchain.org/chaincode/impl"
-	"hyperledger.abchain.org/chaincode/lib/runtime"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
 	"strings"
@@ -53,9 +51,12 @@ func (itxh CollectiveTxs_InnerSupport) Invoke(stub shim.ChaincodeStubInterface, 
 
 }
 
+//--------------- DO NOT USE, HAVE BEEN DEPRECATED, SEE ADDRSPACDE MODULE ----------------------
+
 //this module help to bind a specified addr with a chaincode, so other chaincode
 //could not touch this address
 
+/*
 type InnerAddrBase struct {
 	Root string
 	*runtime.Config
@@ -160,3 +161,4 @@ func (v *InnerAddrVerifier) PreHandling(stub shim.ChaincodeStubInterface, functi
 
 	return nil
 }
+*/
