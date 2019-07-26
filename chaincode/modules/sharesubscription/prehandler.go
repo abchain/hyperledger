@@ -24,7 +24,7 @@ func (v redeemContractAddrCred) PreHandling(stub shim.ChaincodeStubInterface, _ 
 	}
 
 	rt := v.NewTx(stub, parser.GetNonce())
-	err, ct := rt.Query(m.GetContract().GetHash())
+	err, ct := rt.Query_C(m.GetContract().GetHash())
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (v redeemContractAddrCred) PreHandling(stub shim.ChaincodeStubInterface, _ 
 				return err
 			}
 
-			if _, ok := ct.Find(addr.ToString()); ok {
+			if _, ok := ct.Find(addr.Internal()); ok {
 				m.Redeems = append(m.Redeems, addr.PBMessage())
 			}
 		}
@@ -54,7 +54,7 @@ func (v redeemContractAddrCred) PreHandling(stub shim.ChaincodeStubInterface, _ 
 		for _, addr := range m.GetRedeems() {
 			caddr, err := txutil.NewAddressFromPBMessage(addr)
 			if err == nil {
-				if _, ok := ct.Find(caddr.ToString()); !ok {
+				if _, ok := ct.Find(caddr.Internal()); !ok {
 					return errors.New("Invalid redeem addr (not in contract)")
 				}
 			} else {

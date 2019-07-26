@@ -1,7 +1,6 @@
 package multisign
 
 import (
-	"errors"
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	pb "hyperledger.abchain.org/chaincode/modules/multisign/protos"
@@ -31,46 +30,21 @@ func (h queryHandler) Msg() proto.Message    { return new(txpb.TxAddr) }
 func (h contractHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 
 	msg := parser.GetMessage().(*pb.Contract)
+	var addrs [][]byte
+	var weights []int32
 
-	addr2Weight := make(map[string]int32)
 	for _, m := range msg.Addrs {
-		addr, err := txutil.NewAddressFromPBMessage(m.GetAddr())
-		if err != nil {
-			return nil, err
-		}
-
-		addrs := addr.ToString()
-
-		if _, existed := addr2Weight[addrs]; existed {
-			return nil, errors.New("Duplicated contract address")
-		}
-
-		addr2Weight[addrs] = m.GetWeight()
+		addrs = append(addrs, m.GetAddr().GetHash())
+		weights = append(weights, m.GetWeight())
 	}
-	return h.NewTx(stub, parser.GetNonce()).Contract(msg.Threshold, addr2Weight)
+	return h.NewTx(stub, parser.GetNonce()).Contract_C(msg.Threshold, addrs, weights)
 }
 
 func (h updateHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
 	msg := parser.GetMessage().(*pb.Update)
 
-	var addrs [3]string
-	var target []*txpb.TxAddr
-	if msg.GetTo() == nil {
-		target = []*txpb.TxAddr{msg.GetAddr(), msg.GetFrom()}
-	} else {
-		target = []*txpb.TxAddr{msg.GetAddr(), msg.GetFrom(), msg.GetTo()}
-	}
-
-	for i, pbAddr := range target {
-
-		addr, err := txutil.NewAddressFromPBMessage(pbAddr)
-		if err != nil {
-			return nil, err
-		}
-		addrs[i] = addr.ToString()
-	}
-
-	err := h.NewTx(stub, parser.GetNonce()).Update(addrs[0], addrs[1], addrs[2])
+	err := h.NewTx(stub, parser.GetNonce()).Update_C(msg.GetAddr().GetHash(),
+		msg.GetFrom().GetHash(), msg.GetTo().GetHash())
 	if err != nil {
 		return nil, err
 	}
@@ -81,12 +55,7 @@ func (h queryHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parse
 
 	msg := parser.GetMessage().(*txpb.TxAddr)
 
-	accAddr, err := txutil.NewAddressFromPBMessage(msg)
-	if err != nil {
-		return nil, err
-	}
-
-	err, data := h.NewTx(stub, parser.GetNonce()).Query(accAddr.ToString())
+	err, data := h.NewTx(stub, parser.GetNonce()).Query_C(msg.GetHash())
 	if err != nil {
 		return nil, err
 	}

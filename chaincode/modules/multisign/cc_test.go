@@ -77,7 +77,7 @@ func TestChaincode(t *testing.T) {
 		t.Fatal("Wrong contract")
 	}
 
-	if ind := ret.Find(GeorgeOrwell.ToString()); ind < 0 {
+	if ind := ret.Find(GeorgeOrwell.Hash); ind < 0 {
 		t.Fatal("Not found")
 	} else if ret.Addrs[ind].Weight != 70 {
 		t.Fatal("Wrong record")
@@ -144,13 +144,13 @@ func TestChaincode(t *testing.T) {
 		t.Fatal("Wrong contract")
 	}
 
-	if ind := ret.Find(BigBrother.ToString()); ind < 0 {
+	if ind := ret.Find(BigBrother.Hash); ind < 0 {
 		t.Fatal("Not found")
 	} else if ret.Addrs[ind].Weight != 60 {
 		t.Fatal("Wrong record")
 	}
 
-	if ind := ret.Find(AnimalFarm.ToString()); ind >= 0 {
+	if ind := ret.Find(AnimalFarm.Hash); ind >= 0 {
 		t.Fatal("found removed item")
 	}
 

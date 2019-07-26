@@ -3,6 +3,7 @@ package abchainTx
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -40,6 +41,10 @@ var AddrHelper AddressHelper = map[uint8]string{
 }
 
 var networkId uint8 = 1
+
+func init() {
+	pb.TxAddrMarshaller = txAddrMarshaller
+}
 
 func getNetwork(nId uint8) string {
 	n, ok := AddrHelper[nId]
@@ -144,7 +149,20 @@ func NewAddressFromString(addressStr string) (*Address, error) {
 	return addrimpl.NewAddressFromString(addressStr)
 }
 
+func (addr *Address) Internal() []byte {
+
+	if addr == nil {
+		return nil
+	}
+
+	return addr.Hash
+}
+
 func (addr *Address) PBMessage() *pb.TxAddr {
+
+	if addr == nil {
+		return new(pb.TxAddr)
+	}
 
 	addrProto := &pb.TxAddr{
 		addr.Hash,
@@ -156,6 +174,16 @@ func (addr *Address) PBMessage() *pb.TxAddr {
 func (addr *Address) Serialize() []byte {
 
 	return addrimpl.Serialize(addr)
+}
+
+func txAddrMarshaller(m *pb.TxAddr) ([]byte, error) {
+
+	if m.GetHash() == nil {
+		return json.Marshal("NO ADDRESS")
+	}
+
+	caddr := NewAddressFromHash(m.GetHash())
+	return json.Marshal(caddr.ToString())
 }
 
 func (addr *Address) ToString() string {
@@ -171,7 +199,7 @@ func (addr *Address) Dump() string {
 
 func (addr *Address) IsExternal() bool {
 
-	return len(addr.Hash) > ADDRESS_HASH_LEN && addr.Hash[0] == byte(69)
+	return len(addr.Hash) > ADDRESS_HASH_LEN
 
 }
 

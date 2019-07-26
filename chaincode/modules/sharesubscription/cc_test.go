@@ -38,19 +38,19 @@ var bolt *rpc.ChaincodeAdapter
 var tokenbolt *rpc.ChaincodeAdapter
 
 var contract map[string]int32
-var addr1S, addr2S, addr3S, addr4S string
+var addr1S, addr2S, addr3S, addr4S *tx.Address
 
 func init() {
-	addr1S = tx.NewAddressFromHash([]byte(addr1)).ToString()
-	addr2S = tx.NewAddressFromHash([]byte(addr2)).ToString()
-	addr3S = tx.NewAddressFromHash([]byte(addr3)).ToString()
-	addr4S = tx.NewAddressFromHash([]byte(addr4)).ToString()
+	addr1S = tx.NewAddressFromHash([]byte(addr1))
+	addr2S = tx.NewAddressFromHash([]byte(addr2))
+	addr3S = tx.NewAddressFromHash([]byte(addr3))
+	addr4S = tx.NewAddressFromHash([]byte(addr4))
 
 	contract = map[string]int32{
-		addr1S: 34,
-		addr2S: 35,
-		addr3S: 31,
-		addr4S: 1,
+		addr1S.ToString(): 34,
+		addr2S.ToString(): 35,
+		addr3S.ToString(): 31,
+		addr4S.ToString(): 1,
 	}
 }
 
@@ -183,15 +183,10 @@ func testContractBase(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	privAddr, err := tx.NewAddress(priv.Public())
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	spoutcore.BeginTx(nil)
 	bolt.SpecifyTxID("contract")
 
-	ctaddr, err := spout.New(contract, privAddr.Hash)
+	ctaddr, err := spout.New(contract)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,30 +199,32 @@ func testContractBase(t *testing.T) {
 	addr := normalizeContractHash(ctaddr)
 	t.Logf("contract hash (original vs Normalized): [%X] vs [%X]", ctaddr, addr)
 
-	err, cont := spout.Query(addr)
+	err, cont := spout.Query_C(addr)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	t.Log(cont)
 
 	if len(cont.Status) != 4 {
 		t.Fatalf("Invalid status count %d", len(cont.Status))
 	}
 
-	a1, ok := cont.Find(addr1S)
+	a1, ok := cont.Find(addr1S.Internal())
 	if !ok {
 		t.Fatal("No record for addr1")
 	}
 
-	if a1.Weight < 336633 || a1.Weight > 336634 {
+	if a1.Weight != 34 {
 		t.Fatalf("Invalid weight for a1: %d", a1.Weight)
 	}
 
-	a4, ok := cont.Find(addr4S)
+	a4, ok := cont.Find(addr4S.Internal())
 	if !ok {
 		t.Fatal("No record for addr4")
 	}
 
-	if a4.Weight < 9900 || a4.Weight > 9901 {
+	if a4.Weight != 1 {
 		t.Fatalf("Invalid weight for a4: %d", a4.Weight)
 	}
 
@@ -252,7 +249,7 @@ func testContractBase(t *testing.T) {
 	spoutcore.BeginTx(nil)
 	bolt.SpecifyTxID("redeem1")
 
-	_, err = spout.Redeem(addr, big.NewInt(0), [][]byte{[]byte(addr1)})
+	_, err = spout.Redeem_C(addr, big.NewInt(0), [][]byte{[]byte(addr1)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -284,7 +281,7 @@ func testContractBase(t *testing.T) {
 
 	spoutcore.BeginTx(nil)
 	bolt.SpecifyTxID("redeem2")
-	_, err = spout.Redeem(addr, bal, [][]byte{[]byte(addr2)})
+	_, err = spout.Redeem_C(addr, bal, [][]byte{[]byte(addr2)})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -46,7 +46,7 @@ func (h *addrVerifier) Verify(addr *txutil.Address) error {
 		return errors.New("Not inited")
 	}
 
-	err, contract := h.rt.Query(addr.ToString())
+	err, contract := h.rt.Query_C(addr.Hash)
 	if err != nil {
 		return err
 	}
@@ -56,10 +56,8 @@ func (h *addrVerifier) Verify(addr *txutil.Address) error {
 	var thresholdacc int32
 
 	for _, addr := range contract.Addrs {
-		caddr, err := txutil.NewAddressFromString(addr.Addr)
-		if err != nil {
-			continue
-		} else if err = h.recursiveVerifier(caddr); err != nil {
+
+		if err := h.recursiveVerifier(txutil.NewAddressFromHash(addr.Addr)); err != nil {
 			continue
 		} else {
 			thresholdacc += addr.Weight

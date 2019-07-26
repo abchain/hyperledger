@@ -3,13 +3,12 @@ syntax = "proto3";
 
 package ccprotos;
 
-import "hyperledger.abchain.org/protos/txaddr.proto";
+import "protos/txaddr.proto";
 import "google/protobuf/timestamp.proto";
 
 //user can register a public key only if it has own some pais 
 message RegContract {
 
-	protos.TxAddr delegatorAddr = 1;
 	message Member{
 		protos.TxAddr     addr = 1;
 		int32    weight = 2;
@@ -34,13 +33,12 @@ message RedeemResponse {
 }
 
 message Contract {
-	bytes delegatorPkFingerPrint = 1; 
 	bytes     totalRedeem  = 3;
 
 	message MemberStatus{
 		int32    weight = 2;
 		bytes     totalRedeem = 3;	
-		string    memberID = 5;	
+		protos.TxAddr    memberID = 5;	
 	}
 
 	repeated MemberStatus status = 5;
@@ -48,5 +46,4 @@ message Contract {
 	google.protobuf.Timestamp frozenTo = 8;
 	bool      isFrozen = 10;
 
-	protos.TxAddr	  nextAddr = 12;
 }

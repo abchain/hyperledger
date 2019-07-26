@@ -79,23 +79,7 @@ func (s *Subscription) NewContract(rw web.ResponseWriter, req *web.Request) {
 	//s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 	share := share.GeneralCall{s.TxGenerator}
 
-	var addr *tx.Address
-	var err error
-	if s.ActivePrivk == nil {
-		addr, err = tx.NewAddressFromString(req.PostFormValue("initiator"))
-		if err != nil {
-			s.NormalError(rw, err)
-			return
-		}
-	} else {
-		addr, err = tx.NewAddressFromPrivateKey(s.ActivePrivk)
-		if err != nil {
-			s.NormalError(rw, err)
-			return
-		}
-	}
-
-	conaddr, err := share.New(contract, addr.Hash)
+	conaddr, err := share.New(contract)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -120,9 +104,9 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	conaddr, err := tx.NewAddressFromString(req.PathParams[ContrcatAddr])
-	if err != nil {
-		s.NormalError(rw, err)
+	conaddr := req.PathParams[ContrcatAddr]
+	if conaddr == "" {
+		s.NormalErrorF(rw, 400, "No contract addr")
 		return
 	}
 
@@ -141,20 +125,18 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 	// }
 
 	s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
-	var toAddr *tx.Address
-	if tos := req.PostFormValue("to"); tos != "" {
-		toAddr, err = tx.NewAddressFromString(tos)
-	} else {
-		toAddr, err = tx.NewAddressFromPrivateKey(s.ActivePrivk)
-	}
-
-	if err != nil {
-		s.NormalError(rw, err)
-		return
+	tos := req.PostFormValue("to")
+	if tos == "" {
+		toAddr, err := tx.NewAddressFromPrivateKey(s.ActivePrivk)
+		if err != nil {
+			s.NormalError(rw, err)
+			return
+		}
+		tos = toAddr.ToString()
 	}
 
 	//we can omit redeem addr in calling message
-	nonceid, err := share.Redeem(conaddr.Hash, amount, [][]byte{toAddr.Hash})
+	nonceid, err := share.Redeem(conaddr, amount, []string{tos})
 
 	if err != nil {
 		s.NormalError(rw, err)
@@ -199,7 +181,7 @@ func toContractEntry(contract *pb.Contract_s, balance *big.Int) (*contractQueryE
 
 	status := make(map[string]*contractMemberEntry)
 
-	wb := big.NewInt(int64(share.WeightBase))
+	wb := big.NewInt(int64(contract.TotalWeight))
 	for _, s := range contract.Status {
 
 		ret := &contractMemberEntry{}
@@ -207,11 +189,11 @@ func toContractEntry(contract *pb.Contract_s, balance *big.Int) (*contractQueryE
 		canRedeem := big.NewInt(int64(s.Weight))
 		canRedeem = canRedeem.Mul(canRedeem, totalShare).Div(canRedeem, wb)
 
-		ret.Weight = float64(s.Weight) / float64(share.WeightBase)
+		ret.Weight = float64(s.Weight) / float64(contract.TotalWeight)
 		ret.TotalAsset = canRedeem.String()
 		ret.Rest = big.NewInt(0).Sub(canRedeem, s.TotalRedeem).String()
 
-		status[s.MemberID] = ret
+		status[tx.NewAddressFromHash(s.MemberID).ToString()] = ret
 	}
 
 	out.Members = status
@@ -237,7 +219,7 @@ func (s *Subscription) QueryContract(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	share := share.GeneralCall{s.TxGenerator}
-	err, contract := share.Query(addr.Hash)
+	err, contract := share.Query_C(addr.Hash)
 	if err != nil {
 		s.NormalError(rw, err)
 		return

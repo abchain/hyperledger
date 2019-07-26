@@ -8,14 +8,14 @@ import (
 )
 
 type MultiSignAddressTx interface {
-	Contract(threshold int32, addr2weight map[string]int32) ([]byte, error)
+	Contract_C(threshold int32, addrs [][]byte, weights []int32) ([]byte, error)
 
 	// replace the existing multisign addresses specified by 'from' to 'to'
 	// if 'to' is empty, corresponding part is just removed, and notice this
 	// may cause a contract can not be auth. by anyone again
-	Update(acc, from, to string) error
+	Update_C(acc, from, to []byte) error
 
-	Query(acc string) (error, *pb.Contract_s)
+	Query_C(acc []byte) (error, *pb.Contract_s)
 }
 
 type MultiSignConfig interface {

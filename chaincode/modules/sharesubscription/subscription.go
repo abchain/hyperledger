@@ -1,15 +1,19 @@
 package subscription
 
 import (
-	"bytes"
+	"encoding/base64"
 	"errors"
+	"hyperledger.abchain.org/chaincode/lib/runtime"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
 	tx "hyperledger.abchain.org/core/tx"
 	"hyperledger.abchain.org/core/utils"
 	"math/big"
 	"sort"
-	"strconv"
 )
+
+func addrToKey(h []byte) string {
+	return base64.RawURLEncoding.EncodeToString(h)
+}
 
 func toAmount(a []byte) *big.Int {
 
@@ -21,104 +25,44 @@ func toAmount(a []byte) *big.Int {
 }
 
 const (
-	WeightBase    = 1000000
-	MaxContractor = 1024
+	maxContractor = 128
 )
 
-func newContract(contract map[string]int32, addr []byte) (*pb.Contract_s, error) {
+func newContract(addrs [][]byte, ratios []int) (*pb.Contract_s, error) {
 
-	if len(contract) > MaxContractor {
+	if len(addrs) > maxContractor {
 		return nil, errors.New("Too many contractors")
-	}
-
-	if len(addr) < tx.ADDRESS_HASH_LEN {
-		return nil, errors.New("Invalid addr hash")
+	} else if len(addrs) != len(ratios) {
+		return nil, errors.New("Wrong arguments")
 	}
 
 	pcon := &pb.Contract_s{}
 	pcon.TotalRedeem = big.NewInt(0)
 
-	pcon.DelegatorPkFingerPrint = addr
-
-	var totalweight int64
-	var usedweight int32
-	var keys = make([]string, 0, len(contract))
-
-	for k, weight := range contract {
-		if weight < 0 {
+	for i, ratio := range ratios {
+		if ratio < 0 {
 			return nil, errors.New("Minus weight is not allowed")
 		}
-		totalweight = totalweight + int64(weight)
-		keys = append(keys, k)
+
+		pcon.Status = append(pcon.Status,
+			pb.Contract_MemberStatus_s{int32(ratio), big.NewInt(0), addrs[i]})
+		pcon.TotalWeight += int64(ratio)
 	}
 
 	//the data MUST be added in a deterministic manner
-	sort.Strings(keys)
-
-	for _, saddr := range keys {
-
-		weight := contract[saddr]
-		//turn the weight into a base of weightBase
-		weight = int32(int64(weight) * int64(WeightBase) / totalweight)
-		usedweight = weight + usedweight
-
-		pcon.Status = append(pcon.Status, pb.Contract_MemberStatus_s{weight, big.NewInt(0), saddr})
-	}
-
-	if usedweight < int32(WeightBase) {
-
-		resident := int32(WeightBase) - usedweight
-
-		for resident > 0 {
-			//simply add them into first N contractors ...
-			for k, _ := range pcon.Status {
-
-				pcon.Status[k].Weight++
-				resident--
-
-				if resident == 0 {
-					break
-				}
-			}
-		}
-
-	} else if usedweight > int32(WeightBase) {
-		panic("The arithmetic in golang may have ruined")
-	}
+	sort.Sort(pcon.Sorter())
 
 	return pcon, nil
 }
 
 func hashContract(contract *pb.Contract_s, nonce []byte) ([]byte, error) {
 
-	var maphash []byte
-	for _, v := range contract.Status {
-		maphashItem, err := utils.HMACSHA256(
-			bytes.Join([][]byte{
-				[]byte(v.MemberID),
-				[]byte(strconv.Itoa(int(v.Weight)))}, nil),
-			contract.DelegatorPkFingerPrint)
-
-		if err != nil {
-			return nil, err
-		}
-
-		if maphash == nil {
-			maphash = maphashItem
-		} else {
-			//XOR bytes
-			if len(maphash) != len(maphashItem) {
-				return nil, errors.New("Wrong hash len")
-			}
-
-			for i := 0; i < len(maphash); i++ {
-				maphash[i] = maphash[i] ^ maphashItem[i]
-			}
-		}
+	bts, err := runtime.SeralizeObject(contract)
+	if err != nil {
+		return nil, err
 	}
 
-	hash, err := utils.DoubleSHA256(bytes.Join([][]byte{maphash,
-		nonce, []byte("MAGICCODE_SUBSCRIPTION")}, nil))
+	hash, err := utils.HMACSHA256(bts, nonce)
 	if err != nil {
 		return nil, err
 	}
@@ -131,42 +75,38 @@ func hashContract(contract *pb.Contract_s, nonce []byte) ([]byte, error) {
 
 }
 
-func (cn *baseContractTx) New(contract map[string]int32, addr []byte) ([]byte, error) {
+func (cn *baseContractTx) New_C(addrs [][]byte, ratios []int) ([]byte, error) {
 
-	pcon, err := newContract(contract, addr)
+	pcon, err := newContract(addrs, ratios)
 	if err != nil {
 		return nil, err
 	}
 
-	conHash, err := hashContract(pcon, cn.nonce)
+	hash, err := hashContract(pcon, cn.nonce)
 	if err != nil {
 		return nil, err
 	}
 
-	conAddrHash, err := cn.addrutil.NormalizeAddress(conHash)
+	addrhash, err := cn.addrutil.NormalizeAddress(hash)
 	if err != nil {
 		return nil, err
 	}
-
-	conAddr := tx.NewAddressFromHash(conAddrHash)
 
 	t, _ := cn.Tx.GetTxTime()
 	pcon.ContractTs = t
 
-	err = cn.Storage.Set(conAddr.ToString(), pcon)
+	err = cn.Storage.Set(addrToKey(addrhash), pcon)
 	if err != nil {
 		return nil, err
 	}
 
-	return conHash, nil
+	return hash, nil
 }
 
-func (cn *baseContractTx) Query(addr []byte) (error, *pb.Contract_s) {
-	conAddr := tx.NewAddressFromHash(addr)
-
+func (cn *baseContractTx) Query_C(addr []byte) (error, *pb.Contract_s) {
 	con := &pb.Contract_s{}
 
-	err := cn.Storage.Get(conAddr.ToString(), con)
+	err := cn.Storage.Get(addrToKey(addr), con)
 	if err != nil {
 		return err, nil
 	} else if con.TotalRedeem == nil {
@@ -176,14 +116,14 @@ func (cn *baseContractTx) Query(addr []byte) (error, *pb.Contract_s) {
 	return nil, con
 }
 
-func (cn *baseContractTx) QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract_s) {
+func (cn *baseContractTx) QueryOne_C(conaddr, addr []byte) (error, *pb.Contract_s) {
 
-	err, data := cn.Query(conaddr)
+	err, data := cn.Query_C(conaddr)
 	if err != nil {
 		return err, nil
 	}
 
-	m, ok := data.Find(tx.NewAddressFromHash(addr).ToString())
+	m, ok := data.Find(addr)
 	if !ok {
 		return errors.New("Not a member"), nil
 	}
@@ -192,17 +132,13 @@ func (cn *baseContractTx) QueryOne(conaddr []byte, addr []byte) (error, *pb.Cont
 	return nil, data
 }
 
-func (cn *baseContractTx) Redeem(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) (*pb.RedeemResponse, error) {
+func (cn *baseContractTx) Redeem_C(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) (*pb.RedeemResponse, error) {
 
 	if len(redeemAddrs) == 0 {
 		return nil, errors.New("No redeem addrs")
 	}
 
-	conAddrs := tx.NewAddressFromHash(conaddr).ToString()
-
-	contract := &pb.Contract_s{}
-
-	err := cn.Storage.Get(conAddrs, contract)
+	err, contract := cn.Query_C(conaddr)
 	if err != nil {
 		return nil, err
 	}
@@ -213,17 +149,17 @@ func (cn *baseContractTx) Redeem(conaddr []byte, amount *big.Int, redeemAddrs []
 	}
 
 	totalAsset := big.NewInt(0).Add(contract.TotalRedeem, acc.Balance)
+	totalWeight := big.NewInt(contract.TotalWeight)
 
 	ret := &pb.RedeemResponse{}
 	for _, addr := range redeemAddrs {
-		member, mindex := contract.FindAndAccess(tx.NewAddressFromHash(addr).ToString())
+		member, mindex := contract.FindAndAccess(addr)
 		if mindex < 0 {
 			continue
 		}
 
 		memberAsset := big.NewInt(int64(member.Weight))
-		memberAsset = memberAsset.Mul(memberAsset, totalAsset).Div(memberAsset, big.NewInt(WeightBase))
-
+		memberAsset = memberAsset.Mul(memberAsset, totalAsset).Div(memberAsset, totalWeight)
 		if memberAsset.Cmp(member.TotalRedeem) <= 0 {
 			continue
 		}
@@ -235,12 +171,12 @@ func (cn *baseContractTx) Redeem(conaddr []byte, amount *big.Int, redeemAddrs []
 
 		if nc, err := cn.token.Transfer(conaddr, addr, canRedeem); err == nil {
 			ret.Nonces = append(ret.Nonces, nc)
-			contract.TotalRedeem = big.NewInt(0).Add(contract.TotalRedeem, canRedeem)
+			contract.TotalRedeem = contract.TotalRedeem.Add(contract.TotalRedeem, canRedeem)
 			contract.Status[mindex].TotalRedeem = big.NewInt(0).Add(member.TotalRedeem, canRedeem)
 		}
 	}
 
-	err = cn.Storage.Set(conAddrs, contract)
+	err = cn.Storage.Set(addrToKey(conaddr), contract)
 	if err != nil {
 		return nil, err
 	}

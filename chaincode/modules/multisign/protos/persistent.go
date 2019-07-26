@@ -1,12 +1,10 @@
 package ccprotos
 
 import (
-	"fmt"
+	"bytes"
 	txutil "hyperledger.abchain.org/core/tx"
-	"strings"
 
 	"hyperledger.abchain.org/chaincode/lib/runtime"
-	"sort"
 )
 
 type Contract_s struct {
@@ -14,12 +12,12 @@ type Contract_s struct {
 }
 
 type ctaddr struct {
-	Addr   string `asn1:"utf8"`
+	Addr   []byte
 	Weight int32
 }
 
 type contract_store struct {
-	Version   int32
+	Version   int32 `json:"-"`
 	Threshold int32
 	Addrs     []ctaddr
 	Recursive int32 `json:"-"`
@@ -66,29 +64,18 @@ type contract_store struct {
 // }
 
 //notice this never check the duplication of addrs
-func (n *Contract_s) Participate(addr string, weight int32) {
+func (n *Contract_s) Participate(addr []byte, weight int32) {
 	n.Addrs = append(n.Addrs, ctaddr{Addr: addr, Weight: weight})
 }
 
-func (n *Contract_s) Find(addr string) int {
+func (n *Contract_s) Find(addr []byte) int {
 	for i, v := range n.Addrs {
-		if addr == v.Addr {
+		if bytes.Compare(addr, v.Addr) == 0 {
 			return i
 		}
 	}
 
 	return -1
-}
-
-func (n *Contract_s) ToMap() map[string]int32 {
-
-	r := make(map[string]int32)
-
-	for _, v := range n.Addrs {
-		r[v.Addr] = v.Weight
-	}
-
-	return r
 }
 
 func (n *Contract_s) Sorter() addrSort {
@@ -100,7 +87,7 @@ type addrSort []ctaddr
 func (s addrSort) Len() int      { return len(s) }
 func (s addrSort) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s addrSort) Less(i, j int) bool {
-	return strings.Compare(s[i].Addr, s[j].Addr) < 0
+	return bytes.Compare(s[i].Addr, s[j].Addr) < 0
 }
 
 func (n *Contract_s) GetObject() interface{} { return &n.contract_store }
@@ -111,11 +98,9 @@ func (n *Contract_s) LoadFromPB(p *Contract) *Contract_s {
 	n.Threshold = p.Threshold
 
 	for _, element := range p.Addrs {
-		n.Participate(txutil.NewAddressFromHash(element.GetAddr().GetHash()).ToString(),
+		n.Participate(element.GetAddr().GetHash(),
 			element.GetWeight())
 	}
-
-	sort.Sort(n.Sorter())
 
 	return n
 }
@@ -125,26 +110,12 @@ func (n *Contract_s) ToPB() *Contract {
 
 	for _, element := range n.Addrs {
 
-		addr, err := txutil.NewAddressFromString(element.Addr)
-		if err != nil {
-			return nil
-		}
 		res.Addrs = append(res.Addrs,
-			&AddrByWeight{addr.PBMessage(), element.Weight})
+			&AddrByWeight{txutil.NewAddressFromHash(element.Addr).PBMessage(), element.Weight})
 	}
 	return res
 }
 
 func (n *Contract_s) Serialize() ([]byte, error) {
 	return runtime.SeralizeObject(n)
-}
-
-func (n *Contract_s) Dump() (dump string) {
-
-	dump = dump + fmt.Sprintf("Multisign info. Threshold: [%d]\n", n.Threshold)
-	for idx, e := range n.Addrs {
-		dump = dump + fmt.Sprintf("		%d: [%s][%d]\n", idx, e.Addr, e.Weight)
-	}
-
-	return
 }

@@ -10,10 +10,10 @@ import (
 )
 
 type ContractTx interface {
-	New(map[string]int32, []byte) ([]byte, error) //return contract address
-	Redeem(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) (*pb.RedeemResponse, error)
-	Query(addr []byte) (error, *pb.Contract_s)
-	QueryOne(conaddr []byte, addr []byte) (error, *pb.Contract_s)
+	New_C(addrs [][]byte, ratios []int) ([]byte, error) //return contract address
+	Redeem_C(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) (*pb.RedeemResponse, error)
+	Query_C(addr []byte) (error, *pb.Contract_s)
+	QueryOne_C(conaddr, addr []byte) (error, *pb.Contract_s)
 }
 
 type ContractConfig interface {
