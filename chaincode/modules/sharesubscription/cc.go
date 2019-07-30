@@ -45,6 +45,7 @@ type baseContractTx struct {
 
 const (
 	contract_tag_prefix = "Subscription_"
+	contract_auth_tag   = "Auth"
 )
 
 func (cfg *StandardContractConfig) NewTx(stub shim.ChaincodeStubInterface, nonce []byte) ContractTx {

@@ -40,6 +40,8 @@ var tokenbolt *rpc.ChaincodeAdapter
 var contract map[string]int32
 var addr1S, addr2S, addr3S, addr4S *tx.Address
 
+var shareCCImpl txhandle.CollectiveTxs
+
 func init() {
 	addr1S = tx.NewAddressFromHash([]byte(addr1))
 	addr2S = tx.NewAddressFromHash([]byte(addr2))
@@ -103,6 +105,7 @@ func initCond(mutilcc bool) {
 		tokenbolt = bolt
 	}
 
+	shareCCImpl = shareCC
 }
 
 func initTest(t *testing.T, mutilcc bool) {
@@ -308,4 +311,62 @@ func TestContract(t *testing.T) {
 func TestContract_Multicc(t *testing.T) {
 	TestInitMutliCC(t)
 	testContractBase(t)
+}
+
+func testContractLite(t *testing.T) {
+
+	spoutcore := txgen.SimpleTxGen(test_ccname)
+	spoutcore.Dispatcher = bolt
+
+	spout := &GeneralCall{spoutcore}
+
+	priv, err := ecdsa.NewDefaultPrivatekey()
+	spoutcore.Credgenerator = txgen.NewSingleKeyCred(priv)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	degAddr, err := tx.NewAddress(priv.Public())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	spoutcore.BeginTx(nil)
+	bolt.SpecifyTxID("contract")
+
+	ctaddr, err := spout.NewByDelegator(contract, degAddr.ToString())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = spoutcore.Result().TxID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addr := normalizeContractHash(ctaddr)
+	t.Logf("contract hash (original vs Normalized): [%X] vs [%X]", ctaddr, addr)
+
+	err, cont := spout.Query_C(addr)
+	if err != nil {
+		t.Fatal(err)
+	} else if cont == nil {
+		t.Fatal("No account")
+	}
+
+	spoutcore.Credgenerator = nil
+	err, _ = spout.Query_C(addr)
+	if err == nil {
+		t.Fatal("error of passing through restriction")
+	}
+}
+
+func TestContractWithCred(t *testing.T) {
+
+	TestInit(t)
+	ExtendTemplateForDelegator(shareCCImpl, NewConfig(test_tag))
+
+	testContractLite(t)
 }

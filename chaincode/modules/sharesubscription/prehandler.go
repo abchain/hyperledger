@@ -2,6 +2,8 @@ package subscription
 
 import (
 	"errors"
+	"github.com/golang/protobuf/proto"
+	"hyperledger.abchain.org/chaincode/lib/runtime"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
@@ -64,4 +66,62 @@ func (v redeemContractAddrCred) PreHandling(stub shim.ChaincodeStubInterface, _ 
 	}
 
 	return nil
+}
+
+//notice this can not be applied on external invoking
+type contractCred struct {
+	*StandardContractConfig
+}
+
+func NewContractVerifier(cfg *StandardContractConfig) contractCred {
+	return contractCred{cfg}
+}
+
+func (v contractCred) PostHandling(stub shim.ChaincodeStubInterface, _ string,
+	parser txutil.Parser, ret []byte) ([]byte, error) {
+
+	rt := runtime.NewRuntime(v.Root, stub, v.Config).SubRuntime(contract_auth_tag)
+	msg := parser.GetMessage().(*pb.RegContract)
+
+	addrhash, err := v.AddrCfg.NewTx(stub, parser.GetNonce()).NormalizeAddress(ret)
+	if err != nil {
+		return nil, err
+	}
+
+	degaddr, err := txutil.NewAddressFromPBMessage(msg.GetDelegator())
+	if err != nil {
+		return nil, err
+	}
+
+	err = rt.Storage.SetRaw(addrToKey(addrhash), degaddr.Internal())
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
+//can also act as an address interface in verifier, checking for the contract's deligator
+func (v contractCred) La() func(shim.ChaincodeStubInterface,
+	proto.Message) []*txutil.Address {
+
+	return func(stub shim.ChaincodeStubInterface,
+		msg proto.Message) []*txutil.Address {
+
+		rt := runtime.NewRuntime(v.Root, stub, v.Config).SubRuntime(contract_auth_tag)
+		qmsg := msg.(*pb.QueryContract)
+
+		addr, err := txutil.NewAddressFromPBMessage(qmsg.GetContractAddr())
+		if err != nil {
+			return nil
+		}
+
+		deletagorAddr, err := rt.Storage.GetRaw(addrToKey(addr.Internal()))
+		if err != nil {
+			return nil
+		}
+
+		return []*txutil.Address{txutil.NewAddressFromHash(deletagorAddr)}
+	}
+
 }

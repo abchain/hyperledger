@@ -67,7 +67,7 @@ func (req TxMultiAttrVerifier) PreHandling(stub shim.ChaincodeStubInterface, _ s
 //and MUST return empty array if some expected addresses
 //is not available (that is, even there is still some address can be
 //returned, they MUST NOT shown)
-type ListAddresses func(proto.Message) []*txutil.Address
+type ListAddresses func(shim.ChaincodeStubInterface, proto.Message) []*txutil.Address
 
 type MsgAddresses interface {
 	GetAddresses() []*txutil.Address
@@ -173,7 +173,7 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method 
 	var addrs []*txutil.Address
 
 	if v.ListAddresses != nil {
-		addrs = v.ListAddresses(tx.GetMessage())
+		addrs = v.ListAddresses(stub, tx.GetMessage())
 	} else if maddr, ok := tx.GetMessage().(MsgAddresses); ok {
 		addrs = maddr.GetAddresses()
 	}

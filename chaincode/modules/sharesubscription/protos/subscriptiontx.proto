@@ -14,6 +14,7 @@ message RegContract {
 		int32    weight = 2;
 	}
 
+	protos.TxAddr   delegator = 4;
 	repeated Member contractBody = 5;
 }
 

@@ -13,3 +13,12 @@ func (m *RedeemContract) GetAddresses() (addrs []*tx.Address) {
 
 	return
 }
+
+func (m *RegContract) GetAddresses() (addrs []*tx.Address) {
+
+	if addr, err := tx.NewAddressFromPBMessage(m.GetDelegator()); err == nil {
+		addrs = append(addrs, addr)
+	}
+
+	return
+}

@@ -20,10 +20,10 @@ const (
 	Method_MemberQuery = "CONTRACT.SUBSCRIPTION.QUERYONE"
 )
 
-func (i *GeneralCall) New_C(addrs [][]byte, ratios []int) ([]byte, error) {
+func (i *GeneralCall) new(addrs [][]byte, ratios []int) ([]byte, *pb.RegContract, error) {
 
 	if len(addrs) != len(ratios) {
-		return nil, errors.New("Wrong argument")
+		return nil, nil, errors.New("Wrong argument")
 	}
 
 	contractTx := make([]*pb.RegContract_Member, 0, len(addrs))
@@ -40,15 +40,25 @@ func (i *GeneralCall) New_C(addrs [][]byte, ratios []int) ([]byte, error) {
 	//gen the contract addr
 	data, err := newContract(addrs, ratios)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	hash, err := hashContract(data, i.GetNonce())
 	if err != nil {
+		return nil, nil, err
+	}
+
+	return hash, &pb.RegContract{ContractBody: contractTx}, nil
+}
+
+func (i *GeneralCall) New_C(addrs [][]byte, ratios []int) ([]byte, error) {
+
+	hash, msg, err := i.new(addrs, ratios)
+	if err != nil {
 		return nil, err
 	}
 
-	err = i.Invoke(Method_NewContract, &pb.RegContract{ContractBody: contractTx})
+	err = i.Invoke(Method_NewContract, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +67,7 @@ func (i *GeneralCall) New_C(addrs [][]byte, ratios []int) ([]byte, error) {
 
 }
 
-func (i *GeneralCall) New(contract map[string]int32) ([]byte, error) {
+func (i *GeneralCall) NewByDelegator(contract map[string]int32, degAddrs string) ([]byte, error) {
 
 	var addrs [][]byte
 	var ratios []int
@@ -73,7 +83,31 @@ func (i *GeneralCall) New(contract map[string]int32) ([]byte, error) {
 		ratios = append(ratios, int(weight))
 	}
 
-	return i.New_C(addrs, ratios)
+	hash, msg, err := i.new(addrs, ratios)
+	if err != nil {
+		return nil, err
+	}
+
+	if degAddrs != "" {
+		degAddr, err := txutil.NewAddressFromString(degAddrs)
+		if err != nil {
+			return nil, err
+		}
+		msg.Delegator = degAddr.PBMessage()
+	}
+
+	err = i.Invoke(Method_NewContract, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return hash, nil
+
+}
+
+func (i *GeneralCall) New(contract map[string]int32) ([]byte, error) {
+
+	return i.NewByDelegator(contract, "")
 }
 
 func (i *GeneralCall) Redeem_C(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) (*pb.RedeemResponse, error) {
