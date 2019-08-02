@@ -81,11 +81,9 @@ func (s *FundBatch) InitAndAssign(rw web.ResponseWriter, req *web.Request) {
 		s.NormalError(rw, err)
 		return
 	} else {
-		s.AddBatchOut(&FundEntry{
-			"",
-			s.EncodeEntry(nonceid),
-			s.TxGenerator.GetNonce(),
-		})
+		s.AddBatchOut(struct {
+			Nonce interface{} `json:"fundNonce"`
+		}{nonceid})
 	}
 
 }

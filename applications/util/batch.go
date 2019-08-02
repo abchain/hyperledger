@@ -27,12 +27,6 @@ func CreateBatchRouter(root TxRouter, path string) TxBatchRouter {
 	}
 }
 
-type BatchEntry struct {
-	Txid      string        `json:"txID"`
-	TxNonce   []byte        `json:"txNonce"`
-	BatchOuts []interface{} `json:"outputs,omitempty"`
-}
-
 func (r TxBatchRouter) Init(methodName string) TxBatchRouter {
 
 	initc := func(s *TxBatch, rw web.ResponseWriter,
@@ -51,18 +45,7 @@ func (r TxBatchRouter) Init(methodName string) TxBatchRouter {
 				return
 			}
 
-			txid, err := batch.Result().TxID()
-			if err != nil {
-				s.NormalError(rw, err)
-				return
-			}
-
-			var nc []byte
-			if b := s.TxGenerator.GetBuilder(); b != nil {
-				nc = b.GetNonce()
-			}
-
-			s.Normal(rw, &BatchEntry{txid, nc, s.batchOuts})
+			s.DefaultOutput(s.batchOuts)
 		}
 	}
 

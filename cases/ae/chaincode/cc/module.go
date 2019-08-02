@@ -60,6 +60,7 @@ func NewChaincode(debugMode bool) *AECC {
 		share.GeneralInvokingTemplate(CC_NAME, sharecfg),
 		share.GeneralQueryTemplate(CC_NAME, sharecfg),
 	)
+	handlers = share.ExtendTemplateForDelegator(handlers, sharecfg)
 
 	if !debugMode {
 		// //build init batch function ...

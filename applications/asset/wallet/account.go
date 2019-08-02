@@ -43,20 +43,22 @@ func InitTxRouterWithWallet(r util.TxRouter, wallet Wallet) {
 		req *web.Request, next web.NextMiddlewareFunc) {
 
 		//should allow error or ID is not provided
-		privk, err := wallet.LoadPrivKey(req.FormValue(AccountID))
-		if err == nil {
-			if indstr := req.FormValue(AccountIndex); indstr != "" {
-				index, ok := big.NewInt(0).SetString(indstr, 0)
-				if ok {
-					privk, err = crypto.GetChildPrivateKey(privk, index)
-					if err != nil {
-						s.NormalError(rw, err)
-						return
+		if accID := req.FormValue(AccountID); accID != "" {
+			privk, err := wallet.LoadPrivKey(accID)
+			if err == nil {
+				if indstr := req.FormValue(AccountIndex); indstr != "" {
+					index, ok := big.NewInt(0).SetString(indstr, 0)
+					if ok {
+						privk, err = crypto.GetChildPrivateKey(privk, index)
+						if err != nil {
+							s.NormalError(rw, err)
+							return
+						}
 					}
 				}
+				s.Credgenerator = txgen.NewSingleKeyCred(privk)
+				s.ActivePrivk = privk
 			}
-			s.Credgenerator = txgen.NewSingleKeyCred(privk)
-			s.ActivePrivk = privk
 		}
 
 		next(rw, req)

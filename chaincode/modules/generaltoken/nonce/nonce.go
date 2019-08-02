@@ -13,6 +13,14 @@ import (
 	"math/big"
 )
 
+var NonceKeyFromString = pb.NonceKeyFromString
+
+type TokenDuplicatedError []byte
+
+func (TokenDuplicatedError) Error() string {
+	return "Nonce is duplicated"
+}
+
 type TokenNonceTx interface {
 	Nonce(key []byte) (error, *pb.NonceData_s)
 	Add([]byte, *big.Int, *pb.FuncRecord, *pb.FuncRecord) error
@@ -31,7 +39,7 @@ func NewConfig(tag string) *StandardNonceConfig {
 	return &StandardNonceConfig{nonce_tag_prefix + tag, runtime.NewConfig()}
 }
 
-func GeneralTokenNonceKey(txnonce []byte, from []byte, to []byte) []byte {
+func GeneralTokenNonceKey(txnonce []byte, from []byte, to []byte) pb.NonceKey {
 
 	shabyte := sha256.Sum256(bytes.Join([][]byte{txnonce,
 		txutil.NewAddressFromHash(from).Hash,
@@ -97,7 +105,7 @@ func (nc baseNonceTx) Add(key []byte, amount *big.Int, from *pb.FuncRecord, to *
 	}
 
 	if ret.Txid != "" {
-		return errors.New("Nonce is duplicated")
+		return TokenDuplicatedError(key)
 	}
 
 	ret.Txid = nc.Tx.GetTxID()

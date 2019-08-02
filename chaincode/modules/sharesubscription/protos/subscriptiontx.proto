@@ -45,6 +45,7 @@ message Contract {
 	repeated MemberStatus status = 5;
 	google.protobuf.Timestamp contractTs = 6;
 	google.protobuf.Timestamp frozenTo = 8;
+	int64     totalWeight = 9;
 	bool      isFrozen = 10;
 
 }

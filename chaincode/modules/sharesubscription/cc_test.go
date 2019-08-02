@@ -72,7 +72,7 @@ func initCond(mutilcc bool) {
 		tokenQuerycfg = tqc
 	}
 
-	shareCC := GeneralInvokingTemplate(test_ccname, cfg).MustMerge(GeneralQueryTemplate(test_ccname, querycfg))
+	shareCC := SimpleInvokingTemplate(test_ccname, cfg).MustMerge(GeneralQueryTemplate(test_ccname, querycfg))
 
 	tokenCC := token.GeneralAdminTemplate(test_ccname, tokencfg)
 	tokenCC = tokenCC.MustMerge(token.GeneralQueryTemplate(test_ccname, tokenQuerycfg))
@@ -332,6 +332,19 @@ func testContractLite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	spoutcore.BeginTx(nil)
+
+	_, err = spout.New(contract)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = spoutcore.Result().TxID()
+	if err == nil {
+		t.Fatal("Pass through delegator verifing")
+	}
+	t.Log(err)
 
 	spoutcore.BeginTx(nil)
 	bolt.SpecifyTxID("contract")

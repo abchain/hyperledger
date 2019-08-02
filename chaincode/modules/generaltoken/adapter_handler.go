@@ -10,7 +10,10 @@ import (
 	txutil "hyperledger.abchain.org/core/tx"
 )
 
-type transferHandler struct{ TokenConfig }
+type transferHandler struct {
+	TokenConfig
+	legacy bool
+}
 type assignHandler struct{ TokenConfig }
 type tokenQueryHandler struct{ TokenConfig }
 type touchHandler struct{}
@@ -18,6 +21,10 @@ type globalQueryHandler struct{ TokenConfig }
 type initHandler struct{ TokenConfig }
 
 func TransferHandler(cfg TokenConfig) txh.TxHandler {
+	return transferHandler{TokenConfig: cfg, legacy: true}
+}
+
+func TransferHandler2(cfg TokenConfig) txh.TxHandler {
 	return transferHandler{TokenConfig: cfg}
 }
 
@@ -60,7 +67,12 @@ func (h transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pa
 		return nil, err
 	}
 
-	return h.NewTx(stub, parser.GetNonce()).Transfer(addrFrom.Hash, addrTo.Hash, toAmount(msg.Amount))
+	if h.legacy {
+		return h.NewTx(stub, parser.GetNonce()).Transfer(addrFrom.Hash, addrTo.Hash, toAmount(msg.Amount))
+	} else {
+		return h.NewTx(stub, parser.GetNonce()).Transfer2(addrFrom.Hash, addrTo.Hash, toAmount(msg.Amount))
+	}
+
 }
 
 func (h assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {

@@ -4,17 +4,23 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/txhandle"
 )
 
-func GeneralInvokingTemplate(ccname string, cfg ContractConfig) (ret tx.CollectiveTxs) {
+func SimpleInvokingTemplate(ccname string, cfg ContractConfig) (ret tx.CollectiveTxs) {
 
 	ret = tx.NewCollectiveTxs()
+	ret[Method_NewContract] = &tx.ChaincodeTx{ccname, NewContractHandler(cfg), nil, nil}
+	ret[Method_Redeem] = &tx.ChaincodeTx{ccname, RedeemHandler(cfg), nil, nil}
 
-	cH := &tx.ChaincodeTx{ccname, NewContractHandler(cfg), nil, nil}
-	ret[Method_NewContract] = cH
+	return
+}
 
-	rcH := &tx.ChaincodeTx{ccname, RedeemHandler(cfg), nil, nil}
-	rcH.PreHandlers = append(rcH.PreHandlers, NewRedeemContractAddrCred(cfg))
+func GeneralInvokingTemplate(ccname string, cfg ContractConfig) (ret tx.CollectiveTxs) {
 
-	ret[Method_Redeem] = rcH
+	ret = SimpleInvokingTemplate(ccname, cfg)
+
+	rcH := ret[Method_Redeem]
+	rcH.PreHandlers = append(rcH.PreHandlers,
+		NewRedeemContractAddrCred(cfg),
+		tx.NewAddrCredVerifier(nil))
 
 	return
 }

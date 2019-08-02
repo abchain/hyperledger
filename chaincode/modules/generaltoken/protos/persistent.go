@@ -1,15 +1,47 @@
 package ccprotos
 
 import (
+	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
 
 	"hyperledger.abchain.org/core/utils"
 )
 
+type NonceKey []byte
+
+func NonceKeyFromString(ns string) (NonceKey, error) {
+	var v []byte
+	if _, err := fmt.Sscanf(ns, "%X", &v); err != nil {
+		return nil, err
+	}
+	return NonceKey(v), nil
+}
+
+func (n NonceKey) MarshalJSON() ([]byte, error) {
+	if len(n) == 0 {
+		return json.Marshal(nil)
+	} else {
+		return json.Marshal(fmt.Sprintf("%X", []byte(n)))
+	}
+}
+
 type FuncRecord_s struct {
 	Noncekey []byte
 	IsSend   bool
+}
+
+func (n *FuncRecord_s) MarshalJSON() ([]byte, error) {
+	if len(n.Noncekey) == 0 {
+		return json.Marshal(nil)
+	}
+
+	if n.IsSend {
+		return json.Marshal(fmt.Sprintf("-> %X", n.Noncekey))
+	} else {
+		return json.Marshal(fmt.Sprintf("<- %X", n.Noncekey))
+	}
 }
 
 func (n *FuncRecord_s) LoadFromPB(p *FuncRecord) {
@@ -30,21 +62,21 @@ func (n *FuncRecord_s) ToPB() *FuncRecord {
 }
 
 type accountData_Store struct {
-	Balance  *big.Int
-	LastFund FuncRecord_s
+	Balance  *big.Int     `json:"balance"`
+	LastFund FuncRecord_s `json:"lastFundID"`
 }
 
 type nonceData_Store struct {
-	Txid      string `asn1:"printable"`
-	Amount    *big.Int
-	FromLast  FuncRecord_s
-	ToLast    FuncRecord_s
-	NonceTime time.Time `asn1:"generalized"`
+	Txid      string       `asn1:"printable" json:"txID"`
+	Amount    *big.Int     `json:"amount"`
+	FromLast  FuncRecord_s `json:"from"`
+	ToLast    FuncRecord_s `json:"to"`
+	NonceTime time.Time    `asn1:"generalized" json:"txTime"`
 }
 
 type tokenGlobalData_Store struct {
-	TotalTokens      *big.Int
-	UnassignedTokens *big.Int
+	TotalTokens      *big.Int `json:"total"`
+	UnassignedTokens *big.Int `json:"unassign"`
 }
 
 type NonceData_s struct {

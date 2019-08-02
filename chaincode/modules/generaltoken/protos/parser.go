@@ -2,33 +2,34 @@ package ccprotos
 
 import (
 	tx "hyperledger.abchain.org/core/tx"
+	"hyperledger.abchain.org/protos"
 	"math/big"
 )
 
+type baseTokenDetail struct {
+	Amount *big.Int `json:"totalTokens,omitempty"`
+	Name   string   `json:"token,omitempty"`
+}
+
+func (m *BaseToken) MsgDetail() interface{} {
+
+	return &baseTokenDetail{
+		Amount: big.NewInt(0).SetBytes(m.GetTotalTokens()),
+	}
+}
+
 type simpleFundDetail struct {
-	Amount string `json:"amount,omitempty"`
-	From   string `json:"from,omitempty"`
-	To     string `json:"to,omitempty"`
-	Name   string `json:"token,omitempty"`
+	Amount *big.Int       `json:"amount,omitempty"`
+	From   *protos.TxAddr `json:"from,omitempty"`
+	To     *protos.TxAddr `json:"to,omitempty"`
+	Name   string         `json:"token,omitempty"`
 }
 
 func (m *SimpleFund) MsgDetail() interface{} {
 
-	ret := new(simpleFundDetail)
-
-	addr, err := tx.NewAddressFromPBMessage(m.From)
-	if err == nil {
-		ret.From = addr.ToString()
-	}
-
-	addr, err = tx.NewAddressFromPBMessage(m.To)
-	if err == nil {
-		ret.To = addr.ToString()
-	}
-
-	ret.Amount = big.NewInt(0).SetBytes(m.Amount).String()
-
-	return ret
+	return &simpleFundDetail{Amount: big.NewInt(0).SetBytes(m.GetAmount()),
+		From: m.GetFrom(),
+		To:   m.GetTo()}
 }
 
 //the default address extractor in message
@@ -73,6 +74,10 @@ func (m *MultiTokenMsg) MsgDetail() interface{} {
 		switch em := m.Msg.(type) {
 		case *MultiTokenMsg_Fund:
 			detail := em.Fund.MsgDetail().(*simpleFundDetail)
+			detail.Name = m.GetTokenName()
+			return detail
+		case *MultiTokenMsg_Init:
+			detail := em.Init.MsgDetail().(*baseTokenDetail)
 			detail.Name = m.GetTokenName()
 			return detail
 		}

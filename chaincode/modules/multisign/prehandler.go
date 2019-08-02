@@ -79,7 +79,7 @@ func (h *addrVerifier) PreHandling(stub shim.ChaincodeStubInterface,
 
 	h.rt = h.NewTx(stub, tx.GetNonce())
 	h.recursiveVerifier = func(addr *txutil.Address) error {
-		la := func(proto.Message) []*txutil.Address {
+		la := func(_ shim.ChaincodeStubInterface, _ proto.Message) []*txutil.Address {
 			return []*txutil.Address{addr}
 		}
 

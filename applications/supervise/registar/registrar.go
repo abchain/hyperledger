@@ -48,11 +48,6 @@ func (s *Registrar) InitCaller(rw web.ResponseWriter,
 	next(rw, req)
 }
 
-type ReqEntry struct {
-	Txid  string `json:"txID"`
-	Nonce []byte `json:"Nonce"`
-}
-
 func (s *Registrar) InitReg(rw web.ResponseWriter, req *web.Request) {
 
 	manager := req.FormValue("Admin")
@@ -70,16 +65,7 @@ func (s *Registrar) InitReg(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	txid, err := s.TxGenerator.Result().TxID()
-	if err != nil {
-		s.NormalError(rw, err)
-		return
-	}
-
-	s.Normal(rw, &ReqEntry{
-		txid,
-		s.TxGenerator.GetBuilder().GetNonce(),
-	})
+	s.DefaultOutput(nil)
 }
 
 func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
@@ -105,25 +91,18 @@ func (s *Registrar) Reg(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	txid, err := s.TxGenerator.Result().TxID()
-	if err != nil {
-		s.NormalError(rw, err)
-		return
-	}
-
-	s.Normal(rw, &ReqEntry{
-		string(txid),
-		s.TxGenerator.GetBuilder().GetNonce(),
-	})
-
+	s.DefaultOutput(nil)
 }
 
 func (s *Registrar) Query(rw web.ResponseWriter, req *web.Request) {
 
-	key, err := s.DecodeEntry(req.PathParams[RegPkID])
+	var key []byte
+	_, err := fmt.Sscanf(req.PathParams[RegPkID], "%x", &key)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
+	} else if len(key) == 0 {
+		s.NormalErrorF(rw, 400, "Invalid publickey")
 	}
 
 	err, data := s.reg.Pubkey(key)

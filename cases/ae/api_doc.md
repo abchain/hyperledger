@@ -428,7 +428,9 @@ FORMAT:1A
 
 - 响应参数说明
 
-    - result: 转账事务 ID (fundID)
+    - txID: 事务 ID 
+    - Nonce: 事务使用的Nonc，以16进制表示。如果用户指定一个字符串为Nonce，将在后面用()提示
+    - Data：每个转账事务唯一的标识（fundNonce）。具有相同唯一标识的转账事务只会被执行一次。
 
 + Request (application/x-www-form-urlencoded;charset=utf-8)
 
@@ -442,8 +444,17 @@ FORMAT:1A
 
             {
                 "status": "0",
-                "result": "ec239f5e06ff497a96e2d3ee9d266867"
+                "result": {
+                    "txID": "365A858149C6E2D115B6F8BF1F76165C",
+                    "Nonce": "31313131 (1111)",
+                    "Data": "E1917A90F64FABE16A92E2DD0C2046B4F75C5D18FB0882136FD9027460B541DF"
+                }
             }
+
+
+- 事件
+
+    每个成功执行的转账事务会在对应的区块产生一个名为TRANSFERTOKEN的事件，其detail是转账唯一标识（即返回值中的Data）
 
 ### 查询转账结果 [GET]
 
@@ -524,11 +535,10 @@ FORMAT:1A
                 "jsonrpc": "2.0",
                 "result": {
                     "txID": "2019-01-21 11:28:56.7305051 +0800 CST m=+640.183320601",
-                    "txNonce": "0VWmW8+oPRFzn8dYKIRiwr3eW4w=",
-                    "outputs": [
+                    "Nonce": "0VWmW8+oPRFzn8dYKIRiwr3eW4w=",
+                    "Data": [
                         {
-                            "FundNonce": "6nFcIGIEh9B_MUbkG4TytnP3_7ynAjedOMURhxpmZkQ=",
-                            "Nonce": "0VWmW8+oPRFzn8dYKIRiwr3eW4w="
+                            "fundNonce": "6nFcIGIEh9B_MUbkG4TytnP3_7ynAjedOMURhxpmZkQ=",
                         }
                     ]
                 }
@@ -630,6 +640,9 @@ FORMAT:1A
         - 账号 ID 对应的地址必须包含在分润协议中
     - \[index\]: 使用 accountID 的子账号
     - \[amount\]: 希望从分润账户中提取的金额，默认提取当前所有可用的数目
+    - \[to\]: 一个或多个执行分润的地址，必须包含在分润协议中。所有的分润地址都会提取amount中指定的金额或者可提取的最大金额
+    
+        **注意系统当前无法为多个分润地址同时生成凭据，在需要凭据的情况下，只能使用data/方法产生待签名的事务，并交给各个地址进行签名**
 
 - 响应参数说明
 
@@ -662,8 +675,8 @@ FORMAT:1A
                     "hash":"03BD91127B5FED4EC9C0F71A516944880558E5EFC71520A38607189EC302251E",
                     "promise": {
                         "txID": "pending",
-                        "fundNonce": "H-5R9kjK42HSFuA1_h4CqY_8IfBdEAU2aE1FWE79gVA=",
-                        "Nonce": "a7pmGnhskwEhZbyI+FMgNTU4HJM="
+                        "Nonce": "H-5R9kjK42HSFuA1_h4CqY_8IfBdEAU2aE1FWE79gVA=",
+                        "Data": "a7pmGnhskwEhZbyI+FMgNTU4HJM="
                     }
                 }
             }

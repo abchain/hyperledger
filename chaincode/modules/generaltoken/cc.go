@@ -12,8 +12,9 @@ import (
 
 type TokenTx interface {
 	Init(amount *big.Int) error
-	Transfer(from []byte, to []byte, amount *big.Int) ([]byte, error)
-	Assign(to []byte, amount *big.Int) ([]byte, error)
+	Transfer(from []byte, to []byte, amount *big.Int) (pb.NonceKey, error)
+	Transfer2(from []byte, to []byte, amount *big.Int) (pb.NonceKey, error)
+	Assign(to []byte, amount *big.Int) (pb.NonceKey, error)
 	Account(addr []byte) (error, *pb.AccountData_s)
 	Global() (error, *pb.TokenGlobalData_s)
 	//this is only used for inner call to register their address, have

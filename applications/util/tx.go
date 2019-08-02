@@ -1,7 +1,7 @@
 package util
 
 import (
-	"encoding/base64"
+	//"encoding/base64"
 	"fmt"
 	"github.com/gocraft/web"
 	txgen "hyperledger.abchain.org/chaincode/lib/txgen"
@@ -14,10 +14,14 @@ type FabricRPCCore struct {
 	*FabricRPCBase
 	*txgen.TxGenerator
 	ActivePrivk crypto.Signer
+
+	nonceStr    string
+	rwForOutput web.ResponseWriter
 }
 
 func (s *FabricRPCCore) PrehandlePost(rw web.ResponseWriter,
 	req *web.Request, next web.NextMiddlewareFunc) {
+
 	if req.Method == http.MethodPost {
 		err := req.ParseForm()
 		if err != nil {
@@ -25,23 +29,46 @@ func (s *FabricRPCCore) PrehandlePost(rw web.ResponseWriter,
 			return
 		}
 
-		nonce := req.PostFormValue("nonce")
-		if nonce != "" {
-			s.TxGenerator.BeginTx([]byte(nonce))
+		s.nonceStr = req.PostFormValue("nonce")
+		if s.nonceStr != "" {
+			s.TxGenerator.BeginTx([]byte(s.nonceStr))
 		} else {
 			s.TxGenerator.BeginTx(nil)
 		}
+
+		s.rwForOutput = rw
 	}
 
 	next(rw, req)
 }
 
-func (s *FabricRPCCore) EncodeEntry(nonce []byte) string {
-	return base64.URLEncoding.EncodeToString(nonce)
+type defaultEntry struct {
+	Txid  string      `json:"txID"`
+	Nonce string      `json:"Nonce"`
+	Entry interface{} `json:"Data,omitempty"`
 }
 
-func (s *FabricRPCCore) DecodeEntry(nonce string) ([]byte, error) {
-	return base64.URLEncoding.DecodeString(nonce)
+func (s *FabricRPCCore) DefaultOutput(e interface{}) {
+
+	if s.rwForOutput == nil {
+		//sanity check
+		panic("Should not called in non-POST (invoking) method")
+	}
+
+	txid, err := s.TxGenerator.Result().TxID()
+	if err != nil {
+		s.NormalError(s.rwForOutput, err)
+		return
+	}
+
+	var ncStr string
+	if s.nonceStr != "" {
+		ncStr = fmt.Sprintf("%X (%s)", s.TxGenerator.GetNonce(), s.nonceStr)
+	} else {
+		ncStr = fmt.Sprintf("%X", s.TxGenerator.GetNonce())
+	}
+
+	s.Normal(s.rwForOutput, &defaultEntry{txid, ncStr, e})
 }
 
 func (s *FabricRPCCore) SendRawTx(rw web.ResponseWriter, req *web.Request) {

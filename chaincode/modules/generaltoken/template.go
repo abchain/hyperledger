@@ -19,16 +19,26 @@ func GeneralInvokingTemplate(ccname string, cfg TokenConfig) (ret tx.CollectiveT
 
 	ret = tx.NewCollectiveTxs()
 
-	h := TransferHandler(cfg)
-	txh := &tx.ChaincodeTx{ccname, h, nil, nil}
-	txh.PreHandlers = append(txh.PreHandlers, tx.NewAddrCredVerifier(nil))
+	verifier := tx.NewAddrCredVerifier(nil)
+
+	txh := &tx.ChaincodeTx{ccname, TransferHandler(cfg), nil, nil}
+	txh.PreHandlers = append(txh.PreHandlers, verifier)
 	ret[Method_Transfer] = txh
+
+	txh = &tx.ChaincodeTx{ccname, TransferHandler2(cfg), nil, nil}
+	txh.PreHandlers = append(txh.PreHandlers, verifier)
+	ret[Method_Transfer2] = txh
+
 	return
 }
 
 func ExtendInvokingTemplate(cts tx.CollectiveTxs, verifier tx.AddrVerifier) tx.CollectiveTxs {
 
 	if h, ok := cts[Method_Transfer]; ok {
+		tx.AttachAddrVerifier(h.PreHandlers, verifier)
+	}
+
+	if h, ok := cts[Method_Transfer2]; ok {
 		tx.AttachAddrVerifier(h.PreHandlers, verifier)
 	}
 

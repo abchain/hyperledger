@@ -76,10 +76,23 @@ func (s *Subscription) NewContract(rw web.ResponseWriter, req *web.Request) {
 		contract[ret[0]] = int32(w)
 	}
 
-	//s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	if s.ActivePrivk != nil {
+		s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	}
+
+	delegator := req.PostFormValue("delegator")
+	if delegator == "" && s.ActivePrivk != nil {
+		delegatorAddr, err := tx.NewAddressFromPrivateKey(s.ActivePrivk)
+		if err != nil {
+			s.NormalError(rw, err)
+			return
+		}
+		delegator = delegatorAddr.ToString()
+	}
+
 	share := share.GeneralCall{s.TxGenerator}
 
-	conaddr, err := share.New(contract)
+	conaddr, err := share.NewByDelegator(contract, delegator)
 	if err != nil {
 		s.NormalError(rw, err)
 		return
@@ -99,11 +112,6 @@ func (s *Subscription) NewContract(rw web.ResponseWriter, req *web.Request) {
 
 func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 
-	if s.ActivePrivk == nil {
-		s.NormalErrorF(rw, -100, "No account is specified")
-		return
-	}
-
 	conaddr := req.PathParams[ContrcatAddr]
 	if conaddr == "" {
 		s.NormalErrorF(rw, 400, "No contract addr")
@@ -113,52 +121,41 @@ func (s *Subscription) Redeem(rw web.ResponseWriter, req *web.Request) {
 	share := share.GeneralCall{s.TxGenerator}
 	amount, ok := big.NewInt(0).SetString(req.PostFormValue("amount"), 0)
 
-	if !ok && (!amount.IsUint64() || amount.Uint64() != 0) {
+	if !ok {
 		s.NormalErrorF(rw, 0, "Invalid amount")
 		return
 	}
 
-	// redeemAddr, err := tx.NewAddress(s.ActivePrivk.Public())
-	// if err != nil {
-	// 	s.NormalError(rw, err)
-	// 	return
-	// }
+	if s.ActivePrivk != nil {
+		s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	}
 
-	s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
-	tos := req.PostFormValue("to")
-	if tos == "" {
+	var toss []string
+	for _, tos := range req.PostForm["to"] {
+		toss = append(toss, tos)
+	}
+	if len(toss) == 0 {
+		if s.ActivePrivk == nil {
+			s.NormalErrorF(rw, 404, "No redeem address")
+			return
+		}
 		toAddr, err := tx.NewAddressFromPrivateKey(s.ActivePrivk)
 		if err != nil {
 			s.NormalError(rw, err)
 			return
 		}
-		tos = toAddr.ToString()
+		toss = []string{toAddr.ToString()}
 	}
 
 	//we can omit redeem addr in calling message
-	nonceid, err := share.Redeem(conaddr, amount, []string{tos})
+	nonceids, err := share.Redeem(conaddr, amount, toss)
 
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	txid, err := s.TxGenerator.Result().TxID()
-	if err != nil {
-		s.NormalError(rw, err)
-		return
-	}
-
-	var nonce []byte
-	if len(nonceid.Nonces) > 0 {
-		nonce = nonceid.Nonces[0]
-	}
-
-	s.Normal(rw, &FundEntry{
-		txid,
-		s.EncodeEntry(nonce),
-		s.TxGenerator.GetBuilder().GetNonce(),
-	})
+	s.DefaultOutput(nonceids)
 
 }
 
@@ -218,8 +215,37 @@ func (s *Subscription) QueryContract(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	if s.ActivePrivk != nil {
+		s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
+	}
+
 	share := share.GeneralCall{s.TxGenerator}
-	err, contract := share.Query_C(addr.Hash)
+	var contract *pb.Contract_s
+	if isMember := req.FormValue("member"); isMember != "" {
+
+		switch strings.ToLower(isMember) {
+		case "n", "no":
+			err, contract = share.Query_C(addr.Internal())
+		case "y", "yes":
+			if s.ActivePrivk == nil {
+				s.NormalErrorF(rw, 404, "no query member")
+				return
+			}
+			//try to deduce address from private key
+			maddr, err := tx.NewAddress(s.ActivePrivk.Public())
+			if err != nil {
+				s.NormalError(rw, err)
+				return
+			}
+			isMember = maddr.ToString()
+			fallthrough
+		default:
+			err, contract = share.QueryOne(addr.ToString(), isMember)
+		}
+	} else {
+		err, contract = share.Query_C(addr.Internal())
+	}
+
 	if err != nil {
 		s.NormalError(rw, err)
 		return

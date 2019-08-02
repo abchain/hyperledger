@@ -11,7 +11,7 @@ const (
 	deployName = ":deploy"
 )
 
-func (token *baseTokenTx) Assign(to []byte, amount *big.Int) ([]byte, error) {
+func (token *baseTokenTx) Assign(to []byte, amount *big.Int) (pb.NonceKey, error) {
 	global := &pb.TokenGlobalData_s{}
 	// global := &model.TokenGlobalData{}
 	err := token.Storage.Get(deployName, global)

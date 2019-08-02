@@ -79,10 +79,11 @@ func (n *Contract_s) LoadFromPB(p *Contract) {
 	n.TotalRedeem = big.NewInt(0).SetBytes(p.GetTotalRedeem())
 	n.IsFrozen = p.GetIsFrozen()
 	n.FrozenTo = utils.ConvertPBTimestamp(p.GetFrozenTo())
+	n.TotalWeight = p.GetTotalWeight()
 	for _, m := range p.GetStatus() {
 		var item Contract_MemberStatus_s
 		item.LoadFromPB(m)
-		n.TotalWeight += int64(item.Weight)
+		//n.TotalWeight += int64(item.Weight)
 		n.Status = append(n.Status, item)
 	}
 }
@@ -91,6 +92,7 @@ func (n *Contract_s) ToPB() *Contract {
 
 	ret := &Contract{
 		TotalRedeem: n.TotalRedeem.Bytes(),
+		TotalWeight: n.TotalWeight,
 		IsFrozen:    n.IsFrozen,
 		FrozenTo:    utils.CreatePBTimestamp(n.FrozenTo),
 	}

@@ -25,13 +25,14 @@ type GeneralCall struct {
 const (
 	Method_Init        = "TOKEN.INIT"
 	Method_Transfer    = "TOKEN.TRANSFER"
+	Method_Transfer2   = "TOKEN.TRANSFER2"
 	Method_Assign      = "TOKEN.ASSIGN"
 	Method_TouchAddr   = "TOKEN.TOUCHADDR"
 	Method_QueryToken  = "TOKEN.BALANCEQUERY"
 	Method_QueryGlobal = "TOKEN.GLOBALQUERY"
 )
 
-func (i *GeneralCall) Transfer(from []byte, to []byte, amount *big.Int) ([]byte, error) {
+func (i *GeneralCall) transfer(from []byte, to []byte, amount *big.Int, method string) (pb.NonceKey, error) {
 
 	msg := &pb.SimpleFund{
 		amount.Bytes(),
@@ -39,15 +40,24 @@ func (i *GeneralCall) Transfer(from []byte, to []byte, amount *big.Int) ([]byte,
 		txutil.NewAddressFromHash(from).PBMessage(),
 	}
 
-	err := i.Invoke(Method_Transfer, msg)
+	err := i.Invoke(method, msg)
 	if err != nil {
 		return nil, err
 	}
 
 	return nonce.GeneralTokenNonceKey(i.GetNonce(), from, to), nil
+
 }
 
-func (i *GeneralCall) Assign(to []byte, amount *big.Int) ([]byte, error) {
+func (i *GeneralCall) Transfer(from []byte, to []byte, amount *big.Int) (pb.NonceKey, error) {
+	return i.transfer(from, to, amount, Method_Transfer)
+}
+
+func (i *GeneralCall) Transfer2(from []byte, to []byte, amount *big.Int) (pb.NonceKey, error) {
+	return i.transfer(from, to, amount, Method_Transfer2)
+}
+
+func (i *GeneralCall) Assign(to []byte, amount *big.Int) (pb.NonceKey, error) {
 
 	msg := &pb.SimpleFund{
 		amount.Bytes(),

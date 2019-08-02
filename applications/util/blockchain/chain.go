@@ -109,6 +109,9 @@ func (s *FabricBlockChain) GetTransaction(rw web.ResponseWriter, req *web.Reques
 	if err != nil {
 		s.NormalError(rw, err)
 		return
+	} else if tx == nil {
+		s.NormalErrorF(rw, 404, "Transaction not found")
+		return
 	}
 
 	s.Normal(rw, handleTransaction(tx))

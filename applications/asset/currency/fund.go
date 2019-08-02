@@ -80,9 +80,9 @@ func (s *Fund) InitCaller(rw web.ResponseWriter,
 }
 
 type FundEntry struct {
-	Txid  string `json:"txID,omitempty"`
-	Entry string `json:"FundNonce"`
-	Nonce []byte `json:"Nonce,omitempty"`
+	Txid  string      `json:"txID"`
+	Nonce string      `json:"Nonce"`
+	Entry interface{} `json:"FundNonce,omitempty"`
 }
 
 func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
@@ -123,23 +123,19 @@ func (s *Fund) Fund(rw web.ResponseWriter, req *web.Request) {
 	}
 	//s.TxGenerator.Credgenerator = txgen.NewSingleKeyCred(s.ActivePrivk)
 
-	nonceid, err := s.token.Transfer(fromAddr.Hash, toAddr.Hash, amount)
+	var nonceid interface{}
+	if req.PostFormValue("legacy") == "" {
+		nonceid, err = s.token.Transfer2(fromAddr.Hash, toAddr.Hash, amount)
+	} else {
+		nonceid, err = s.token.Transfer(fromAddr.Hash, toAddr.Hash, amount)
+	}
+
 	if err != nil {
 		s.NormalError(rw, err)
 		return
 	}
 
-	txid, err := s.TxGenerator.Result().TxID()
-	if err != nil {
-		s.NormalError(rw, err)
-		return
-	}
-
-	s.Normal(rw, &FundEntry{
-		string(txid),
-		s.EncodeEntry(nonceid),
-		s.TxGenerator.GetBuilder().GetNonce(),
-	})
+	s.DefaultOutput(nonceid)
 }
 
 func (s *Fund) InitGlobal(rw web.ResponseWriter, req *web.Request) {
@@ -157,17 +153,7 @@ func (s *Fund) InitGlobal(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	txid, err := s.TxGenerator.Result().TxID()
-	if err != nil {
-		s.NormalError(rw, err)
-		return
-	}
-
-	s.Normal(rw, &FundEntry{
-		txid,
-		"",
-		s.TxGenerator.GetBuilder().GetNonce(),
-	})
+	s.DefaultOutput(nil)
 }
 
 func (s *Fund) Assign(rw web.ResponseWriter, req *web.Request) {
@@ -191,23 +177,8 @@ func (s *Fund) Assign(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	txid, err := s.TxGenerator.Result().TxID()
-	if err != nil {
-		s.NormalError(rw, err)
-		return
-	}
+	s.DefaultOutput(nonceid)
 
-	s.Normal(rw, &FundEntry{
-		string(txid),
-		s.EncodeEntry(nonceid),
-		s.TxGenerator.GetBuilder().GetNonce(),
-	})
-
-}
-
-type globalEntry struct {
-	Total      string `json:"total"`
-	Unassigned string `json:"unassign"`
 }
 
 func (s *Fund) QueryGlobal(rw web.ResponseWriter, req *web.Request) {
@@ -218,16 +189,8 @@ func (s *Fund) QueryGlobal(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	s.Normal(rw, &globalEntry{
-		data.TotalTokens.String(),
-		data.UnassignedTokens.String(),
-	})
+	s.Normal(rw, data.GetObject())
 
-}
-
-type balanceEntry struct {
-	Balance  string `json:"balance"`
-	LastFund string `json:"lastFundID"`
 }
 
 func (s *Fund) Query(rw web.ResponseWriter, req *web.Request) {
@@ -249,10 +212,7 @@ func (s *Fund) Query(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	s.Normal(rw, &balanceEntry{
-		data.Balance.String(),
-		s.EncodeEntry(data.LastFund.Noncekey),
-	})
+	s.Normal(rw, data.GetObject())
 }
 
 func (s *Fund) QueryAddress(rw web.ResponseWriter, req *web.Request) {
@@ -269,34 +229,14 @@ func (s *Fund) QueryAddress(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	s.Normal(rw, &balanceEntry{
-		data.Balance.String(),
-		s.EncodeEntry(data.LastFund.Noncekey),
-	})
-}
-
-type fundRecordEntry struct {
-	Txid   string `json:"txID"`
-	Amount string `json:"amount"`
-	fundRecordDetailEntry
-}
-
-type fundRecordDetailEntry struct {
-	FromLast *FuncRecord `json:"from,omitempty"`
-	ToLast   *FuncRecord `json:"to,omitempty"`
-	TxTime   string      `json:"txTime,omitempty"`
-}
-
-type FuncRecord struct {
-	Noncekey string `json:"noncekey"`
-	IsSend   bool   `json:"isSend"`
+	s.Normal(rw, data.GetObject())
 }
 
 func (s *Fund) QueryTransfer(rw web.ResponseWriter, req *web.Request) {
 
 	nc := tokenNonce.GeneralCall{s.TxGenerator}
 
-	nonce, err := s.DecodeEntry(req.PathParams[FundID])
+	nonce, err := tokenNonce.NonceKeyFromString(req.PathParams[FundID])
 
 	if err != nil {
 		s.NormalError(rw, err)
@@ -309,22 +249,6 @@ func (s *Fund) QueryTransfer(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	ret := &fundRecordEntry{
-		Txid:   data.Txid,
-		Amount: data.Amount.String(),
-	}
-
-	if req.FormValue(Simple) != "true" {
-		ret.FromLast = &FuncRecord{
-			s.EncodeEntry(data.FromLast.Noncekey),
-			data.FromLast.IsSend,
-		}
-		ret.ToLast = &FuncRecord{
-			s.EncodeEntry(data.ToLast.Noncekey),
-			data.ToLast.IsSend,
-		}
-		ret.TxTime = data.NonceTime.Format("2006-01-02 15:04:05")
-	}
-	s.Normal(rw, ret)
+	s.Normal(rw, data.GetObject())
 
 }

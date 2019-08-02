@@ -4,10 +4,31 @@ import (
 	"errors"
 	"math/big"
 
+	"hyperledger.abchain.org/chaincode/modules/generaltoken/nonce"
 	pb "hyperledger.abchain.org/chaincode/modules/generaltoken/protos"
 )
 
-func (token *baseTokenTx) Transfer(from []byte, to []byte, amount *big.Int) ([]byte, error) {
+func (token *baseTokenTx) Transfer2(from []byte, to []byte, amount *big.Int) (k pb.NonceKey, err error) {
+
+	defer func() {
+		if err == nil {
+			n, v := pb.NewTransferEvent(k)
+			token.Core.SetEvent(n, v)
+		}
+	}()
+
+	k, err = token.Transfer(from, to, amount)
+	if err == nil {
+		return k, nil
+	} else if derr, ok := err.(nonce.TokenDuplicatedError); ok {
+		return []byte(derr), nil
+	} else {
+		return nil, err
+	}
+
+}
+
+func (token *baseTokenTx) Transfer(from []byte, to []byte, amount *big.Int) (pb.NonceKey, error) {
 
 	err, ret := token.txNonce(token.nonce, from, to, amount)
 

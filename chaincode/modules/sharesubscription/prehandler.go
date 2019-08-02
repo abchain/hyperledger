@@ -119,6 +119,8 @@ func (v contractCred) La() func(shim.ChaincodeStubInterface,
 		deletagorAddr, err := rt.Storage.GetRaw(addrToKey(addr.Internal()))
 		if err != nil {
 			return nil
+		} else if len(deletagorAddr) == 0 {
+			return nil
 		}
 
 		return []*txutil.Address{txutil.NewAddressFromHash(deletagorAddr)}
