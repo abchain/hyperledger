@@ -217,6 +217,35 @@
 					"response": []
 				},
 				{
+					"name": "Redeem",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "accountID",
+									"value": "example01",
+									"type": "text"
+								},
+								{
+									"key": "amount",
+									"value": "0",
+									"type": "text"
+								}
+							]
+						},
+						"url": "http://{{url}}/api/v1/subscription/redeem/ASYwdRX-Gox5sjU5UbNjYYyJm92WOoYk6w"
+					},
+					"response": []
+				},
+				{
 					"name": "Fund",
 					"request": {
 						"method": "POST",
