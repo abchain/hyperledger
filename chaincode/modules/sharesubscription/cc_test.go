@@ -72,7 +72,7 @@ func initCond(mutilcc bool) {
 		tokenQuerycfg = tqc
 	}
 
-	shareCC := SimpleInvokingTemplate(test_ccname, cfg).MustMerge(GeneralQueryTemplate(test_ccname, querycfg))
+	shareCC := GeneralInvokingTemplate(test_ccname, cfg).MustMerge(GeneralQueryTemplate(test_ccname, querycfg))
 
 	tokenCC := token.GeneralAdminTemplate(test_ccname, tokencfg)
 	tokenCC = tokenCC.MustMerge(token.GeneralQueryTemplate(test_ccname, tokenQuerycfg))

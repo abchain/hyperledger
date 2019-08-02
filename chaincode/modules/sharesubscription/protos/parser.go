@@ -16,22 +16,28 @@ func (m *RedeemContract) GetAddresses() (addrs []*tx.Address) {
 	return
 }
 
-func (m *RegContract) GetAddresses() (addrs []*tx.Address) {
+func (m *RegContract) GetAddresses() []*tx.Address {
 
 	if addr, err := tx.NewAddressFromPBMessage(m.GetDelegator()); err == nil {
-		addrs = append(addrs, addr)
+		return []*tx.Address{addr}
 	}
 
-	return
+	return nil
 }
 
-func (m *QueryContract) GetAddresses() (addrs []*tx.Address) {
+func (m *QueryContract) GetAddresses() []*tx.Address {
 
-	if addr, err := tx.NewAddressFromPBMessage(m.GetMemberAddr()); err == nil {
-		addrs = append(addrs, addr)
+	if maddr := m.GetMemberAddr(); maddr != nil {
+		if addr, err := tx.NewAddressFromPBMessage(maddr); err == nil {
+			return []*tx.Address{addr}
+		}
+	} else {
+		if addr, err := tx.NewAddressFromPBMessage(m.GetContractAddr()); err == nil {
+			return []*tx.Address{addr}
+		}
 	}
 
-	return
+	return nil
 }
 
 func (m *RedeemResponse) MarshalJSON() ([]byte, error) {

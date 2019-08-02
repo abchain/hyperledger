@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/lib/runtime"
+	"hyperledger.abchain.org/chaincode/lib/txhandle"
 	pb "hyperledger.abchain.org/chaincode/modules/sharesubscription/protos"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
@@ -101,29 +102,27 @@ func (v contractCred) PostHandling(stub shim.ChaincodeStubInterface, _ string,
 	return ret, nil
 }
 
-//can also act as an address interface in verifier, checking for the contract's deligator
-func (v contractCred) La() func(shim.ChaincodeStubInterface,
+//an address interface in verifier, checking for the contract's deligator
+func GetDeletagorAddress(cfg *StandardContractConfig) func(shim.ChaincodeStubInterface,
 	proto.Message) []*txutil.Address {
 
 	return func(stub shim.ChaincodeStubInterface,
-		msg proto.Message) []*txutil.Address {
+		msg proto.Message) (ret []*txutil.Address) {
 
-		rt := runtime.NewRuntime(v.Root, stub, v.Config).SubRuntime(contract_auth_tag)
-		qmsg := msg.(*pb.QueryContract)
-
-		addr, err := txutil.NewAddressFromPBMessage(qmsg.GetContractAddr())
-		if err != nil {
-			return nil
+		if ma, ok := msg.(tx.MsgAddresses); !ok {
+			return
+		} else {
+			ret = ma.GetAddresses()
 		}
 
-		deletagorAddr, err := rt.Storage.GetRaw(addrToKey(addr.Internal()))
-		if err != nil {
-			return nil
-		} else if len(deletagorAddr) == 0 {
-			return nil
-		}
+		rt := runtime.NewRuntime(cfg.Root, stub, cfg.Config).SubRuntime(contract_auth_tag)
 
-		return []*txutil.Address{txutil.NewAddressFromHash(deletagorAddr)}
+		for i, addr := range ret {
+			deletagorAddr, err := rt.Storage.GetRaw(addrToKey(addr.Internal()))
+			if err == nil && len(deletagorAddr) != 0 {
+				ret[i] = txutil.NewAddressFromHash(deletagorAddr)
+			}
+		}
+		return
 	}
-
 }

@@ -154,6 +154,35 @@
 					"response": []
 				},
 				{
+					"name": "Assign_subscription_recursive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "to",
+									"value": "Af72HZrWvkkzSjVhgfMIW2lKUJP7PxBgfg",
+									"type": "text"
+								},
+								{
+									"key": "amount",
+									"value": "40000000000000000000000000",
+									"type": "text"
+								}
+							]
+						},
+						"url": "http://{{url}}/api/v1/assign"
+					},
+					"response": []
+				},
+				{
 					"name": "Reg",
 					"request": {
 						"method": "POST",
@@ -217,6 +246,45 @@
 					"response": []
 				},
 				{
+					"name": "Subscription_Recursive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "accountID",
+									"value": "example",
+									"type": "text"
+								},
+								{
+									"key": "contract",
+									"value": "AfmAE1K-T8V-y4ObshuwV2faNMOdNMYW0Q:40",
+									"type": "text"
+								},
+								{
+									"key": "contract",
+									"value": "ASYwdRX-Gox5sjU5UbNjYYyJm92WOoYk6w:50",
+									"type": "text"
+								},
+								{
+									"key": "nonce",
+									"value": "1111",
+									"type": "text"
+								}
+							]
+						},
+						"url": "http://{{url}}/api/v1/subscription"
+					},
+					"response": []
+				},
+				{
 					"name": "Redeem",
 					"request": {
 						"method": "POST",
@@ -242,6 +310,40 @@
 							]
 						},
 						"url": "http://{{url}}/api/v1/subscription/redeem/ASYwdRX-Gox5sjU5UbNjYYyJm92WOoYk6w"
+					},
+					"response": []
+				},
+				{
+					"name": "Redeem_Recursive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "accountID",
+									"value": "example",
+									"type": "text"
+								},
+								{
+									"key": "amount",
+									"value": "0",
+									"type": "text"
+								},
+								{
+									"key": "to",
+									"value": "ASYwdRX-Gox5sjU5UbNjYYyJm92WOoYk6w",
+									"type": "text"
+								}
+							]
+						},
+						"url": "http://{{url}}/api/v1/subscription/redeem/Af72HZrWvkkzSjVhgfMIW2lKUJP7PxBgfg"
 					},
 					"response": []
 				},
@@ -458,6 +560,42 @@
 								{
 									"key": "member",
 									"value": "y"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VerifySubscription_recursive_member",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"url": {
+							"raw": "http://{{url}}/api/v1/subscription/Af72HZrWvkkzSjVhgfMIW2lKUJP7PxBgfg?accountID=example&member=ASYwdRX-Gox5sjU5UbNjYYyJm92WOoYk6w",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"subscription",
+								"Af72HZrWvkkzSjVhgfMIW2lKUJP7PxBgfg"
+							],
+							"query": [
+								{
+									"key": "accountID",
+									"value": "example"
+								},
+								{
+									"key": "member",
+									"value": "ASYwdRX-Gox5sjU5UbNjYYyJm92WOoYk6w"
 								}
 							]
 						}

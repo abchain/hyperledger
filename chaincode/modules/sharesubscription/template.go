@@ -4,23 +4,12 @@ import (
 	"hyperledger.abchain.org/chaincode/lib/txhandle"
 )
 
-func SimpleInvokingTemplate(ccname string, cfg ContractConfig) (ret tx.CollectiveTxs) {
+func GeneralInvokingTemplate(ccname string, cfg ContractConfig) (ret tx.CollectiveTxs) {
 
 	ret = tx.NewCollectiveTxs()
 	ret[Method_NewContract] = &tx.ChaincodeTx{ccname, NewContractHandler(cfg), nil, nil}
-	ret[Method_Redeem] = &tx.ChaincodeTx{ccname, RedeemHandler(cfg), nil, nil}
-
-	return
-}
-
-func GeneralInvokingTemplate(ccname string, cfg ContractConfig) (ret tx.CollectiveTxs) {
-
-	ret = SimpleInvokingTemplate(ccname, cfg)
-
-	rcH := ret[Method_Redeem]
-	rcH.PreHandlers = append(rcH.PreHandlers,
-		NewRedeemContractAddrCred(cfg),
-		tx.NewAddrCredVerifier(nil))
+	ret[Method_Redeem] = &tx.ChaincodeTx{ccname, RedeemHandler(cfg),
+		[]tx.TxPreHandler{NewRedeemContractAddrCred(cfg)}, nil}
 
 	return
 }
@@ -40,19 +29,21 @@ func GeneralQueryTemplate(ccname string, cfg ContractConfig) (ret tx.CollectiveT
 //credential is required for memberquery method
 func ExtendTemplateForDelegator(cts tx.CollectiveTxs, cfg *StandardContractConfig) tx.CollectiveTxs {
 
-	handler := NewContractVerifier(cfg)
-
 	//newcontract is supposed to be existed, or just panic
 	cH := cts[Method_NewContract]
-	cH.PostHandlers = append(cH.PostHandlers, handler)
+	cH.PostHandlers = append(cH.PostHandlers, NewContractVerifier(cfg))
 	cH.PreHandlers = append(cH.PreHandlers, tx.NewAddrCredVerifier(nil))
 
+	la := GetDeletagorAddress(cfg)
+	cH = cts[Method_Redeem]
+	cH.PreHandlers = append(cH.PreHandlers, tx.NewAddrCredVerifier(la))
+
 	if cH, ok := cts[Method_Query]; ok {
-		cH.PreHandlers = append(cH.PreHandlers, tx.NewAddrCredVerifier(handler.La()))
+		cH.PreHandlers = append(cH.PreHandlers, tx.NewAddrCredVerifier(la))
 	}
 
 	if cH, ok := cts[Method_MemberQuery]; ok {
-		cH.PreHandlers = append(cH.PreHandlers, tx.NewAddrCredVerifier(nil))
+		cH.PreHandlers = append(cH.PreHandlers, tx.NewAddrCredVerifier(la))
 	}
 
 	return cts
