@@ -168,22 +168,11 @@ func (v *addrCredVerifier) AddVerifier(vv AddrVerifier) bool {
 var defaultVerifier = failVerifier{Verifier_CheckCred}
 var noCredential = fmt.Errorf("No credential inspector")
 
-func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method string, tx txutil.Parser) error {
-
-	var addrs []*txutil.Address
-
-	if v.ListAddresses != nil {
-		addrs = v.ListAddresses(stub, tx.GetMessage())
-	} else if maddr, ok := tx.GetMessage().(MsgAddresses); ok {
-		addrs = maddr.GetAddresses()
-	}
-
-	if len(addrs) == 0 {
-		return fmt.Errorf("No address is available")
-	}
+func (v *addrCredVerifier) verifyCore(stub shim.ChaincodeStubInterface,
+	method string, tx txutil.Parser,
+	addrs []*txutil.Address, inps []AddrVerifier) (error, []AddrVerifier) {
 
 	cred := tx.GetAddrCredential()
-	inps := make([]AddrVerifier, len(v.inspectors))
 
 	for _, addr := range addrs {
 
@@ -214,9 +203,66 @@ func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method 
 		}
 
 		if verifyErr != nil {
-			return fmt.Errorf("addr [%s] verify failure: \n%v", addr.ToString(), traceLog)
+			return fmt.Errorf("addr [%s] verify failure: \n%v", addr.ToString(), traceLog), inps
 		}
 	}
 
-	return nil
+	return nil, inps
+
+}
+
+func (v *addrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method string, tx txutil.Parser) error {
+
+	var addrs []*txutil.Address
+
+	if v.ListAddresses != nil {
+		addrs = v.ListAddresses(stub, tx.GetMessage())
+	} else if maddr, ok := tx.GetMessage().(MsgAddresses); ok {
+		addrs = maddr.GetAddresses()
+	}
+
+	if len(addrs) == 0 {
+		return fmt.Errorf("No address is available")
+	}
+
+	err, _ := v.verifyCore(stub, method, tx, addrs, make([]AddrVerifier, len(v.inspectors)))
+
+	return err
+}
+
+type addrOrCredVerifier struct {
+	*addrCredVerifier
+}
+
+func NewAddrOrCredVerifier(la ListAddresses) addrOrCredVerifier {
+	return addrOrCredVerifier{&addrCredVerifier{la, []AddrVerifier{defaultVerifier}}}
+}
+
+func (v addrOrCredVerifier) PreHandling(stub shim.ChaincodeStubInterface, method string, tx txutil.Parser) error {
+
+	var addrs []*txutil.Address
+
+	if v.ListAddresses != nil {
+		addrs = v.ListAddresses(stub, tx.GetMessage())
+	} else if maddr, ok := tx.GetMessage().(MsgAddresses); ok {
+		addrs = maddr.GetAddresses()
+	}
+
+	if len(addrs) == 0 {
+		return fmt.Errorf("No address is available")
+	}
+
+	var allErrors []error
+	inps := make([]AddrVerifier, len(v.inspectors))
+	for _, addr := range addrs {
+		var err error
+		err, inps = v.verifyCore(stub, method, tx, []*txutil.Address{addr}, inps)
+		if err == nil {
+			return err
+		} else {
+			allErrors = append(allErrors, err)
+		}
+	}
+
+	return fmt.Errorf("All address verify fail: %v", allErrors)
 }
