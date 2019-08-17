@@ -1,4 +1,4 @@
-package ccprotos
+package ccshareprotos
 
 import (
 	"encoding/json"

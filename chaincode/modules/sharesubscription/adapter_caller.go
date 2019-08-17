@@ -113,9 +113,9 @@ func (i *GeneralCall) New(contract map[string]int32) ([]byte, error) {
 func (i *GeneralCall) Redeem_C(conaddr []byte, amount *big.Int, redeemAddrs [][]byte) (*pb.RedeemResponse, error) {
 
 	msg := &pb.RedeemContract{
-		txutil.NewAddressFromHash(conaddr).PBMessage(),
-		amount.Bytes(),
-		nil,
+		Contract: txutil.NewAddressFromHash(conaddr).PBMessage(),
+		Amount:   amount.Bytes(),
+		Redeems:  nil,
 	}
 
 	ret := &pb.RedeemResponse{}
@@ -154,8 +154,7 @@ func (i *GeneralCall) Redeem(conaddr string, amount *big.Int, redeemAddrs []stri
 
 func (i *GeneralCall) Query_C(addr []byte) (error, *pb.Contract_s) {
 	msg := &pb.QueryContract{
-		txutil.NewAddressFromHash(addr).PBMessage(),
-		nil,
+		ContractAddr: txutil.NewAddressFromHash(addr).PBMessage(),
 	}
 
 	data, err := i.TxGenerator.Query(Method_Query, msg)
@@ -187,8 +186,8 @@ func (i *GeneralCall) Query(addr string) (error, *pb.Contract_s) {
 
 func (i *GeneralCall) QueryOne_C(conaddr []byte, addr []byte) (error, *pb.Contract_s) {
 	msg := &pb.QueryContract{
-		txutil.NewAddressFromHash(conaddr).PBMessage(),
-		txutil.NewAddressFromHash(addr).PBMessage(),
+		ContractAddr: txutil.NewAddressFromHash(conaddr).PBMessage(),
+		MemberAddr:   txutil.NewAddressFromHash(addr).PBMessage(),
 	}
 
 	data, err := i.TxGenerator.Query(Method_MemberQuery, msg)

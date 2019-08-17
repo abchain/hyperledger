@@ -1,4 +1,4 @@
-package ccprotos
+package ccauthprotos
 
 import (
 	"bytes"
@@ -111,7 +111,10 @@ func (n *Contract_s) ToPB() *Contract {
 	for _, element := range n.Addrs {
 
 		res.Addrs = append(res.Addrs,
-			&AddrByWeight{txutil.NewAddressFromHash(element.Addr).PBMessage(), element.Weight})
+			&AddrByWeight{
+				Addr:   txutil.NewAddressFromHash(element.Addr).PBMessage(),
+				Weight: element.Weight,
+			})
 	}
 	return res
 }

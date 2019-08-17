@@ -1,4 +1,4 @@
-package ccprotos
+package ccauthprotos
 
 import (
 	"sort"
