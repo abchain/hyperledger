@@ -17,6 +17,7 @@ import (
 var configTitle string
 var blockspec string
 var ccFilter string
+var includeErrTx bool
 
 type argsDump struct {
 	Function string   `json:"function,omitempty"`
@@ -29,6 +30,7 @@ func main() {
 	flag.StringVar(&configTitle, "config", "config", "config file name")
 	flag.StringVar(&blockspec, "block", "", "range of block: [n] or [start-end]")
 	flag.StringVar(&ccFilter, "chaincodes", "", "filter by chaincode name, separated by comma")
+	flag.BoolVar(&includeErrTx, "dumpErrTx", false, "also dump the tx which is errored")
 	flag.Parse()
 
 	if err := config.LoadConfig(configTitle, nil); err != nil {
@@ -67,7 +69,10 @@ func main() {
 		}
 	}
 
-	ccFilters := strings.Split(ccFilter, ",")
+	var ccFilters []string
+	if ccFilter != "" {
+		ccFilters = strings.Split(ccFilter, ",")
+	}
 
 	chain, err := cfg.GetChain()
 	if err != nil {
@@ -93,7 +98,23 @@ func main() {
 			panic(err)
 		}
 
+		//construct err tx mapper
+		errTxs := map[string]bool{}
+		if !includeErrTx {
+			for _, evt := range blk.TxEvents {
+
+				if evt.Status > 0 {
+					errTxs[evt.TxID] = true
+				}
+
+			}
+		}
+
 		for _, tx := range blk.Transactions {
+
+			if _, existed := errTxs[tx.TxID]; existed {
+				continue
+			}
 
 			if len(ccFilters) > 0 {
 				passed := false
@@ -119,5 +140,5 @@ func main() {
 		}
 	}
 
-	fmt.Fprintf(os.Stderr, "Dump %d transactions, %d fail", txcnt-failcnt, failcnt)
+	fmt.Fprintf(os.Stderr, "Dump %d transactions, %d fail\n", txcnt-failcnt, failcnt)
 }
