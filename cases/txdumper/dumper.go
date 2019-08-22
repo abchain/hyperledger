@@ -56,15 +56,20 @@ func main() {
 			end = beg
 
 			if len(val) >= 2 {
-				if vn, done := big.NewInt(0).SetString(val[1], 0); !done {
-					panic("Wrong blocknumber:" + blockspec)
-				} else if end = int64(vn.Uint64()); end < 0 {
-					panic("Number too large:" + blockspec)
+				if val[1] != "" {
+					if vn, done := big.NewInt(0).SetString(val[1], 0); !done {
+						panic("Wrong blocknumber:" + blockspec)
+					} else if end = int64(vn.Uint64()); end < 0 {
+						panic("Number too large:" + blockspec)
+					}
+
+					if beg > end {
+						panic("Wrong range:" + blockspec)
+					}
+				} else {
+					end = 0
 				}
 
-				if beg > end {
-					panic("Wrong range:" + blockspec)
-				}
 			}
 		}
 	}
