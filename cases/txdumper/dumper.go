@@ -18,6 +18,7 @@ var configTitle string
 var blockspec string
 var ccFilter string
 var includeErrTx bool
+var progSpec int
 
 type argsDump struct {
 	Function string   `json:"function,omitempty"`
@@ -31,6 +32,7 @@ func main() {
 	flag.StringVar(&blockspec, "block", "", "range of block: [n] or [start-end]")
 	flag.StringVar(&ccFilter, "chaincodes", "", "filter by chaincode name, separated by comma")
 	flag.BoolVar(&includeErrTx, "dumpErrTx", false, "also dump the tx which is errored")
+	flag.IntVar(&progSpec, "printprog", -1, "print a dot after each N blocks is dumped")
 	flag.Parse()
 
 	if err := config.LoadConfig(configTitle, nil); err != nil {
@@ -95,7 +97,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Chain has %d blocks, dumping from %d to %d\n", cn.Height, beg, end)
 	}
 
-	var txcnt, failcnt int
+	var txcnt, failcnt, progcnt int
 
 	for i := beg; i <= end; i++ {
 		blk, err := chain.GetBlock(i)
@@ -137,13 +139,19 @@ func main() {
 			txcnt++
 			dumpstr, err := json.Marshal(&argsDump{tx.Method, tx.TxArgs, true})
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "dumping tx [%v] fail: %s", tx, err)
+				fmt.Fprintf(os.Stderr, "dumping tx [%v] fail: %s\n", tx, err)
 				failcnt++
 			} else {
 				fmt.Println(string(dumpstr))
 			}
 		}
+
+		progcnt++
+		if progSpec > 0 && progcnt >= progSpec {
+			fmt.Fprintf(os.Stderr, ".")
+			progcnt = 0
+		}
 	}
 
-	fmt.Fprintf(os.Stderr, "Dump %d transactions, %d fail\n", txcnt-failcnt, failcnt)
+	fmt.Fprintf(os.Stderr, "\nDump %d transactions, %d fail\n", txcnt-failcnt, failcnt)
 }
