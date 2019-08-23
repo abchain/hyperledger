@@ -185,12 +185,19 @@ func (pub *PublicKey) IsEqual(p interface{}) bool {
 
 func digestECDSAPk(pub *ecdsa.PublicKey) ([]byte, error) {
 
+	fsz := pub.Curve.Params().BitSize / 8
+
 	xLen := len(pub.X.Bytes())
 	yLen := len(pub.Y.Bytes())
 
-	rawBytes := make([]byte, xLen+yLen)
-	copy(rawBytes, pub.X.Bytes())
-	copy(rawBytes[xLen:], pub.Y.Bytes())
+	//sanity checking
+	if xLen > fsz || yLen > fsz {
+		panic("Wrong curve parameters")
+	}
+
+	rawBytes := make([]byte, fsz*2)
+	copy(rawBytes[fsz-xLen:], pub.X.Bytes())
+	copy(rawBytes[fsz*2-yLen:], pub.Y.Bytes())
 
 	hash, err := utils.SHA256RIPEMD160(rawBytes)
 	if err != nil {

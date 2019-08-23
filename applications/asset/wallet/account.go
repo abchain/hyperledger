@@ -375,6 +375,7 @@ func (s *Account) ImportKey(rw web.ResponseWriter, req *web.Request) {
 	privkeyS, ok := req.PostForm["privkey"]
 	if !ok || len(privkeyS) == 0 {
 		http.Error(rw, "Missing parameters", http.StatusBadRequest)
+		return
 	}
 
 	// Debug
