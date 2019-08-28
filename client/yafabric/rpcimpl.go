@@ -173,6 +173,8 @@ func (b *RpcBuilder) Query(args [][]byte) ([]byte, error) {
 
 	if err != nil {
 		return nil, err
+	} else if resp.Status != pb.Response_SUCCESS {
+		return nil, fmt.Errorf("Failure resp: %s", string(resp.Msg))
 	}
 
 	return resp.Msg, nil
