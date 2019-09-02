@@ -8,9 +8,29 @@ import (
 	"time"
 )
 
+type Flags uint32
+
+//indicate the expried time in header is obliged to be considered
+func TxFlag_Timelock() Flags {
+	return Flags(1)
+}
+
+func (f Flags) U() uint32 {
+	return uint32(f)
+}
+
+func (f Flags) And(fanother Flags) Flags {
+	return Flags(uint32(f) | uint32(fanother))
+}
+
+func (f Flags) IsTimeLock() bool {
+	return (f & TxFlag_Timelock()) != 0
+}
+
 type Parser interface {
 	GetCCname() string
 	GetNonce() []byte
+	GetFlags() Flags
 	GetTxTime() time.Time
 	GetAddrCredential() AddrCredentials
 	GetDataCredential() DataCredentials
@@ -33,6 +53,10 @@ func (t *txParser) GetCCname() string {
 
 func (t *txParser) GetNonce() []byte {
 	return t.nonce
+}
+
+func (t *txParser) GetFlags() Flags {
+	return Flags(t.flags)
 }
 
 func (t *txParser) GetTxTime() time.Time {

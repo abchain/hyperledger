@@ -8,6 +8,7 @@ import (
 	"hyperledger.abchain.org/core/crypto"
 	txutil "hyperledger.abchain.org/core/tx"
 	"net/http"
+	"time"
 )
 
 type FabricRPCCore struct {
@@ -34,6 +35,23 @@ func (s *FabricRPCCore) PrehandlePost(rw web.ResponseWriter,
 			s.TxGenerator.BeginTx([]byte(s.nonceStr))
 		} else {
 			s.TxGenerator.BeginTx(nil)
+		}
+
+		if tl := req.PostFormValue("timelock"); tl != "" {
+			td, err := time.ParseDuration(tl)
+			if err != nil {
+				http.Error(rw, err.Error(), http.StatusBadRequest)
+				return
+			}
+			s.TxGenerator.Timelock = time.Now().Add(td)
+
+		} else if tlT := req.PostFormValue("timelockat"); tlT != "" {
+			t, err := time.Parse(time.Stamp, tlT)
+			if err != nil {
+				http.Error(rw, err.Error(), http.StatusBadRequest)
+				return
+			}
+			s.TxGenerator.Timelock = t
 		}
 
 		s.rwForOutput = rw

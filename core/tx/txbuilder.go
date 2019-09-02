@@ -23,7 +23,7 @@ type baseMaker struct {
 	credBuilder *builder
 }
 
-func NewTxMaker(args [][]byte) TxMaker {
+func NewTxMaker(args [][]byte) *baseMaker {
 	return &baseMaker{args, newTxCredentialBuilder()}
 }
 
@@ -79,16 +79,51 @@ type Builder interface {
 
 type baseBuilder struct {
 	baseMaker
-	txHash []byte
+	method string
 	nonce  []byte
+	txHash []byte
 }
 
 func (b *baseBuilder) GetHash() []byte {
+	if b.txHash == nil {
+		b.txHash = b.GenHash(b.method)
+	}
 	return b.txHash
 }
 
 func (b *baseBuilder) GetNonce() []byte {
 	return b.nonce
+}
+
+func (b *baseBuilder) SetHeader(h *pb.TxHeader) error {
+
+	hh := msgToByte(h)
+	if hh == nil {
+		return errors.New("Encode header fail")
+	}
+
+	b.nonce = h.GetNonce()
+	b.txHash = nil
+
+	b.txArgs[0] = hh
+
+	return nil
+}
+
+func (b *baseBuilder) SetMethod(m string) {
+	b.txHash = nil
+	b.method = m
+}
+
+func (b *baseBuilder) SetMessage(msg proto.Message) error {
+
+	hm := msgToByte(msg)
+	if hm == nil {
+		return errors.New("No message binded")
+	}
+	b.txArgs[1] = hm
+	b.txHash = nil
+	return nil
 }
 
 const (
@@ -107,41 +142,71 @@ func GenerateNonce() []byte {
 	return nonce
 }
 
-func NewTxBuilder(ccname string, nonce []byte, method string, msg proto.Message) (Builder, error) {
+func newTxBuilder() *baseBuilder {
 
-	hm := msgToByte(msg)
-	if hm == nil {
-		return nil, errors.New("No message binded")
-	}
+	return &baseBuilder{baseMaker: baseMaker{make([][]byte, 2), newTxCredentialBuilder()}}
+}
+
+func NewTxBuilderWithTimeLock(ccname string, nonce []byte, t time.Time) (b *baseBuilder, err error) {
 
 	if nonce == nil {
 		nonce = GenerateNonce()
 	}
 
-	expTime := &timestamp.Timestamp{
-		Seconds: time.Now().Unix() + int64(queryEffectInHour*3600),
-		Nanos:   0}
+	header := &pb.TxHeader{
+		Base: &pb.TxBase{
+			Network: DefaultNetworkName(),
+			Ccname:  ccname,
+		},
+		ExpiredTs: &timestamp.Timestamp{
+			Seconds: t.Unix(),
+			Nanos:   0},
+		Nonce: nonce,
+		Flags: TxFlag_Timelock().U(),
+	}
+
+	b = newTxBuilder()
+	err = b.SetHeader(header)
+
+	return
+}
+
+func NewTxBuilder2(ccname string, nonce []byte) (b *baseBuilder, err error) {
+
+	if nonce == nil {
+		nonce = GenerateNonce()
+	}
 
 	header := &pb.TxHeader{
 		Base: &pb.TxBase{
 			Network: DefaultNetworkName(),
 			Ccname:  ccname,
-			Method:  "",
 		},
-		ExpiredTs: expTime,
-		Nonce:     nonce,
+		ExpiredTs: &timestamp.Timestamp{
+			Seconds: time.Now().Unix() + int64(queryEffectInHour*3600),
+			Nanos:   0},
+		Nonce: nonce,
 	}
 
-	hh := msgToByte(header)
-	if hh == nil {
-		return nil, errors.New("Encode header fail")
+	b = newTxBuilder()
+	err = b.SetHeader(header)
+
+	return
+}
+
+func NewTxBuilder(ccname string, nonce []byte, method string, msg proto.Message) (*baseBuilder, error) {
+
+	b, err := NewTxBuilder2(ccname, nonce)
+	if err != nil {
+		return nil, err
 	}
 
-	b := &baseBuilder{
-		baseMaker{[][]byte{hh, hm}, newTxCredentialBuilder()},
-		genHash(hh, hm, method),
-		nonce}
+	err = b.SetMessage(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	b.SetMethod(method)
 
 	return b, nil
-
 }

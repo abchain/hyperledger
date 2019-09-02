@@ -5,6 +5,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"hyperledger.abchain.org/chaincode/lib/caller"
 	txutil "hyperledger.abchain.org/core/tx"
+	"time"
 )
 
 type QueryResp struct {
@@ -41,6 +42,7 @@ type TxGenerator struct {
 	calledError   error
 	callnotify    chan struct{}
 	call_deploy   bool
+	Timelock      time.Time
 	Credgenerator TxCredHandler
 	Dispatcher    rpc.Caller
 	MethodMapper  map[string]string
@@ -72,12 +74,28 @@ func (t *TxGenerator) txcall(method string, msg proto.Message) error {
 
 	method = t.methodName(method)
 
-	b, err := txutil.NewTxBuilder(t.Ccname, t.GetNonce(), method, msg)
-	if err != nil {
-		return err
-	}
+	if t.Timelock.IsZero() {
 
-	t.txbuilder = b
+		b, err := txutil.NewTxBuilder(t.Ccname, t.GetNonce(), method, msg)
+		if err != nil {
+			return err
+		}
+		t.txbuilder = b
+
+	} else {
+		b, err := txutil.NewTxBuilderWithTimeLock(t.Ccname, t.GetNonce(), t.Timelock)
+		if err != nil {
+			return err
+		}
+
+		err = b.SetMessage(msg)
+		if err != nil {
+			return err
+		}
+		b.SetMethod(method)
+		t.txbuilder = b
+
+	}
 
 	return nil
 }

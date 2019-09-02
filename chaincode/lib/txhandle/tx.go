@@ -40,6 +40,18 @@ func (cci *ChaincodeTx) TxCall(stub shim.ChaincodeStubInterface,
 		return nil, errors.New("Unmatched chaincode name")
 	}
 
+	//check ts expired
+	if parser.GetFlags().IsTimeLock() {
+		expT := parser.GetTxTime()
+		if expT.IsZero() {
+			return nil, errors.New("Enforced timelock Tx has no valid expired time")
+		} else if nowT, err := stub.GetTxTime(); err != nil {
+			return nil, errors.New("Can not get exec time: " + err.Error())
+		} else if nowT.After(expT) {
+			return nil, errors.New("Tx is expired")
+		}
+	}
+
 	for _, h := range cci.PreHandlers {
 		err := h.PreHandling(stub, function, parser)
 		if err != nil {

@@ -38,7 +38,7 @@ func TestTx(t *testing.T) {
 
 	txinit(t)
 
-	msg := &pb.TxMsgExample{[]byte{'1', '9', '8', '4'}, 1984}
+	msg := &pb.TxMsgExample{Param1: []byte{'1', '9', '8', '4'}, Param2: 1984}
 
 	builder, err := NewTxBuilder("gamepai", nil, "example", msg)
 
