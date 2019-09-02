@@ -165,7 +165,7 @@ func (addr *Address) PBMessage() *pb.TxAddr {
 	}
 
 	addrProto := &pb.TxAddr{
-		addr.Hash,
+		Hash: addr.Hash,
 	}
 
 	return addrProto

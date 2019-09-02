@@ -17,6 +17,7 @@ message TxHeader{
     TxBase      base            = 1;
     google.protobuf.Timestamp expiredTs = 2;
     bytes       nonce           = 3;
+    fixed32     flags = 4;
 }
 
 message TxCredential {

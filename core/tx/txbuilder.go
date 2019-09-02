@@ -123,13 +123,13 @@ func NewTxBuilder(ccname string, nonce []byte, method string, msg proto.Message)
 		Nanos:   0}
 
 	header := &pb.TxHeader{
-		&pb.TxBase{
-			DefaultNetworkName(),
-			ccname,
-			"",
+		Base: &pb.TxBase{
+			Network: DefaultNetworkName(),
+			Ccname:  ccname,
+			Method:  "",
 		},
-		expTime,
-		nonce,
+		ExpiredTs: expTime,
+		Nonce:     nonce,
 	}
 
 	hh := msgToByte(header)

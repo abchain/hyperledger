@@ -21,6 +21,7 @@ type Parser interface {
 type txParser struct {
 	nonce  []byte
 	ccname string
+	flags  uint32
 	txts   time.Time
 	cred   txCredentials
 	msg    proto.Message
@@ -138,6 +139,7 @@ func ParseTx(msg proto.Message, method string, args [][]byte) (Parser, error) {
 	return &txParser{
 		header.Nonce,
 		header.Base.Ccname,
+		header.Flags,
 		txTs,
 		cred,
 		msg,

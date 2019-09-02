@@ -39,7 +39,7 @@ func decodeECDSASig(sig string) (*protos.Signature_ECDSA, error) {
 			return nil, fmt.Errorf("Parse sig.p bytes has no expected length [%d]", len(bt))
 		}
 
-		p := &protos.Signature_ECDSA_P{&protos.ECPoint{bt[:32], bt[32:]}}
+		p := &protos.Signature_ECDSA_P{P: &protos.ECPoint{X: bt[:32], Y: bt[32:]}}
 		ret.Pub = p
 	}
 

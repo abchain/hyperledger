@@ -30,7 +30,7 @@ func (t *BatchTxCall) Invoke(method string, msg proto.Message) error {
 		return err
 	}
 
-	t.Msg.Txs = append(t.Msg.Txs, &pb.TxBatchSubTx{method, payload})
+	t.Msg.Txs = append(t.Msg.Txs, &pb.TxBatchSubTx{Method: method, Payload: payload})
 
 	return nil
 }
@@ -48,7 +48,7 @@ func (t *BatchTxCall) Query(method string, msg proto.Message) (chan QueryResp, e
 		return nil, err
 	}
 
-	t.Msg.Txs = append(t.Msg.Txs, &pb.TxBatchSubTx{method, payload})
+	t.Msg.Txs = append(t.Msg.Txs, &pb.TxBatchSubTx{Method: method, Payload: payload})
 
 	qret := make(chan QueryResp)
 	t.query_ret = append(t.query_ret, qret)

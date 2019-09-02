@@ -28,7 +28,9 @@ func DecodeCompactPublicKey(pk string) (Verifier, error) {
 			return nil, fmt.Errorf("Decode ecdsa public key fail, invalid publickey length (%d)", len(key))
 		}
 
-		retpb.Pub = &protos.PublicKey_Ec{&protos.PublicKey_ECDSA{ctype, &protos.ECPoint{key[:32], key[32:]}}}
+		retpb.Pub = &protos.PublicKey_Ec{&protos.PublicKey_ECDSA{
+			Curvetype: ctype,
+			P:         &protos.ECPoint{X: key[:32], Y: key[32:]}}}
 		ret := CryptoSchemes[SCHEME_ECDSA].NewVerifier()
 		if err := ret.FromPBMessage(retpb); err != nil {
 			return nil, err

@@ -283,9 +283,9 @@ func (priv *PrivateKey) Sign(hash []byte) (sig *protos.Signature, err error) {
 
 	//TODO: using v is still not available, we put pk
 	sigpk := &protos.Signature_ECDSA_P{
-		&protos.ECPoint{
-			priv.Key.PublicKey.X.Bytes(),
-			priv.Key.PublicKey.Y.Bytes(),
+		P: &protos.ECPoint{
+			X: priv.Key.PublicKey.X.Bytes(),
+			Y: priv.Key.PublicKey.Y.Bytes(),
 		},
 	}
 
@@ -301,7 +301,7 @@ func (priv *PrivateKey) Sign(hash []byte) (sig *protos.Signature, err error) {
 		kdinf = priv.ToKDMessage()
 	}
 
-	return &protos.Signature{&protos.Signature_Ec{ecsign}, kdinf}, nil
+	return &protos.Signature{Data: &protos.Signature_Ec{Ec: ecsign}, Kd: kdinf}, nil
 }
 
 //deprecate APIs

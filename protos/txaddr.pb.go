@@ -3,23 +3,54 @@
 
 package protos
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type TxAddr struct {
-	Hash []byte `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	Hash                 []byte   `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TxAddr) Reset()                    { *m = TxAddr{} }
-func (m *TxAddr) String() string            { return proto.CompactTextString(m) }
-func (*TxAddr) ProtoMessage()               {}
-func (*TxAddr) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *TxAddr) Reset()         { *m = TxAddr{} }
+func (m *TxAddr) String() string { return proto.CompactTextString(m) }
+func (*TxAddr) ProtoMessage()    {}
+func (*TxAddr) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b785f6fe27629ef0, []int{0}
+}
+
+func (m *TxAddr) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxAddr.Unmarshal(m, b)
+}
+func (m *TxAddr) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxAddr.Marshal(b, m, deterministic)
+}
+func (m *TxAddr) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxAddr.Merge(m, src)
+}
+func (m *TxAddr) XXX_Size() int {
+	return xxx_messageInfo_TxAddr.Size(m)
+}
+func (m *TxAddr) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxAddr.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxAddr proto.InternalMessageInfo
 
 func (m *TxAddr) GetHash() []byte {
 	if m != nil {
@@ -29,14 +60,37 @@ func (m *TxAddr) GetHash() []byte {
 }
 
 type TxMsgExample struct {
-	Param1 []byte `protobuf:"bytes,1,opt,name=param1,proto3" json:"param1,omitempty"`
-	Param2 int32  `protobuf:"varint,2,opt,name=param2" json:"param2,omitempty"`
+	Param1               []byte   `protobuf:"bytes,1,opt,name=param1,proto3" json:"param1,omitempty"`
+	Param2               int32    `protobuf:"varint,2,opt,name=param2,proto3" json:"param2,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TxMsgExample) Reset()                    { *m = TxMsgExample{} }
-func (m *TxMsgExample) String() string            { return proto.CompactTextString(m) }
-func (*TxMsgExample) ProtoMessage()               {}
-func (*TxMsgExample) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (m *TxMsgExample) Reset()         { *m = TxMsgExample{} }
+func (m *TxMsgExample) String() string { return proto.CompactTextString(m) }
+func (*TxMsgExample) ProtoMessage()    {}
+func (*TxMsgExample) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b785f6fe27629ef0, []int{1}
+}
+
+func (m *TxMsgExample) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxMsgExample.Unmarshal(m, b)
+}
+func (m *TxMsgExample) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxMsgExample.Marshal(b, m, deterministic)
+}
+func (m *TxMsgExample) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxMsgExample.Merge(m, src)
+}
+func (m *TxMsgExample) XXX_Size() int {
+	return xxx_messageInfo_TxMsgExample.Size(m)
+}
+func (m *TxMsgExample) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxMsgExample.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxMsgExample proto.InternalMessageInfo
 
 func (m *TxMsgExample) GetParam1() []byte {
 	if m != nil {
@@ -57,9 +111,9 @@ func init() {
 	proto.RegisterType((*TxMsgExample)(nil), "protos.TxMsgExample")
 }
 
-func init() { proto.RegisterFile("txaddr.proto", fileDescriptor2) }
+func init() { proto.RegisterFile("txaddr.proto", fileDescriptor_b785f6fe27629ef0) }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_b785f6fe27629ef0 = []byte{
 	// 145 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x29, 0xa9, 0x48, 0x4c,
 	0x49, 0x29, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x03, 0x53, 0xc5, 0x4a, 0x32, 0x5c,

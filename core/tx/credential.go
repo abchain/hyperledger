@@ -98,7 +98,8 @@ func (b *builder) AddSignature(sign *pb.Signature) {
 	}
 
 	b.cache[ind] = &pb.TxCredential_AddrCredentials{
-		Cred: &pb.TxCredential_AddrCredentials_User{User: &pb.TxCredential_UserCredential{sign}},
+		Cred: &pb.TxCredential_AddrCredentials_User{
+			User: &pb.TxCredential_UserCredential{Signature: sign}},
 	}
 
 }

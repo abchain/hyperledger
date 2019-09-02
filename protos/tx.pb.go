@@ -3,26 +3,57 @@
 
 package protos
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type TxBase struct {
-	Network string `protobuf:"bytes,1,opt,name=network" json:"network,omitempty"`
-	Ccname  string `protobuf:"bytes,2,opt,name=ccname" json:"ccname,omitempty"`
-	Method  string `protobuf:"bytes,3,opt,name=method" json:"method,omitempty"`
+	Network              string   `protobuf:"bytes,1,opt,name=network,proto3" json:"network,omitempty"`
+	Ccname               string   `protobuf:"bytes,2,opt,name=ccname,proto3" json:"ccname,omitempty"`
+	Method               string   `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TxBase) Reset()                    { *m = TxBase{} }
-func (m *TxBase) String() string            { return proto.CompactTextString(m) }
-func (*TxBase) ProtoMessage()               {}
-func (*TxBase) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *TxBase) Reset()         { *m = TxBase{} }
+func (m *TxBase) String() string { return proto.CompactTextString(m) }
+func (*TxBase) ProtoMessage()    {}
+func (*TxBase) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0fd2153dc07d3b5c, []int{0}
+}
+
+func (m *TxBase) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxBase.Unmarshal(m, b)
+}
+func (m *TxBase) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxBase.Marshal(b, m, deterministic)
+}
+func (m *TxBase) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxBase.Merge(m, src)
+}
+func (m *TxBase) XXX_Size() int {
+	return xxx_messageInfo_TxBase.Size(m)
+}
+func (m *TxBase) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxBase.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxBase proto.InternalMessageInfo
 
 func (m *TxBase) GetNetwork() string {
 	if m != nil {
@@ -46,15 +77,39 @@ func (m *TxBase) GetMethod() string {
 }
 
 type TxHeader struct {
-	Base      *TxBase                    `protobuf:"bytes,1,opt,name=base" json:"base,omitempty"`
-	ExpiredTs *google_protobuf.Timestamp `protobuf:"bytes,2,opt,name=expiredTs" json:"expiredTs,omitempty"`
-	Nonce     []byte                     `protobuf:"bytes,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	Base                 *TxBase              `protobuf:"bytes,1,opt,name=base,proto3" json:"base,omitempty"`
+	ExpiredTs            *timestamp.Timestamp `protobuf:"bytes,2,opt,name=expiredTs,proto3" json:"expiredTs,omitempty"`
+	Nonce                []byte               `protobuf:"bytes,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	Flags                uint32               `protobuf:"fixed32,4,opt,name=flags,proto3" json:"flags,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *TxHeader) Reset()                    { *m = TxHeader{} }
-func (m *TxHeader) String() string            { return proto.CompactTextString(m) }
-func (*TxHeader) ProtoMessage()               {}
-func (*TxHeader) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *TxHeader) Reset()         { *m = TxHeader{} }
+func (m *TxHeader) String() string { return proto.CompactTextString(m) }
+func (*TxHeader) ProtoMessage()    {}
+func (*TxHeader) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0fd2153dc07d3b5c, []int{1}
+}
+
+func (m *TxHeader) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxHeader.Unmarshal(m, b)
+}
+func (m *TxHeader) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxHeader.Marshal(b, m, deterministic)
+}
+func (m *TxHeader) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxHeader.Merge(m, src)
+}
+func (m *TxHeader) XXX_Size() int {
+	return xxx_messageInfo_TxHeader.Size(m)
+}
+func (m *TxHeader) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxHeader.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxHeader proto.InternalMessageInfo
 
 func (m *TxHeader) GetBase() *TxBase {
 	if m != nil {
@@ -63,7 +118,7 @@ func (m *TxHeader) GetBase() *TxBase {
 	return nil
 }
 
-func (m *TxHeader) GetExpiredTs() *google_protobuf.Timestamp {
+func (m *TxHeader) GetExpiredTs() *timestamp.Timestamp {
 	if m != nil {
 		return m.ExpiredTs
 	}
@@ -77,14 +132,44 @@ func (m *TxHeader) GetNonce() []byte {
 	return nil
 }
 
-type TxCredential struct {
-	Addrc []*TxCredential_AddrCredentials `protobuf:"bytes,1,rep,name=addrc" json:"addrc,omitempty"`
+func (m *TxHeader) GetFlags() uint32 {
+	if m != nil {
+		return m.Flags
+	}
+	return 0
 }
 
-func (m *TxCredential) Reset()                    { *m = TxCredential{} }
-func (m *TxCredential) String() string            { return proto.CompactTextString(m) }
-func (*TxCredential) ProtoMessage()               {}
-func (*TxCredential) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+type TxCredential struct {
+	Addrc                []*TxCredential_AddrCredentials `protobuf:"bytes,1,rep,name=addrc,proto3" json:"addrc,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
+	XXX_unrecognized     []byte                          `json:"-"`
+	XXX_sizecache        int32                           `json:"-"`
+}
+
+func (m *TxCredential) Reset()         { *m = TxCredential{} }
+func (m *TxCredential) String() string { return proto.CompactTextString(m) }
+func (*TxCredential) ProtoMessage()    {}
+func (*TxCredential) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0fd2153dc07d3b5c, []int{2}
+}
+
+func (m *TxCredential) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxCredential.Unmarshal(m, b)
+}
+func (m *TxCredential) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxCredential.Marshal(b, m, deterministic)
+}
+func (m *TxCredential) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxCredential.Merge(m, src)
+}
+func (m *TxCredential) XXX_Size() int {
+	return xxx_messageInfo_TxCredential.Size(m)
+}
+func (m *TxCredential) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxCredential.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxCredential proto.InternalMessageInfo
 
 func (m *TxCredential) GetAddrc() []*TxCredential_AddrCredentials {
 	if m != nil {
@@ -94,13 +179,36 @@ func (m *TxCredential) GetAddrc() []*TxCredential_AddrCredentials {
 }
 
 type TxCredential_UserCredential struct {
-	Signature *Signature `protobuf:"bytes,3,opt,name=signature" json:"signature,omitempty"`
+	Signature            *Signature `protobuf:"bytes,3,opt,name=signature,proto3" json:"signature,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *TxCredential_UserCredential) Reset()                    { *m = TxCredential_UserCredential{} }
-func (m *TxCredential_UserCredential) String() string            { return proto.CompactTextString(m) }
-func (*TxCredential_UserCredential) ProtoMessage()               {}
-func (*TxCredential_UserCredential) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2, 0} }
+func (m *TxCredential_UserCredential) Reset()         { *m = TxCredential_UserCredential{} }
+func (m *TxCredential_UserCredential) String() string { return proto.CompactTextString(m) }
+func (*TxCredential_UserCredential) ProtoMessage()    {}
+func (*TxCredential_UserCredential) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0fd2153dc07d3b5c, []int{2, 0}
+}
+
+func (m *TxCredential_UserCredential) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxCredential_UserCredential.Unmarshal(m, b)
+}
+func (m *TxCredential_UserCredential) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxCredential_UserCredential.Marshal(b, m, deterministic)
+}
+func (m *TxCredential_UserCredential) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxCredential_UserCredential.Merge(m, src)
+}
+func (m *TxCredential_UserCredential) XXX_Size() int {
+	return xxx_messageInfo_TxCredential_UserCredential.Size(m)
+}
+func (m *TxCredential_UserCredential) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxCredential_UserCredential.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxCredential_UserCredential proto.InternalMessageInfo
 
 func (m *TxCredential_UserCredential) GetSignature() *Signature {
 	if m != nil {
@@ -110,18 +218,48 @@ func (m *TxCredential_UserCredential) GetSignature() *Signature {
 }
 
 type TxCredential_DataCredential struct {
-	Key string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	// Types that are valid to be assigned to Data:
 	//	*TxCredential_DataCredential_Bts
 	//	*TxCredential_DataCredential_Int
 	//	*TxCredential_DataCredential_Str
-	Data isTxCredential_DataCredential_Data `protobuf_oneof:"data"`
+	Data                 isTxCredential_DataCredential_Data `protobuf_oneof:"data"`
+	XXX_NoUnkeyedLiteral struct{}                           `json:"-"`
+	XXX_unrecognized     []byte                             `json:"-"`
+	XXX_sizecache        int32                              `json:"-"`
 }
 
-func (m *TxCredential_DataCredential) Reset()                    { *m = TxCredential_DataCredential{} }
-func (m *TxCredential_DataCredential) String() string            { return proto.CompactTextString(m) }
-func (*TxCredential_DataCredential) ProtoMessage()               {}
-func (*TxCredential_DataCredential) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2, 1} }
+func (m *TxCredential_DataCredential) Reset()         { *m = TxCredential_DataCredential{} }
+func (m *TxCredential_DataCredential) String() string { return proto.CompactTextString(m) }
+func (*TxCredential_DataCredential) ProtoMessage()    {}
+func (*TxCredential_DataCredential) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0fd2153dc07d3b5c, []int{2, 1}
+}
+
+func (m *TxCredential_DataCredential) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxCredential_DataCredential.Unmarshal(m, b)
+}
+func (m *TxCredential_DataCredential) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxCredential_DataCredential.Marshal(b, m, deterministic)
+}
+func (m *TxCredential_DataCredential) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxCredential_DataCredential.Merge(m, src)
+}
+func (m *TxCredential_DataCredential) XXX_Size() int {
+	return xxx_messageInfo_TxCredential_DataCredential.Size(m)
+}
+func (m *TxCredential_DataCredential) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxCredential_DataCredential.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxCredential_DataCredential proto.InternalMessageInfo
+
+func (m *TxCredential_DataCredential) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
 
 type isTxCredential_DataCredential_Data interface {
 	isTxCredential_DataCredential_Data()
@@ -130,15 +268,19 @@ type isTxCredential_DataCredential_Data interface {
 type TxCredential_DataCredential_Bts struct {
 	Bts []byte `protobuf:"bytes,2,opt,name=bts,proto3,oneof"`
 }
+
 type TxCredential_DataCredential_Int struct {
-	Int int32 `protobuf:"varint,3,opt,name=int,oneof"`
+	Int int32 `protobuf:"varint,3,opt,name=int,proto3,oneof"`
 }
+
 type TxCredential_DataCredential_Str struct {
-	Str string `protobuf:"bytes,4,opt,name=str,oneof"`
+	Str string `protobuf:"bytes,4,opt,name=str,proto3,oneof"`
 }
 
 func (*TxCredential_DataCredential_Bts) isTxCredential_DataCredential_Data() {}
+
 func (*TxCredential_DataCredential_Int) isTxCredential_DataCredential_Data() {}
+
 func (*TxCredential_DataCredential_Str) isTxCredential_DataCredential_Data() {}
 
 func (m *TxCredential_DataCredential) GetData() isTxCredential_DataCredential_Data {
@@ -146,13 +288,6 @@ func (m *TxCredential_DataCredential) GetData() isTxCredential_DataCredential_Da
 		return m.Data
 	}
 	return nil
-}
-
-func (m *TxCredential_DataCredential) GetKey() string {
-	if m != nil {
-		return m.Key
-	}
-	return ""
 }
 
 func (m *TxCredential_DataCredential) GetBts() []byte {
@@ -239,14 +374,14 @@ func _TxCredential_DataCredential_OneofSizer(msg proto.Message) (n int) {
 	// data
 	switch x := m.Data.(type) {
 	case *TxCredential_DataCredential_Bts:
-		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(len(x.Bts)))
 		n += len(x.Bts)
 	case *TxCredential_DataCredential_Int:
-		n += proto.SizeVarint(3<<3 | proto.WireVarint)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(x.Int))
 	case *TxCredential_DataCredential_Str:
-		n += proto.SizeVarint(4<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(len(x.Str)))
 		n += len(x.Str)
 	case nil:
@@ -260,26 +395,51 @@ type TxCredential_AddrCredentials struct {
 	// Types that are valid to be assigned to Cred:
 	//	*TxCredential_AddrCredentials_User
 	//	*TxCredential_AddrCredentials_Data
-	Cred isTxCredential_AddrCredentials_Cred `protobuf_oneof:"cred"`
+	Cred                 isTxCredential_AddrCredentials_Cred `protobuf_oneof:"cred"`
+	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
+	XXX_unrecognized     []byte                              `json:"-"`
+	XXX_sizecache        int32                               `json:"-"`
 }
 
-func (m *TxCredential_AddrCredentials) Reset()                    { *m = TxCredential_AddrCredentials{} }
-func (m *TxCredential_AddrCredentials) String() string            { return proto.CompactTextString(m) }
-func (*TxCredential_AddrCredentials) ProtoMessage()               {}
-func (*TxCredential_AddrCredentials) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2, 2} }
+func (m *TxCredential_AddrCredentials) Reset()         { *m = TxCredential_AddrCredentials{} }
+func (m *TxCredential_AddrCredentials) String() string { return proto.CompactTextString(m) }
+func (*TxCredential_AddrCredentials) ProtoMessage()    {}
+func (*TxCredential_AddrCredentials) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0fd2153dc07d3b5c, []int{2, 2}
+}
+
+func (m *TxCredential_AddrCredentials) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxCredential_AddrCredentials.Unmarshal(m, b)
+}
+func (m *TxCredential_AddrCredentials) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxCredential_AddrCredentials.Marshal(b, m, deterministic)
+}
+func (m *TxCredential_AddrCredentials) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxCredential_AddrCredentials.Merge(m, src)
+}
+func (m *TxCredential_AddrCredentials) XXX_Size() int {
+	return xxx_messageInfo_TxCredential_AddrCredentials.Size(m)
+}
+func (m *TxCredential_AddrCredentials) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxCredential_AddrCredentials.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxCredential_AddrCredentials proto.InternalMessageInfo
 
 type isTxCredential_AddrCredentials_Cred interface {
 	isTxCredential_AddrCredentials_Cred()
 }
 
 type TxCredential_AddrCredentials_User struct {
-	User *TxCredential_UserCredential `protobuf:"bytes,1,opt,name=user,oneof"`
+	User *TxCredential_UserCredential `protobuf:"bytes,1,opt,name=user,proto3,oneof"`
 }
+
 type TxCredential_AddrCredentials_Data struct {
-	Data *TxCredential_DataCredential `protobuf:"bytes,3,opt,name=data,oneof"`
+	Data *TxCredential_DataCredential `protobuf:"bytes,3,opt,name=data,proto3,oneof"`
 }
 
 func (*TxCredential_AddrCredentials_User) isTxCredential_AddrCredentials_Cred() {}
+
 func (*TxCredential_AddrCredentials_Data) isTxCredential_AddrCredentials_Cred() {}
 
 func (m *TxCredential_AddrCredentials) GetCred() isTxCredential_AddrCredentials_Cred {
@@ -362,12 +522,12 @@ func _TxCredential_AddrCredentials_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.Cred.(type) {
 	case *TxCredential_AddrCredentials_User:
 		s := proto.Size(x.User)
-		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *TxCredential_AddrCredentials_Data:
 		s := proto.Size(x.Data)
-		n += proto.SizeVarint(3<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -378,13 +538,36 @@ func _TxCredential_AddrCredentials_OneofSizer(msg proto.Message) (n int) {
 }
 
 type TxBatch struct {
-	Txs []*TxBatchSubTx `protobuf:"bytes,1,rep,name=txs" json:"txs,omitempty"`
+	Txs                  []*TxBatchSubTx `protobuf:"bytes,1,rep,name=txs,proto3" json:"txs,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *TxBatch) Reset()                    { *m = TxBatch{} }
-func (m *TxBatch) String() string            { return proto.CompactTextString(m) }
-func (*TxBatch) ProtoMessage()               {}
-func (*TxBatch) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (m *TxBatch) Reset()         { *m = TxBatch{} }
+func (m *TxBatch) String() string { return proto.CompactTextString(m) }
+func (*TxBatch) ProtoMessage()    {}
+func (*TxBatch) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0fd2153dc07d3b5c, []int{3}
+}
+
+func (m *TxBatch) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxBatch.Unmarshal(m, b)
+}
+func (m *TxBatch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxBatch.Marshal(b, m, deterministic)
+}
+func (m *TxBatch) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxBatch.Merge(m, src)
+}
+func (m *TxBatch) XXX_Size() int {
+	return xxx_messageInfo_TxBatch.Size(m)
+}
+func (m *TxBatch) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxBatch.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxBatch proto.InternalMessageInfo
 
 func (m *TxBatch) GetTxs() []*TxBatchSubTx {
 	if m != nil {
@@ -394,14 +577,37 @@ func (m *TxBatch) GetTxs() []*TxBatchSubTx {
 }
 
 type TxBatchSubTx struct {
-	Method  string `protobuf:"bytes,1,opt,name=method" json:"method,omitempty"`
-	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	Method               string   `protobuf:"bytes,1,opt,name=method,proto3" json:"method,omitempty"`
+	Payload              []byte   `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TxBatchSubTx) Reset()                    { *m = TxBatchSubTx{} }
-func (m *TxBatchSubTx) String() string            { return proto.CompactTextString(m) }
-func (*TxBatchSubTx) ProtoMessage()               {}
-func (*TxBatchSubTx) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3, 0} }
+func (m *TxBatchSubTx) Reset()         { *m = TxBatchSubTx{} }
+func (m *TxBatchSubTx) String() string { return proto.CompactTextString(m) }
+func (*TxBatchSubTx) ProtoMessage()    {}
+func (*TxBatchSubTx) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0fd2153dc07d3b5c, []int{3, 0}
+}
+
+func (m *TxBatchSubTx) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxBatchSubTx.Unmarshal(m, b)
+}
+func (m *TxBatchSubTx) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxBatchSubTx.Marshal(b, m, deterministic)
+}
+func (m *TxBatchSubTx) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxBatchSubTx.Merge(m, src)
+}
+func (m *TxBatchSubTx) XXX_Size() int {
+	return xxx_messageInfo_TxBatchSubTx.Size(m)
+}
+func (m *TxBatchSubTx) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxBatchSubTx.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxBatchSubTx proto.InternalMessageInfo
 
 func (m *TxBatchSubTx) GetMethod() string {
 	if m != nil {
@@ -418,13 +624,36 @@ func (m *TxBatchSubTx) GetPayload() []byte {
 }
 
 type TxBatchResp struct {
-	Response [][]byte `protobuf:"bytes,1,rep,name=response,proto3" json:"response,omitempty"`
+	Response             [][]byte `protobuf:"bytes,1,rep,name=response,proto3" json:"response,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TxBatchResp) Reset()                    { *m = TxBatchResp{} }
-func (m *TxBatchResp) String() string            { return proto.CompactTextString(m) }
-func (*TxBatchResp) ProtoMessage()               {}
-func (*TxBatchResp) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (m *TxBatchResp) Reset()         { *m = TxBatchResp{} }
+func (m *TxBatchResp) String() string { return proto.CompactTextString(m) }
+func (*TxBatchResp) ProtoMessage()    {}
+func (*TxBatchResp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0fd2153dc07d3b5c, []int{4}
+}
+
+func (m *TxBatchResp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TxBatchResp.Unmarshal(m, b)
+}
+func (m *TxBatchResp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TxBatchResp.Marshal(b, m, deterministic)
+}
+func (m *TxBatchResp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxBatchResp.Merge(m, src)
+}
+func (m *TxBatchResp) XXX_Size() int {
+	return xxx_messageInfo_TxBatchResp.Size(m)
+}
+func (m *TxBatchResp) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxBatchResp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxBatchResp proto.InternalMessageInfo
 
 func (m *TxBatchResp) GetResponse() [][]byte {
 	if m != nil {
@@ -445,38 +674,39 @@ func init() {
 	proto.RegisterType((*TxBatchResp)(nil), "protos.TxBatchResp")
 }
 
-func init() { proto.RegisterFile("tx.proto", fileDescriptor1) }
+func init() { proto.RegisterFile("tx.proto", fileDescriptor_0fd2153dc07d3b5c) }
 
-var fileDescriptor1 = []byte{
-	// 480 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x53, 0xc1, 0x8e, 0xd3, 0x30,
-	0x10, 0xdd, 0x92, 0xb6, 0xdb, 0x4e, 0xab, 0x02, 0x16, 0xa0, 0x28, 0x07, 0xa8, 0x02, 0x12, 0xe5,
-	0x92, 0x4a, 0xe5, 0xc2, 0x72, 0xdb, 0xc2, 0xa1, 0x67, 0x13, 0x2e, 0xdc, 0x9c, 0x78, 0xb6, 0x89,
-	0xb6, 0xb1, 0x23, 0xdb, 0x15, 0xe9, 0x85, 0x2b, 0x47, 0x7e, 0x19, 0xd9, 0x4e, 0x48, 0x16, 0xed,
-	0x29, 0x79, 0x6f, 0xe6, 0xcd, 0xcc, 0xb3, 0xc7, 0x30, 0x33, 0x4d, 0x52, 0x2b, 0x69, 0x24, 0x99,
-	0xba, 0x8f, 0x8e, 0x96, 0xb9, 0xba, 0xd4, 0x46, 0x7a, 0x36, 0x7a, 0x73, 0x94, 0xf2, 0x78, 0xc2,
-	0xad, 0x43, 0xd9, 0xf9, 0x6e, 0x6b, 0xca, 0x0a, 0xb5, 0x61, 0x55, 0xed, 0x13, 0x62, 0x0a, 0xd3,
-	0xb4, 0xd9, 0x33, 0x8d, 0x24, 0x84, 0x6b, 0x81, 0xe6, 0xa7, 0x54, 0xf7, 0xe1, 0x68, 0x3d, 0xda,
-	0xcc, 0x69, 0x07, 0xc9, 0x2b, 0x98, 0xe6, 0xb9, 0x60, 0x15, 0x86, 0x4f, 0x5c, 0xa0, 0x45, 0x96,
-	0xaf, 0xd0, 0x14, 0x92, 0x87, 0x81, 0xe7, 0x3d, 0x8a, 0x7f, 0xc1, 0x2c, 0x6d, 0x0e, 0xc8, 0x38,
-	0x2a, 0x12, 0xc3, 0x38, 0x63, 0x1a, 0x5d, 0xc9, 0xc5, 0x6e, 0xe5, 0xbb, 0xea, 0xc4, 0xf7, 0xa4,
-	0x2e, 0x46, 0x3e, 0xc1, 0x1c, 0x9b, 0xba, 0x54, 0xc8, 0x53, 0xed, 0x5a, 0x2c, 0x76, 0x51, 0xe2,
-	0x07, 0x4f, 0xba, 0xc1, 0x93, 0xb4, 0x1b, 0x9c, 0xf6, 0xc9, 0xe4, 0x05, 0x4c, 0x84, 0x14, 0x39,
-	0xba, 0x01, 0x96, 0xd4, 0x83, 0xf8, 0x77, 0x00, 0xcb, 0xb4, 0xf9, 0xa2, 0x90, 0xa3, 0x30, 0x25,
-	0x3b, 0x91, 0xcf, 0x30, 0x61, 0x9c, 0xab, 0x3c, 0x1c, 0xad, 0x83, 0xcd, 0x62, 0xf7, 0xae, 0x9f,
-	0xa2, 0x4f, 0x4a, 0x6e, 0x39, 0x57, 0x3d, 0xd4, 0xd4, 0x4b, 0xa2, 0x5b, 0x58, 0x7d, 0xd7, 0x38,
-	0x88, 0x90, 0x2d, 0xcc, 0x75, 0x79, 0x14, 0xcc, 0x9c, 0x95, 0x6f, 0xbc, 0xd8, 0x3d, 0xef, 0x2a,
-	0x7e, 0xeb, 0x02, 0xb4, 0xcf, 0x89, 0xee, 0x60, 0xf5, 0x95, 0x19, 0x36, 0x28, 0xf1, 0x0c, 0x82,
-	0x7b, 0xbc, 0xb4, 0xe7, 0x6c, 0x7f, 0x09, 0x81, 0x20, 0x33, 0xde, 0xfd, 0xf2, 0x70, 0x45, 0x2d,
-	0xb0, 0x5c, 0x29, 0x8c, 0x6b, 0x31, 0xb1, 0x5c, 0x29, 0x8c, 0xe5, 0xb4, 0x51, 0xe1, 0xd8, 0x2a,
-	0x2d, 0xa7, 0x8d, 0xda, 0x4f, 0x61, 0xcc, 0x99, 0x61, 0xd1, 0x9f, 0x11, 0x3c, 0xfd, 0xcf, 0x05,
-	0xb9, 0x81, 0xf1, 0x59, 0xa3, 0x6a, 0xcf, 0xff, 0xed, 0xa3, 0xce, 0x1f, 0xfa, 0x3b, 0x5c, 0x51,
-	0x27, 0xb1, 0x52, 0x5b, 0xb6, 0xb5, 0xf8, 0xb8, 0xf4, 0xa1, 0x2f, 0x2b, 0xb5, 0x12, 0x3b, 0x51,
-	0xae, 0x90, 0xc7, 0x15, 0x5c, 0xdb, 0x9b, 0x36, 0x79, 0x41, 0xde, 0x43, 0x60, 0x1a, 0xdd, 0xde,
-	0xc0, 0xcb, 0xe1, 0x1e, 0x98, 0xbc, 0x48, 0xf4, 0x39, 0x4b, 0x1b, 0x6a, 0x33, 0xa2, 0x1b, 0x98,
-	0x38, 0x34, 0x58, 0xaf, 0xd1, 0x70, 0xbd, 0xec, 0xa2, 0xd6, 0xec, 0x72, 0x92, 0x8c, 0xfb, 0xe3,
-	0xa2, 0x1d, 0x8c, 0x3f, 0xc0, 0xa2, 0x2d, 0x48, 0x51, 0xd7, 0x24, 0x82, 0x99, 0x42, 0x5d, 0x4b,
-	0xe1, 0xf6, 0x2f, 0xd8, 0x2c, 0xe9, 0x3f, 0xbc, 0x5f, 0xff, 0x78, 0x5d, 0x5c, 0x6a, 0x54, 0x27,
-	0xe4, 0x47, 0x54, 0x09, 0xcb, 0xf2, 0x82, 0x95, 0x22, 0x91, 0xea, 0xe8, 0xdf, 0x8a, 0xce, 0xfc,
-	0x83, 0xfa, 0xf8, 0x37, 0x00, 0x00, 0xff, 0xff, 0xe6, 0xd0, 0xc0, 0x79, 0x63, 0x03, 0x00, 0x00,
+var fileDescriptor_0fd2153dc07d3b5c = []byte{
+	// 492 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x53, 0x3d, 0xaf, 0xd3, 0x30,
+	0x14, 0x7d, 0x21, 0xfd, 0xbc, 0xad, 0x0a, 0x58, 0x80, 0xa2, 0x0c, 0x50, 0x05, 0x24, 0xca, 0x92,
+	0x4a, 0x65, 0xe1, 0xb1, 0xbd, 0xc2, 0xd0, 0xd9, 0x84, 0x85, 0xcd, 0x89, 0x6f, 0xd3, 0xe8, 0xb5,
+	0x76, 0x64, 0xbb, 0x22, 0xfd, 0x05, 0x8c, 0x2c, 0xfc, 0x60, 0x64, 0x3b, 0xa1, 0x79, 0xe8, 0x4d,
+	0xc9, 0x39, 0xf7, 0xeb, 0x1c, 0xfb, 0x1a, 0x26, 0xa6, 0x49, 0x6b, 0x25, 0x8d, 0x24, 0x23, 0xf7,
+	0xd1, 0xf1, 0xbc, 0x50, 0x97, 0xda, 0x48, 0xcf, 0xc6, 0x6f, 0x4a, 0x29, 0xcb, 0x23, 0xae, 0x1d,
+	0xca, 0xcf, 0xfb, 0xb5, 0xa9, 0x4e, 0xa8, 0x0d, 0x3b, 0xd5, 0x3e, 0x21, 0xa1, 0x30, 0xca, 0x9a,
+	0x2d, 0xd3, 0x48, 0x22, 0x18, 0x0b, 0x34, 0x3f, 0xa5, 0xba, 0x8f, 0x82, 0x65, 0xb0, 0x9a, 0xd2,
+	0x0e, 0x92, 0x57, 0x30, 0x2a, 0x0a, 0xc1, 0x4e, 0x18, 0x3d, 0x71, 0x81, 0x16, 0x59, 0xfe, 0x84,
+	0xe6, 0x20, 0x79, 0x14, 0x7a, 0xde, 0xa3, 0xe4, 0x4f, 0x00, 0x93, 0xac, 0xd9, 0x21, 0xe3, 0xa8,
+	0x48, 0x02, 0x83, 0x9c, 0x69, 0x74, 0x3d, 0x67, 0x9b, 0x85, 0x1f, 0xab, 0x53, 0x3f, 0x94, 0xba,
+	0x18, 0xf9, 0x04, 0x53, 0x6c, 0xea, 0x4a, 0x21, 0xcf, 0xb4, 0x9b, 0x31, 0xdb, 0xc4, 0xa9, 0x57,
+	0x9e, 0x76, 0xca, 0xd3, 0xac, 0x53, 0x4e, 0xaf, 0xc9, 0xe4, 0x05, 0x0c, 0x85, 0x14, 0x05, 0x3a,
+	0x05, 0x73, 0xea, 0x81, 0x65, 0xf7, 0x47, 0x56, 0xea, 0x68, 0xb0, 0x0c, 0x56, 0x63, 0xea, 0x41,
+	0xf2, 0x2b, 0x84, 0x79, 0xd6, 0x7c, 0x51, 0xc8, 0x51, 0x98, 0x8a, 0x1d, 0xc9, 0x67, 0x18, 0x32,
+	0xce, 0x55, 0x11, 0x05, 0xcb, 0x70, 0x35, 0xdb, 0xbc, 0xbb, 0x6a, 0xbb, 0x26, 0xa5, 0x77, 0x9c,
+	0xab, 0x2b, 0xd4, 0xd4, 0x97, 0xc4, 0x77, 0xb0, 0xf8, 0xae, 0xb1, 0x17, 0x21, 0x6b, 0x98, 0xea,
+	0xaa, 0x14, 0xcc, 0x9c, 0x95, 0x97, 0x33, 0xdb, 0x3c, 0xef, 0x3a, 0x7e, 0xeb, 0x02, 0xf4, 0x9a,
+	0x13, 0xef, 0x61, 0xf1, 0x95, 0x19, 0xd6, 0x6b, 0xf1, 0x0c, 0xc2, 0x7b, 0xbc, 0xb4, 0xc7, 0x6f,
+	0x7f, 0x09, 0x81, 0x30, 0x37, 0xfe, 0x4c, 0xe6, 0xbb, 0x1b, 0x6a, 0x81, 0xe5, 0x2a, 0x61, 0xdc,
+	0x88, 0xa1, 0xe5, 0x2a, 0x61, 0x2c, 0xa7, 0x8d, 0x72, 0x7e, 0xa7, 0x96, 0xd3, 0x46, 0x6d, 0x47,
+	0x30, 0xe0, 0xcc, 0xb0, 0xf8, 0x77, 0x00, 0x4f, 0xff, 0x73, 0x41, 0x6e, 0x61, 0x70, 0xd6, 0xa8,
+	0xda, 0x5b, 0x79, 0xfb, 0xa8, 0xf3, 0x87, 0xfe, 0x76, 0x37, 0xd4, 0x95, 0xd8, 0x52, 0xdb, 0xb6,
+	0xb5, 0xf8, 0x78, 0xe9, 0x43, 0x5f, 0xb6, 0xd4, 0x96, 0x58, 0x45, 0x85, 0x42, 0x9e, 0x9c, 0x60,
+	0x6c, 0xef, 0xdf, 0x14, 0x07, 0xf2, 0x1e, 0x42, 0xd3, 0xe8, 0xf6, 0x06, 0x5e, 0xf6, 0xb7, 0xc3,
+	0x14, 0x87, 0x54, 0x9f, 0xf3, 0xac, 0xa1, 0x36, 0x23, 0xbe, 0x85, 0xa1, 0x43, 0xbd, 0xad, 0x0b,
+	0xfa, 0x5b, 0x67, 0xf7, 0xb7, 0x66, 0x97, 0xa3, 0x64, 0xdc, 0x1f, 0x17, 0xed, 0x60, 0xf2, 0x01,
+	0x66, 0x6d, 0x43, 0x8a, 0xba, 0x26, 0x31, 0x4c, 0x14, 0xea, 0x5a, 0x0a, 0xb7, 0x95, 0xe1, 0x6a,
+	0x4e, 0xff, 0xe1, 0xed, 0xf2, 0xc7, 0xeb, 0xc3, 0xa5, 0x46, 0x75, 0x44, 0x5e, 0xa2, 0x4a, 0x59,
+	0x5e, 0x1c, 0x58, 0x25, 0x52, 0xa9, 0x4a, 0xff, 0x84, 0x74, 0xee, 0xdf, 0xd9, 0xc7, 0xbf, 0x01,
+	0x00, 0x00, 0xff, 0xff, 0x55, 0x12, 0xba, 0x19, 0x7a, 0x03, 0x00, 0x00,
 }

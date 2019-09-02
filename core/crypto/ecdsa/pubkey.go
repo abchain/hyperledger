@@ -47,7 +47,7 @@ func (pub *PublicKey) PBMessage() proto.Message {
 
 	pubProto.Pub = &protos.PublicKey_Ec{&protos.PublicKey_ECDSA{
 		Curvetype: pub.CurveType,
-		P:         &protos.ECPoint{pub.Key.X.Bytes(), pub.Key.Y.Bytes()},
+		P:         &protos.ECPoint{X: pub.Key.X.Bytes(), Y: pub.Key.Y.Bytes()},
 	}}
 
 	return pubProto
