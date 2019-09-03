@@ -79,6 +79,10 @@ func (w *shimStateMapROLegacy) Set(string, p.Message) error {
 	return nil
 }
 
+func (w *shimStateMapLegacy) Delete(key string) error {
+	return w.stub.DelState(w.path + key)
+}
+
 //default
 func NewShimMapLegacy(root string, stub shim.ChaincodeStubInterface, readOnly bool) StateMap_Legacy {
 	if readOnly {

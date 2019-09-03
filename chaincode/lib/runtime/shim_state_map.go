@@ -45,6 +45,11 @@ func (w *shimStateMap) SetRaw(key string, raw []byte) error {
 	}
 	return w.stub.PutState(w.path+key, raw)
 }
+
+func (w *shimStateMap) Delete(key string) error {
+	return w.stub.DelState(w.path + key)
+}
+
 func (w *shimStateMap) Get(key string, m StorageObject) error {
 
 	raw, err := w.GetRaw(key)

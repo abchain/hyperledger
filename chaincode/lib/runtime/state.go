@@ -43,6 +43,7 @@ type StateMap interface {
 	SetRaw(string, []byte) error
 	Get(string, StorageObject) error
 	Set(string, StorageObject) error
+	Delete(string) error
 }
 
 //default
