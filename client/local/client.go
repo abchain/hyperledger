@@ -176,7 +176,7 @@ func (c *LocalChain) BuildBlock() {
 		blk.PreviousHash = "Genesis"
 	}
 
-	blk.TimeStamp = time.Now().String()
+	blk.TimeStamp = time.Now()
 	//update indexs
 	for _, tx := range c.pendingTxs {
 		tx.Height = blk.Height

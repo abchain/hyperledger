@@ -16,6 +16,7 @@ type ChainTransaction struct {
 	*client.ChainTransaction
 	//Data for the original protobuf input (Message part) and Detail left for parser
 	ChaincodeModule, Nonce string
+	TimeLock               string      `json:"expiredAt,omitempty"`
 	Detail, Data           interface{} `json:",omitempty"`
 	TxHash                 string      `json:",omitempty"`
 }
@@ -37,7 +38,7 @@ func SetParsers(m map[string]abchainTx.TxArgParser) { registryParsers = m }
 
 func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 
-	ret := &ChainTransaction{tx, "", "", nil, nil, ""}
+	ret := &ChainTransaction{tx, "", "", "", nil, nil, ""}
 
 	if len(tx.TxArgs) < 2 {
 		ret.Detail = notHyperledgerTx
@@ -51,6 +52,10 @@ func handleTransaction(tx *client.ChainTransaction) *ChainTransaction {
 	}
 	ret.Nonce = fmt.Sprintf("%X", parser.GetNonce())
 	ret.ChaincodeModule = parser.GetCCname()
+	if parser.GetFlags().IsTimeLock() {
+		ret.TimeLock = parser.GetTxTime().String()
+	}
+
 	ret.Data = tx.TxArgs[1]
 	//we also add the hash of tx, for convinient
 	ret.TxHash = fmt.Sprintf("%X", abchainTx.GetHashOfRawTx(tx.TxArgs[0], tx.TxArgs[1], tx.Method))

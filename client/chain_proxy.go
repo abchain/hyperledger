@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/spf13/viper"
+	"time"
 )
 
 type Chain struct {
@@ -32,7 +33,7 @@ type ChainBlock struct {
 	Height       int64  `json:",string"`
 	Hash         string `json:",omitempty"`
 	PreviousHash string
-	TimeStamp    string              `json:",omitempty"`
+	TimeStamp    time.Time           `json:",omitempty"`
 	Transactions []*ChainTransaction `json:"-"`
 	TxEvents     []*ChainTxEvents    `json:"-"`
 }
