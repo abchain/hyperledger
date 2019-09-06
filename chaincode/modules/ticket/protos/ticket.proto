@@ -1,0 +1,28 @@
+
+syntax = "proto3";
+
+package ccauthprotos;
+
+import "protos/txaddr.proto";
+
+
+message Ticket {
+	protos.TxAddr owner = 1;
+	bytes id = 2;
+	int32 ticketCat = 3;
+	string desc = 4;
+}
+
+message ApplyTicket {
+	protos.TxAddr owner = 1;
+	bytes id = 2;
+}
+
+
+message QueryTicket {
+	protos.TxAddr owner = 1;
+	bytes id = 2;
+}
+
+
+
