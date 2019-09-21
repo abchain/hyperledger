@@ -8,5 +8,5 @@ RUN rm -rf $(find ${GOPATH}/src -name .git -type d)
 
 FROM abchain/fabric:base_0.97
 COPY --from=coderepo ${GOPATH}/src ${GOPATH}/src/
-COPY * ${GOPATH}/src/hyperledger.abchain.org
+COPY * ${GOPATH}/src/hyperledger.abchain.org/
 
