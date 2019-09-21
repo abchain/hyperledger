@@ -6,7 +6,7 @@ RUN go get -u github.com/gocraft/web
 
 RUN rm -rf $(find ${GOPATH}/src -name .git -type d)
 
-FROM abchain/fabric
+FROM abchain/fabric:base_0.97
 COPY --from=coderepo ${GOPATH}/src ${GOPATH}/src/
-RUN go get -d hyperledger.abchain.org/cases/ae
+COPY * ${GOPATH}/src/hyperledger.abchain.org
 
