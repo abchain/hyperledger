@@ -1,4 +1,4 @@
-package client
+package client // import "hyperledger.abchain.org/client"
 
 import (
 	"errors"

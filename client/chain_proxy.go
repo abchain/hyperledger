@@ -1,4 +1,4 @@
-package client
+package client // import "hyperledger.abchain.org/client"
 
 import (
 	"errors"
@@ -7,10 +7,12 @@ import (
 	"time"
 )
 
+/*Chain for blockchain */
 type Chain struct {
 	Height int64
 }
 
+/*ChainTransaction for tx */
 type ChainTransaction struct {
 	Height                  int64 `json:",string"`
 	TxID, Chaincode, Method string
@@ -23,6 +25,7 @@ const (
 	TxStatus_Fail    = 1
 )
 
+/*ChainTxEvents for events */
 type ChainTxEvents struct {
 	TxID, Chaincode, Name string
 	Status                int
