@@ -15,43 +15,15 @@ type StateMap_Legacy interface {
 }
 
 type shimStateMapLegacy struct {
-	path string
-	stub shim.ChaincodeStubInterface
+	StateMap
 }
 
-type shimStateMapROLegacy struct {
-	shimStateMapLegacy
+func (w shimStateMapLegacy) SubMap(node string) StateMap_Legacy {
+
+	return shimStateMapLegacy{w.StateMap.SubMap(node)}
 }
 
-func (w *shimStateMapLegacy) SubMap(node string) StateMap_Legacy {
-
-	if node == "" {
-		return w
-	}
-
-	if node[len(node)-1] != '/' {
-		node = node + "/"
-	}
-
-	return &shimStateMapLegacy{
-		w.path + node,
-		w.stub,
-	}
-}
-
-func (w *shimStateMapLegacy) StoragePath() string {
-	return w.path
-}
-
-func (w *shimStateMapLegacy) GetRaw(key string) ([]byte, error) {
-	return w.stub.GetState(w.path + key)
-}
-
-func (w *shimStateMapLegacy) SetRaw(key string, raw []byte) error {
-	return w.stub.PutState(w.path+key, raw)
-}
-
-func (w *shimStateMapLegacy) Get(key string, m p.Message) error {
+func (w shimStateMapLegacy) Get(key string, m p.Message) error {
 
 	raw, err := w.GetRaw(key)
 	if err != nil {
@@ -65,7 +37,7 @@ func (w *shimStateMapLegacy) Get(key string, m p.Message) error {
 	return p.Unmarshal(raw, m)
 }
 
-func (w *shimStateMapLegacy) Set(key string, m p.Message) error {
+func (w shimStateMapLegacy) Set(key string, m p.Message) error {
 
 	raw, err := p.Marshal(m)
 	if err != nil {
@@ -75,28 +47,8 @@ func (w *shimStateMapLegacy) Set(key string, m p.Message) error {
 	return w.SetRaw(key, raw)
 }
 
-func (w *shimStateMapROLegacy) Set(string, p.Message) error {
-	return nil
-}
-
-func (w *shimStateMapLegacy) Delete(key string) error {
-	return w.stub.DelState(w.path + key)
-}
-
-//default
+//NewShimMapLegacy create legacy interface
 func NewShimMapLegacy(root string, stub shim.ChaincodeStubInterface, readOnly bool) StateMap_Legacy {
-	if readOnly {
-		return &shimStateMapROLegacy{
-			shimStateMapLegacy{
-				"/" + root + "/",
-				stub,
-			},
-		}
-	}
-
-	return &shimStateMapLegacy{
-		"/" + root + "/",
-		stub,
-	}
+	return shimStateMapLegacy{NewShimMap(root, stub, readOnly)}
 
 }

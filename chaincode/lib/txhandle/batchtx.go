@@ -3,6 +3,7 @@ package tx
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	rt "hyperledger.abchain.org/chaincode/lib/runtime"
 	"hyperledger.abchain.org/chaincode/shim"
 	txutil "hyperledger.abchain.org/core/tx"
 	pb "hyperledger.abchain.org/protos"
@@ -24,6 +25,9 @@ func (h batchTx) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([
 
 	ret := new(pb.TxBatchResp)
 	msg := parser.GetMessage().(*pb.TxBatch)
+
+	//adapt the stub to caching one, we require this for batchTx
+	stub = rt.NewCachingStub(stub)
 
 	for _, subcall := range msg.Txs {
 		txh, ok := h.Handlers[subcall.Method]

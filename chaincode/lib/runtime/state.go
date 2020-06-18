@@ -46,7 +46,7 @@ type StateMap interface {
 	Delete(string) error
 }
 
-//default
+//NewShimMap create default shimMap
 func NewShimMap(root string, stub shim.ChaincodeStubInterface, readOnly bool) StateMap {
 	if readOnly {
 		return &shimStateMapRO{
@@ -62,4 +62,12 @@ func NewShimMap(root string, stub shim.ChaincodeStubInterface, readOnly bool) St
 		stub,
 	}
 
+}
+
+//NewShimMapWithCache create shimMap with a wrapping stub along with write-cache
+//which provide a more consistent data-isolation (invoked chaincode read uncommited
+//data) on different chain-platform but tamper a little so it is not made an default
+//option
+func NewShimMapWithCache(root string, stub shim.ChaincodeStubInterface) StateMap {
+	return NewShimMap(root, NewCachingStub(stub), false)
 }
