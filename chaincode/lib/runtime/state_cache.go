@@ -4,6 +4,12 @@ import (
 	"hyperledger.abchain.org/chaincode/shim"
 )
 
+//CachingSupport enable an implement indicate it has support caching,
+//i.e. GetState can read uncommited value
+type CachingSupport interface {
+	CanReadUnCommit()
+}
+
 type cachingCcStub struct {
 	shim.ChaincodeStubInterface
 	stateCache map[string][]byte
@@ -13,6 +19,8 @@ type cachingCcStub struct {
 func NewCachingStub(stub shim.ChaincodeStubInterface) shim.ChaincodeStubInterface {
 	return &cachingCcStub{stub, make(map[string][]byte)}
 }
+
+func (*cachingCcStub) CanReadUnCommit() {}
 
 func (wc *cachingCcStub) GetState(key string) ([]byte, error) {
 

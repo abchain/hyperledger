@@ -69,5 +69,9 @@ func NewShimMap(root string, stub shim.ChaincodeStubInterface, readOnly bool) St
 //data) on different chain-platform but tamper a little so it is not made an default
 //option
 func NewShimMapWithCache(root string, stub shim.ChaincodeStubInterface) StateMap {
+	_, done := stub.(CachingSupport)
+	if done {
+		return NewShimMap(root, stub, false)
+	}
 	return NewShimMap(root, NewCachingStub(stub), false)
 }
