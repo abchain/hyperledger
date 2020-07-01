@@ -40,6 +40,8 @@ func initCond() {
 	querycfg.SetReadOnly(true)
 
 	cc := GeneralInvokingTemplate(test_ccname, cfg).MustMerge(GeneralQueryTemplate(test_ccname, querycfg))
+	//disable prehandles in this test
+	cc[Method_Update].PreHandlers = nil
 	bolt = rpc.NewLocalChaincode(cc)
 }
 func TestChaincode(t *testing.T) {

@@ -18,3 +18,14 @@ func (c ctaddr) MarshalJSON() ([]byte, error) {
 	return json.Marshal(fmt.Sprintf("%s:%d", caddr.ToString(), c.Weight))
 
 }
+
+//GetAddresses indicate we use current contract address
+func (m *Update) GetAddresses() []*txutil.Address {
+
+	addr, err := txutil.NewAddressFromPBMessage(m.Addr)
+	if err != nil {
+		return nil
+	}
+
+	return []*txutil.Address{addr}
+}

@@ -108,7 +108,7 @@ func afterFailInvoking(err error, t *testing.T) {
 	}
 }
 
-func doTestVerifier(t *testing.T) {
+func doTestVerifier(t *testing.T, ismulticc bool) {
 
 	//first build a contract
 	spout := &GeneralCall{spoutcore}
@@ -193,20 +193,45 @@ func doTestVerifier(t *testing.T) {
 	} else if ctacc.Balance.Cmp(big.NewInt(500)) != 0 {
 		t.Fatalf("Wrong balance: %s", ctacc.Balance)
 	}
+
+	if ismulticc {
+		return
+	}
+
+	//update is also require signature
+	spoutcore.BeginTx(nil)
+	spoutcore.Credgenerator = txgen.NewMultiKeyCred(nineteenEightyFour, georgeOrwell)
+	err = spout.Update_C(ctaddr2.Hash, GeorgeOrwell.Hash, BigBrother.Hash)
+	afterInvoking(err, t)
+
+	err, ret := spout.Query_C(ctaddr2.Hash)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ind := ret.Find(NineteenEightyFour.Hash); ind < 0 {
+		t.Fatal("Not found")
+	} else if ret.Addrs[ind].Weight != 50 {
+		t.Fatal("Wrong record")
+	}
+
+	if ind := ret.Find(GeorgeOrwell.Hash); ind >= 0 {
+		t.Fatal("Ghost address")
+	}
 }
 
 func TestVerifier(t *testing.T) {
 
 	initFullCond(false)
 	initTest(t)
-	doTestVerifier(t)
+	doTestVerifier(t, false)
 }
 
 func TestVerifier_Multicc(t *testing.T) {
 
 	initFullCond(true)
 	initTest(t)
-	doTestVerifier(t)
+	doTestVerifier(t, true)
 }
 
 func doRecursiveTestVerifier(t *testing.T) {
@@ -272,6 +297,8 @@ func doRecursiveTestVerifier(t *testing.T) {
 	} else if ctacc.Balance.Cmp(big.NewInt(500)) != 0 {
 		t.Fatalf("Wrong balance: %s", ctacc.Balance)
 	}
+
+	//also test update
 }
 
 func doRecursiveLimitTest(t *testing.T) {
@@ -340,9 +367,18 @@ func TestRecursiveVerifier(t *testing.T) {
 
 func TestRecursiveVerifier_Multicc(t *testing.T) {
 
+	defer func(d int) {
+		defaultRecursiveDepth = d
+	}(defaultRecursiveDepth)
+
 	initFullCond(true)
 	initTest(t)
-	doTestVerifier(t)
+	doRecursiveTestVerifier(t)
+
+	defaultRecursiveDepth = 0
+	initFullCond(false)
+	initTest(t)
+	doRecursiveLimitTest(t)
 }
 
 func doRecursiveTestSpecial(t *testing.T) {
@@ -414,7 +450,6 @@ func TestRecursiveSpecial(t *testing.T) {
 	initFullCond(false)
 	initTest(t)
 	doRecursiveTestSpecial(t)
-
 }
 
 func TestRecursiveSpecial_Multicc(t *testing.T) {

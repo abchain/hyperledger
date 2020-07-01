@@ -8,10 +8,13 @@ func GeneralInvokingTemplate(ccname string, cfg MultiSignConfig) (ret tx.Collect
 
 	ret = tx.NewCollectiveTxs()
 
+	verifier := MultiSignAddrPreHandler(cfg)
+
 	cH := &tx.ChaincodeTx{ccname, ContractHandler(cfg), nil, nil}
 	ret[Method_Contract] = cH
 
 	rcH := &tx.ChaincodeTx{ccname, UpdateHandler(cfg), nil, nil}
+	rcH.PreHandlers = append(rcH.PreHandlers, verifier)
 	ret[Method_Update] = rcH
 
 	return
