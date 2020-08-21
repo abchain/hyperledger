@@ -28,7 +28,7 @@ func (i *GeneralCall) Add(key []byte, amount *big.Int, from *pb.FuncRecord, to *
 
 func (i *GeneralCall) Nonce(key []byte) (error, *pb.NonceData_s) {
 
-	ret, err := i.Query(Method_Query, &pb.QueryTransfer{key})
+	ret, err := i.Query(Method_Query, &pb.QueryTransfer{Nonce: key})
 
 	if err != nil {
 		return err, nil

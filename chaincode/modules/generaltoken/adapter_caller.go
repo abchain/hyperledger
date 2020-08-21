@@ -35,9 +35,9 @@ const (
 func (i *GeneralCall) transfer(from []byte, to []byte, amount *big.Int, method string) (pb.NonceKey, error) {
 
 	msg := &pb.SimpleFund{
-		amount.Bytes(),
-		txutil.NewAddressFromHash(to).PBMessage(),
-		txutil.NewAddressFromHash(from).PBMessage(),
+		Amount: amount.Bytes(),
+		To:     txutil.NewAddressFromHash(to).PBMessage(),
+		From:   txutil.NewAddressFromHash(from).PBMessage(),
 	}
 
 	err := i.Invoke(method, msg)
@@ -60,9 +60,9 @@ func (i *GeneralCall) Transfer2(from []byte, to []byte, amount *big.Int) (pb.Non
 func (i *GeneralCall) Assign(to []byte, amount *big.Int) (pb.NonceKey, error) {
 
 	msg := &pb.SimpleFund{
-		amount.Bytes(),
-		txutil.NewAddressFromHash(to).PBMessage(),
-		nil,
+		Amount: amount.Bytes(),
+		To:     txutil.NewAddressFromHash(to).PBMessage(),
+		From:   nil,
 	}
 
 	err := i.Invoke(Method_Assign, msg)
@@ -87,7 +87,8 @@ func (i *GeneralCall) Init(amount *big.Int) error {
 
 func (i *GeneralCall) Account(addr []byte) (error, *pb.AccountData_s) {
 	a := txutil.NewAddressFromHash(addr)
-	ret, err := i.Query(Method_QueryToken, &pb.QueryToken{pb.QueryToken_ENCODED, a.PBMessage()})
+	ret, err := i.Query(Method_QueryToken, &pb.QueryToken{
+		Format: pb.QueryToken_ENCODED, Addr: a.PBMessage()})
 
 	if err != nil {
 		return err, nil

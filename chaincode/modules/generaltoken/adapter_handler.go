@@ -55,7 +55,19 @@ func (h tokenQueryHandler) Msg() proto.Message  { return new(ccpb.QueryToken) }
 func (h globalQueryHandler) Msg() proto.Message { return new(empty.Empty) }
 func (h initHandler) Msg() proto.Message        { return new(ccpb.BaseToken) }
 
-func (h transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func mutiTokenIndicate(stub shim.ChaincodeStubInterface, parser txutil.Parser, nc []byte) error {
+	//pick the parent message
+	if msg := parser.GetMessage(1); msg == nil {
+		return nil
+	} else if mtkmsg, ok := msg.(*ccpb.MultiTokenMsg); ok {
+		evtN, bt := ccpb.NewMultiTokenContext(nc, mtkmsg.GetTokenName())
+		return stub.SetEvent(evtN, bt)
+	}
+
+	return nil
+}
+
+func (h transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) (nc []byte, rerr error) {
 	msg := parser.GetMessage().(*ccpb.SimpleFund)
 	addrFrom, err := txutil.NewAddressFromPBMessage(msg.From)
 	if err != nil {
@@ -67,21 +79,33 @@ func (h transferHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Pa
 		return nil, err
 	}
 
+	defer func() {
+		if rerr == nil {
+			rerr = mutiTokenIndicate(stub, parser, nc)
+		}
+	}()
+
 	if h.legacy {
 		return h.NewTx(stub, parser.GetNonce()).Transfer(addrFrom.Hash, addrTo.Hash, toAmount(msg.Amount))
-	} else {
-		return h.NewTx(stub, parser.GetNonce()).Transfer2(addrFrom.Hash, addrTo.Hash, toAmount(msg.Amount))
 	}
+
+	return h.NewTx(stub, parser.GetNonce()).Transfer2(addrFrom.Hash, addrTo.Hash, toAmount(msg.Amount))
 
 }
 
-func (h assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) ([]byte, error) {
+func (h assignHandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) (nc []byte, rerr error) {
 	msg := parser.GetMessage().(*ccpb.SimpleFund)
 
 	addrTo, err := txutil.NewAddressFromPBMessage(msg.To)
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() {
+		if rerr == nil {
+			rerr = mutiTokenIndicate(stub, parser, nc)
+		}
+	}()
 
 	return h.NewTx(stub, parser.GetNonce()).Assign(addrTo.Hash, toAmount(msg.Amount))
 }

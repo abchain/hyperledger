@@ -20,17 +20,17 @@ func (h basehandler) Msg() proto.Message { return new(ccpb.MultiTokenMsg) }
 func (h basehandler) Call(stub shim.ChaincodeStubInterface, parser txutil.Parser) (rbt []byte, e error) {
 
 	msg := parser.GetMessage().(*ccpb.MultiTokenMsg)
-	defer parser.UpdateMsg(msg)
+	defer parser.PopMsg()
 
 	switch m := msg.GetMsg().(type) {
 	case *ccpb.MultiTokenMsg_Fund:
-		parser.UpdateMsg(m.Fund)
+		parser.PushMsg(m.Fund)
 	case *ccpb.MultiTokenMsg_Query:
-		parser.UpdateMsg(m.Query)
+		parser.PushMsg(m.Query)
 	case *ccpb.MultiTokenMsg_Init:
-		parser.UpdateMsg(m.Init)
+		parser.PushMsg(m.Init)
 	default:
-		parser.UpdateMsg(&empty.Empty{})
+		parser.PushMsg(&empty.Empty{})
 	}
 
 	defer func() {

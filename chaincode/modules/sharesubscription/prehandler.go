@@ -50,8 +50,6 @@ func (v redeemContractAddrCred) PreHandling(stub shim.ChaincodeStubInterface, _ 
 			}
 		}
 
-		parser.UpdateMsg(m)
-
 	} else {
 		//match
 		for _, addr := range m.GetRedeems() {

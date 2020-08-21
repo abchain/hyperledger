@@ -83,9 +83,8 @@ func (cci *ChaincodeTx) txSubCall(stub shim.ChaincodeStubInterface,
 		return nil, err
 	}
 
-	originMsg := parser.GetMessage()
-	defer parser.UpdateMsg(originMsg)
-	parser.UpdateMsg(callmsg)
+	defer parser.PopMsg()
+	parser.PushMsg(callmsg)
 
 	for _, h := range cci.PreHandlers {
 		err := h.PreHandling(stub, function, parser)

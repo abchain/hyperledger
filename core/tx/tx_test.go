@@ -72,3 +72,68 @@ func TestTx(t *testing.T) {
 		t.Fatal("Wrong message")
 	}
 }
+
+func TestParserStack(t *testing.T) {
+
+	msg1 := new(pb.TxMsgExample)
+	msg2 := new(pb.TxMsgExample)
+	msg3 := new(pb.TxMsgExample)
+
+	parser := &txParser{msg: msg1}
+
+	if parser.GetMessage(1) != nil {
+		t.Fatal("Wrong msg stack get 1")
+	}
+
+	if parser.GetMessage() != msg1 {
+		t.Fatal("Wrong msg stack get 2")
+	}
+
+	if parser.GetMessage() != parser.GetMessage(0) {
+		t.Fatal("Wrong msg stack get 2.1")
+	}
+
+	parser.PushMsg(msg2)
+
+	if parser.GetMessage(1) != msg1 {
+		t.Fatal("Wrong msg stack get 3")
+	}
+
+	if parser.GetMessage() != msg2 {
+		t.Fatal("Wrong msg stack get 4")
+	}
+
+	if parser.GetMessage(2) != nil {
+		t.Fatal("Wrong msg stack get 5")
+	}
+
+	parser.PushMsg(msg3)
+
+	if parser.GetMessage(1) != msg2 {
+		t.Fatal("Wrong msg stack get 6")
+	}
+
+	if parser.GetMessage() != msg3 {
+		t.Fatal("Wrong msg stack get 7")
+	}
+
+	if parser.GetMessage(2) != msg1 {
+		t.Fatal("Wrong msg stack get 8")
+	}
+
+	if parser.PopMsg() != msg3 {
+		t.Fatal("Wrong msg stack get 9")
+	}
+
+	if parser.GetMessage(1) != msg1 {
+		t.Fatal("Wrong msg stack get 10")
+	}
+
+	if parser.GetMessage() != msg2 {
+		t.Fatal("Wrong msg stack get 11")
+	}
+
+	if parser.GetMessage(2) != nil {
+		t.Fatal("Wrong msg stack get 12")
+	}
+}

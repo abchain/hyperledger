@@ -3,8 +3,9 @@ syntax = "proto3";
 
 package ccprotos;
 
-import "hyperledger.abchain.org/protos/txaddr.proto";
+import "protos/txaddr.proto";
 import "google/protobuf/timestamp.proto";
+option go_package = "hyperledger.abchain.org/chaincode/modules/generaltoken/ccprotos";
 
 message SimpleFund {
 	bytes	amount  = 1;
@@ -49,6 +50,16 @@ message AccountData {
 	FuncRecord lastFund = 2;
 }
 
+message TransferResult {
+	bytes     noncekey = 1;
+	message AccountStatus {
+		protos.TxAddr addr = 1;
+		bytes balance = 2;
+	}
+	AccountStatus from = 2;
+	AccountStatus to = 3;
+}
+
 message NonceData{
 	string txid = 1;
 	bytes  amount = 2;
@@ -76,4 +87,9 @@ message MultiTokenMsg {
 		QueryToken query = 4;
 		BaseToken  init = 5;
 	}	
+}
+
+message MultiTokenRecord {
+	bytes     noncekey = 1;
+	string    tokenName = 2;
 }
