@@ -10,6 +10,7 @@ import (
 
 func (token *baseTokenTx) Transfer2(from []byte, to []byte, amount *big.Int) (k pb.NonceKey, err error) {
 
+	//this event will be deprecated
 	defer func() {
 		if err == nil {
 			n, v := pb.NewTransferEvent(k)
@@ -81,6 +82,9 @@ func (token *baseTokenTx) Transfer(from []byte, to []byte, amount *big.Int) (pb.
 	if err != nil {
 		return nil, err
 	}
+
+	evts, bt := pb.NewTransferResult(ret.Key, from, to, ret.From, ret.To)
+	token.Core.SetEvent(evts, bt)
 
 	return ret.Key, nil
 

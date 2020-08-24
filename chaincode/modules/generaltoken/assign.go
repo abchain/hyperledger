@@ -71,6 +71,10 @@ func (token *baseTokenTx) Assign(to []byte, amount *big.Int) (pb.NonceKey, error
 	if err != nil {
 		return nil, err
 	}
+
+	evts, bt := pb.NewTransferResult(ret.Key, nil, to, nil, ret.To)
+	token.Core.SetEvent(evts, bt)
+
 	return ret.Key, nil
 }
 
